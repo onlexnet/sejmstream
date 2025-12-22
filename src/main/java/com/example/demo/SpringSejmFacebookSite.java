@@ -39,7 +39,7 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
                 .get()
                 .getAccessToken();
 
-        var pageClient = new DefaultFacebookClient(pat, Version.LATEST);
+        var pageClient = new DefaultFacebookClient(pat, Version.LATEST);  
         var feed = pageClient.fetchConnection("me/feed", Post.class);
         for (var post : feed.getData()) {
             System.out.println("Post: " + post.getMessage());
@@ -54,10 +54,10 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
         // System.out.println("Published photo ID: " + publishPhoto.getId());
 
         // create a post
-        var publishPost = pageClient.publish("me/feed", com.restfb.types.FacebookType.class,
-                com.restfb.Parameter.with("message", message),
-                com.restfb.Parameter.with("is_published", false));
-        System.out.println("Published post ID: " + publishPost.getId());
+        // var publishPost = pageClient.publish("me/feed", com.restfb.types.FacebookType.class,
+        //         com.restfb.Parameter.with("message", message),
+        //         com.restfb.Parameter.with("is_published", false));
+        // System.out.println("Published post ID: " + publishPost.getId());
     }
 
 }
