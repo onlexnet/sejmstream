@@ -10,6 +10,7 @@ import org.springframework.web.client.RestClient;
 
 import com.restfb.Connection;
 import com.restfb.DefaultFacebookClient;
+import com.restfb.FacebookClient;
 import com.restfb.Version;
 import com.restfb.types.Page;
 import com.restfb.types.Post;
@@ -28,7 +29,7 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
         var body = client.get().uri("sejm/{term}/MP", "term10").retrieve().body(type);
 
         var activeCount = body.stream().filter(it -> it.active()).count();
-        var message ="Lista posłów: " + activeCount;
+        var message = "Lista posłów: " + activeCount;
 
         var fbClient = new DefaultFacebookClient(fbToken, Version.LATEST);
         Connection<Page> pages = fbClient.fetchConnection("me/accounts", Page.class);
@@ -39,27 +40,33 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
                 .get()
                 .getAccessToken();
 
-        var pageClient = new DefaultFacebookClient(pat, Version.LATEST);  
+        var pageClient = new DefaultFacebookClient(pat, Version.LATEST);
         var feed = pageClient.fetchConnection("me/feed", Post.class);
         for (var post : feed.getData()) {
-            System.out.println("Post: " + post.getMessage());
+            System.out.println("delete post: " + post.getMessage());
+            var postId = post.getId();
+            pageClient.deleteObject(postId);
         }
 
         // // generate a simple image and publish in the feed
-        // var imageUrl = "https://www.yttags.com/blog/wp-content/uploads/2023/02/image-urls-for-testing.webp";
-        // var publishPhoto = pageClient.publish("me/photos", com.restfb.types.FacebookType.class,
-        //         com.restfb.Parameter.with("url", imageUrl),
-        //         com.restfb.Parameter.with("caption", "Hello from RestFB!"),
-        //         com.restfb.Parameter.with("is_published", false));
+        // var imageUrl =
+        // "https://www.yttags.com/blog/wp-content/uploads/2023/02/image-urls-for-testing.webp";
+        // var publishPhoto = pageClient.publish("me/photos",
+        // com.restfb.types.FacebookType.class,
+        // com.restfb.Parameter.with("url", imageUrl),
+        // com.restfb.Parameter.with("caption", "Hello from RestFB!"),
+        // com.restfb.Parameter.with("is_published", false));
         // System.out.println("Published photo ID: " + publishPhoto.getId());
 
         // create a post
-        // var publishPost = pageClient.publish("me/feed", com.restfb.types.FacebookType.class,
-        //         com.restfb.Parameter.with("message", message),
-        //         com.restfb.Parameter.with("is_published", false));
-        // System.out.println("Published post ID: " + publishPost.getId());
+        var publishPost = pageClient.publish("me/feed",
+                com.restfb.types.FacebookType.class,
+                com.restfb.Parameter.with("message", message),
+                com.restfb.Parameter.with("is_published", false));
+        System.out.println("Published post ID: " + publishPost.getId());
     }
 
 }
 
-record MP(String accusativeName, boolean active) { }
+record MP(String accusativeName, boolean active) {
+}
