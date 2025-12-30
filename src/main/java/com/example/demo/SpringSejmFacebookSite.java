@@ -34,20 +34,14 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        var restClient = RestClient.create("https://api.sejm.gov.pl");
-
         var termInfo = sejmApi.getTerms();
         var activeTerm = termInfo.stream().filter(it -> it.current()).findAny().get();
 
-        var type = new ParameterizedTypeReference<List<MP>>() {
-        };
-        var listMP = restClient.get().uri("sejm/term{termNo}/MP", activeTerm.num()).retrieve().body(type);
+        var listMP = sejmApi.getMPs(activeTerm.num());
 
         for (var mp : listMP) {
             log.info("wczytujemy dane posla {}", mp.firstLastName());
-            restClient.get().uri("sejm/term{termNo}/MP/{mpId}/votings/stats", activeTerm.num(), mp.id()).retrieve()
-                    .body(new ParameterizedTypeReference<List<VotingStats>>() {
-                    });
+            sejmApi.getVotingStats(activeTerm.num(), mp.id());
         }
 
         var activeCount = listMP.stream().filter(it -> it.active()).count();
