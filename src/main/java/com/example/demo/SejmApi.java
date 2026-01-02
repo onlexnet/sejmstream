@@ -15,6 +15,7 @@ public interface SejmApi {
     List<VotingStats> getVotingStats(int termNumber, int mpId);
 }
 
+
 @Component
 class SejmApiImpl implements SejmApi {
 
