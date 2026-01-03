@@ -17,7 +17,7 @@ public class MpStats {
     }
 
     public double getAttendance() {
-        return totalVotings == 0 ? 0.0 : (double) presentCount / totalVotings;
+        return totalVotings == 0 ? 1.0 : (double) presentCount / totalVotings;
     }
 
     public int getMpId() { return mpId; }
