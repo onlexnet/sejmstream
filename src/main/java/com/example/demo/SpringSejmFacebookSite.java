@@ -1,51 +1,71 @@
 package com.example.demo;
 
-import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-
-import com.restfb.Connection;
-import com.restfb.DefaultFacebookClient;
-import com.restfb.FacebookClient;
-import com.restfb.Version;
-import com.restfb.types.Page;
-import com.restfb.types.Post;
 
 @Component
 public class SpringSejmFacebookSite implements CommandLineRunner {
 
     private final static Logger log = LoggerFactory.getLogger(SpringSejmFacebookSite.class);
-    @Value("${FB_TOKEN}")
-    String fbToken;
     private final FaceApi faceApi;
     private final SejmApi sejmApi;
 
-    SpringSejmFacebookSite(FaceApi faceApi, SejmApi sejmApi) {
+    public SpringSejmFacebookSite(FaceApi faceApi, SejmApi sejmApi) {
         this.faceApi = faceApi;
         this.sejmApi = sejmApi;
     }
 
     @Override
     public void run(String... args) throws Exception {
-        var termInfo = sejmApi.getTerms();
-        var activeTerm = termInfo.stream().filter(it -> it.current()).findAny().get();
 
+        // 1️⃣ Pobieramy aktywną kadencję
+        var termInfo = sejmApi.getTerms();
+        var activeTerm = termInfo.stream().filter(Term::current).findAny().orElseThrow();
+
+        // 2️⃣ Pobieramy listę posłów
         var listMP = sejmApi.getMPs(activeTerm.num());
 
+        // 3️⃣ Tworzymy listę statystyk posłów
+        List<MpStats> statsList = new ArrayList<>();
         for (var mp : listMP) {
-            log.info("wczytujemy dane posla {}", mp.firstLastName());
-            sejmApi.getVotingStats(activeTerm.num(), mp.id());
+            statsList.add(new MpStats(mp.id(), mp.firstLastName()));
         }
 
-        var activeCount = listMP.stream().filter(it -> it.active()).count();
-        var message = String.format("Lista posłów: %s, kadencja nr %s ", activeCount, activeTerm.num());
+        // 4️⃣ Iterujemy po posłach i ich głosowaniach, liczymy frekwencję
+        for (var mp : listMP) {
+            log.info("Wczytujemy dane posła {}", mp.firstLastName());
+            List<VotingStats> votings = sejmApi.getVotingStats(activeTerm.num(), mp.id());
+            for (VotingStats v : votings) {
+                boolean wasPresent = (v.numVotings() - v.numMissed()) > 0;
+                
+                // aktualizujemy statystyki posła
+                statsList.stream()
+                        .filter(s -> s.getMpId() == mp.id())
+                        .findFirst()
+                        .ifPresent(s -> s.addVote(wasPresent));
+            }
+        }
+
+        // 5️⃣ Wyświetlamy frekwencję i oznaczamy posłów widm
+        double threshold = 0.2; // 20%
+        for (MpStats s : statsList) {
+            double attendance = s.getAttendance();
+            if (attendance < threshold) {
+                log.warn("{} – frekwencja: {}% – poseł widmo!", 
+                         s.getFirstLastName(), attendance * 100);
+            } else {
+                log.info("{} – frekwencja: {}%", s.getFirstLastName(), attendance * 100);
+            }
+        }
+
+        // 6️⃣ Opcjonalnie – post na Facebook
+        var activeCount = listMP.stream().filter(MP::active).count();
+        var message = String.format("Lista posłów: %s, kadencja nr %s", activeCount, activeTerm.num());
         faceApi.post(message);
         log.info(message);
     }

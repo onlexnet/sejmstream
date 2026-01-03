@@ -25,9 +25,7 @@ record VotingStats(
         // liczba oddanych głosów
         int numVoted,
         // numer posiedzenia
-        int sitting,
-        //lista głosów
-        List<Vote> votes
+        int sitting
 ) {
 }
 
