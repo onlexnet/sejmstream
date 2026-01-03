@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-mp-stats-table" author="aleksander">
+        <createTable tableName="mp_stats">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="mp_id" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="first_last_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="total_votings" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="present_count" type="INT" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex tableName="mp_stats" indexName="idx_mp_id">
+            <column name="mp_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

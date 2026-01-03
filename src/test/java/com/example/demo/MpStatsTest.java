@@ -15,7 +15,7 @@ public class MpStatsTest {
 
 
         double attendance = mpStats.getAttendance();
-        Assertions.assertThat(attendance).isEqualTo(2.0/3.0);
+        Assertions.assertThat(attendance).isEqualTo(2.0/3.0 * 100.0);
     }
 
     @Test
@@ -24,6 +24,6 @@ public class MpStatsTest {
         MpStats mpStats = new MpStats(2,"Beata Szydlo");
 
         double attendance = mpStats.getAttendance();
-        Assertions.assertThat(attendance).isEqualTo(1.0);
+        Assertions.assertThat(attendance).isEqualTo(100.0);
     }
 }

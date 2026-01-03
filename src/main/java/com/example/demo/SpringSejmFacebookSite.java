@@ -17,10 +17,12 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
     private final static Logger log = LoggerFactory.getLogger(SpringSejmFacebookSite.class);
     private final FaceApi faceApi;
     private final SejmApi sejmApi;
+    private final MpStatsRepository mpStatsRepository;
 
-    public SpringSejmFacebookSite(FaceApi faceApi, SejmApi sejmApi) {
+    public SpringSejmFacebookSite(FaceApi faceApi, SejmApi sejmApi, MpStatsRepository mpStatsRepository) {
         this.faceApi = faceApi;
         this.sejmApi = sejmApi;
+        this.mpStatsRepository = mpStatsRepository;
     }
 
     @Override
@@ -54,15 +56,19 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
             }
         }
 
+        // Zapisujemy statystyki do bazy danych
+        mpStatsRepository.saveAll(statsList);
+        log.info("Zapisano {} statystyk posłów do bazy danych", statsList.size());
+
         // 5️⃣ Wyświetlamy frekwencję i oznaczamy posłów widm
         double threshold = 0.2; // 20%
         for (MpStats s : statsList) {
             double attendance = s.getAttendance();
             if (attendance < threshold) {
                 log.warn("{} – frekwencja: {}% – poseł widmo!", 
-                         s.getFirstLastName(), attendance * 100);
+                         s.getFirstLastName(), attendance );
             } else {
-                log.info("{} – frekwencja: {}%", s.getFirstLastName(), attendance * 100);
+                log.info("{} – frekwencja: {}%", s.getFirstLastName(), attendance );
             }
         }
 
