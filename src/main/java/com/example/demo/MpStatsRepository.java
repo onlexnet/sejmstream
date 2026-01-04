@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface MpStatsRepository extends JpaRepository<MpStats, Long> {
-    Optional<MpStats> findByMpId(int mpId);
+public interface MpStatsRepository extends JpaRepository<MpStatsDb, Long> {
+    Optional<MpStatsDb> findByMpId(int mpId);
 }

@@ -10,16 +10,16 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SpringSejmFacebookSite implements CommandLineRunner {
+public class SejmStream implements CommandLineRunner {
     @Value("${FB_TOKEN}")
     String fbToken;
-    
-    private final static Logger log = LoggerFactory.getLogger(SpringSejmFacebookSite.class);
+
+    private final static Logger log = LoggerFactory.getLogger(SejmStream.class);
     private final FaceApi faceApi;
     private final SejmApi sejmApi;
     private final MpStatsRepository mpStatsRepository;
 
-    public SpringSejmFacebookSite(FaceApi faceApi, SejmApi sejmApi, MpStatsRepository mpStatsRepository) {
+    public SejmStream(FaceApi faceApi, SejmApi sejmApi, MpStatsRepository mpStatsRepository) {
         this.faceApi = faceApi;
         this.sejmApi = sejmApi;
         this.mpStatsRepository = mpStatsRepository;
@@ -47,17 +47,28 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
             List<VotingStats> votings = sejmApi.getVotingStats(activeTerm.num(), mp.id());
             for (VotingStats v : votings) {
                 boolean wasPresent = (v.numVotings() - v.numMissed()) > 0;
-                
+
                 // aktualizujemy statystyki posła
                 statsList.stream()
                         .filter(s -> s.getMpId() == mp.id())
                         .findFirst()
                         .ifPresent(s -> s.addVote(wasPresent));
             }
+
+        }
+
+        List<MpStatsDb> statsDbList = new ArrayList<>();
+        for (var it : statsList) {
+            var dbo = new MpStatsDb();
+            dbo.setFirstLastName(it.getFirstLastName());
+            dbo.setMpId(it.getMpId());
+            // dbo.setPresentCount(0);
+            // dbo.setTotalVotings(0);
+            statsDbList.add(dbo);
         }
 
         // Zapisujemy statystyki do bazy danych
-        mpStatsRepository.saveAll(statsList);
+        mpStatsRepository.saveAll(statsDbList);
         log.info("Zapisano {} statystyk posłów do bazy danych", statsList.size());
 
         // 5️⃣ Wyświetlamy frekwencję i oznaczamy posłów widm
@@ -65,10 +76,10 @@ public class SpringSejmFacebookSite implements CommandLineRunner {
         for (MpStats s : statsList) {
             double attendance = s.getAttendance();
             if (attendance < threshold) {
-                log.warn("{} – frekwencja: {}% – poseł widmo!", 
-                         s.getFirstLastName(), attendance );
+                log.warn("{} – frekwencja: {}% – poseł widmo!",
+                        s.getFirstLastName(), attendance);
             } else {
-                log.info("{} – frekwencja: {}%", s.getFirstLastName(), attendance );
+                log.info("{} – frekwencja: {}%", s.getFirstLastName(), attendance);
             }
         }
 
