@@ -28,6 +28,4 @@ public class MpStats {
     public double getAttendance() {
         return totalVotings == 0 ? 100.0 : (double) presentCount / totalVotings * 100.0;
     }
-
-  
 }

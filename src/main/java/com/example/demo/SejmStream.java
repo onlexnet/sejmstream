@@ -1,7 +1,9 @@
 package com.example.demo;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,11 +84,14 @@ public class SejmStream implements CommandLineRunner {
                 log.info("{} – frekwencja: {}%", s.getFirstLastName(), attendance);
             }
         }
-
         // 6️⃣ Opcjonalnie – post na Facebook
         var activeCount = listMP.stream().filter(MP::active).count();
         var message = String.format("Lista posłów: %s, kadencja nr %s", activeCount, activeTerm.num());
         faceApi.post(message);
         log.info(message);
+    }
+
+    static LocalDate findMaxDate(Map<MP, List<VotingStats>> votingsMap) {
+        return null;
     }
 }
