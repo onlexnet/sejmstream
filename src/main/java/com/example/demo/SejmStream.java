@@ -2,6 +2,7 @@ package com.example.demo;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -59,19 +60,19 @@ public class SejmStream implements CommandLineRunner {
 
         }
 
-        List<MpStatsDb> statsDbList = new ArrayList<>();
-        for (var it : statsList) {
-            var dbo = new MpStatsDb();
-            dbo.setFirstLastName(it.getFirstLastName());
-            dbo.setMpId(it.getMpId());
-            // dbo.setPresentCount(0);
-            // dbo.setTotalVotings(0);
-            statsDbList.add(dbo);
-        }
+        // List<MpStatsDb> statsDbList = new ArrayList<>();
+        // for (var it : statsList) {
+        // var dbo = new MpStatsDb();
+        // dbo.setFirstLastName(it.getFirstLastName());
+        // dbo.setMpId(it.getMpId());
+        // // dbo.setPresentCount(0);
+        // // dbo.setTotalVotings(0);
+        // statsDbList.add(dbo);
+        // }
 
         // Zapisujemy statystyki do bazy danych
-        mpStatsRepository.saveAll(statsDbList);
-        log.info("Zapisano {} statystyk posłów do bazy danych", statsList.size());
+        // mpStatsRepository.saveAll(statsDbList);
+        // log.info("Zapisano {} statystyk posłów do bazy danych", statsList.size());
 
         // 5️⃣ Wyświetlamy frekwencję i oznaczamy posłów widm
         double threshold = 0.2; // 20%
@@ -84,14 +85,26 @@ public class SejmStream implements CommandLineRunner {
                 log.info("{} – frekwencja: {}%", s.getFirstLastName(), attendance);
             }
         }
-        // 6️⃣ Opcjonalnie – post na Facebook
+
         var activeCount = listMP.stream().filter(MP::active).count();
+
         var message = String.format("Lista posłów: %s, kadencja nr %s", activeCount, activeTerm.num());
         faceApi.post(message);
         log.info(message);
+
+        var maxDate = findMaxDate();
+
+        var message2 = String.format("najnowsze głosowanie odbyło się dnia : 2026, czerwiec, 6-tego");
+        faceApi.post(message2);
+        log.info(message2);
+
     }
 
     static LocalDate findMaxDate(Map<MP, List<VotingStats>> votingsMap) {
-        return null;
+        return votingsMap.values().stream()
+                .flatMap(List::stream)
+                .map(VotingStats::date)
+                .max(LocalDate::compareTo)
+                .orElse(null);
     }
 }

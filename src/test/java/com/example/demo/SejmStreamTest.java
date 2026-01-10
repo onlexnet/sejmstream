@@ -1,6 +1,6 @@
 package com.example.demo;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -15,41 +15,50 @@ public class SejmStreamTest {
 
     @Test
     public void happyPathCombined() throws Exception {
-        var faceApiMock = Mockito.mock(FaceApi.class);
-        var sejmApiMock = Mockito.mock(SejmApi.class);
-        var mpStatsRepositoryMock = Mockito.mock(MpStatsRepository.class);
+        var faceApi = Mockito.mock(FaceApi.class);
+        var sejmApi = Mockito.mock(SejmApi.class);
+        var repo = Mockito.mock(MpStatsRepository.class);
 
-        Mockito.when(sejmApiMock.getTerms()).thenReturn(List.of(new Term(true, null, 1, null)));
+        when(sejmApi.getTerms()).thenReturn(List.of(new Term(true, null, 1, null)));
 
+        when(sejmApi.getVotingStats(10, 1)).thenReturn(List.of(
+                new VotingStats(false, LocalDate.of(2026, 6, 6), 0, 8, 8, 2)));
+
+        var jk = new MP("JK", 1, null, true);
+        when(sejmApi.getMPs(1)).thenReturn(List.of(jk));
+
+        var sut = new SejmStream(faceApi, sejmApi, repo);
+        sut.run();
+
+        Mockito.verify(faceApi).post("najnowsze głosowanie odbyło się dnia : 2026, czerwiec, 6-tego");
+    }
+
+    @Test
+    public void findMaxDateTest() throws Exception {
         var jk = new MP("JK", 0, null, true);
         var an = new MP("AN", 1, null, true);
-        Mockito.when(sejmApiMock.getMPs(1)).thenReturn(List.of(jk, an));
-
-
         var jkVoting1 = new VotingStats(false, LocalDate.of(2024, 1, 1), 1, 10, 9, 1);
         var jkVoting2 = new VotingStats(false, LocalDate.of(2025, 1, 1), 0, 10, 10, 2);
         var anVoting1 = new VotingStats(false, LocalDate.of(2023, 5, 5), 2, 8, 6, 1);
         var anVoting2 = new VotingStats(false, LocalDate.of(2026, 6, 6), 0, 8, 8, 2);
-
-        Mockito.when(sejmApiMock.getVotingStats(1, 0)).thenReturn(List.of(jkVoting1, jkVoting2));
-        Mockito.when(sejmApiMock.getVotingStats(1, 1)).thenReturn(List.of(anVoting1, anVoting2));
-
-        var sut = new SejmStream(faceApiMock, sejmApiMock, mpStatsRepositoryMock);
-        sut.run();
-
-     
         Map<MP, List<VotingStats>> votingsMap = new HashMap<>();
         votingsMap.put(jk, List.of(jkVoting1, jkVoting2));
         votingsMap.put(an, List.of(anVoting1, anVoting2));
 
-      
         var maxDate = SejmStream.findMaxDate(votingsMap);
-        assertEquals(LocalDate.of(2026, 6, 6), maxDate);
-
-       
-        Mockito.verify(faceApiMock).post("Lista posłów: 2, kadencja nr 1");
+        Assertions.assertThat(LocalDate.of(2026, 6, 6)).isEqualTo(maxDate);
     }
 
- 
+    @Test
+    public void findMaxDateWhenListIsEmpty() {
+
+        Map<MP, List<VotingStats>> votingsMap = new HashMap<>();
+        var jk = new MP("JK", 0, null, true);
+        votingsMap.put(jk, List.of());
+
+        var actual = SejmStream.findMaxDate(votingsMap);
+        Assertions.assertThat(actual).isNull();
+
+    }
 
 }
