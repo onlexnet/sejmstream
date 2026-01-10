@@ -36,6 +36,39 @@ public class SejmStreamTest {
     }
 
     @Test
+    public void shouldWorkingActive() throws Exception {
+        var faceApi = Mockito.mock(FaceApi.class);
+        var sejmApi = Mockito.mock(SejmApi.class);
+        var repo = Mockito.mock(MpStatsRepository.class);
+
+        when(sejmApi.getTerms()).thenReturn(List.of(new Term(true, null, 10, null)));
+
+        var mp1 = new MP("JK", 1, null, true);
+        var mp2 = new MP("AN", 2, null, true);
+        var mp3 = new MP("CN", 3, null, true);
+        var mp4 = new MP("XD", 4, null, true);
+
+        var statDay1 = LocalDate.of(2024, 1, 1);
+        var mp1Voting = new VotingStats(false, statDay1, 1, 10, 9, 2);
+        var mp2Voting = new VotingStats(false, statDay1, 0, 10, 10, 2);
+        var mp3Voting = new VotingStats(false, statDay1, 2, 10, 6, 2);
+        var mp4Voting = new VotingStats(false, statDay1, 0, 10, 8, 2);
+
+        when(sejmApi.getMPs(10)).thenReturn(List.of(mp1, mp2, mp3, mp4));
+
+        when(sejmApi.getVotingStats(10, 1)).thenReturn(List.of(mp1Voting));
+        when(sejmApi.getVotingStats(10, 2)).thenReturn(List.of(mp2Voting));
+        when(sejmApi.getVotingStats(10, 3)).thenReturn(List.of(mp3Voting));
+        when(sejmApi.getVotingStats(10, 4)).thenReturn(List.of(mp4Voting));
+
+        var sut = new SejmStream(faceApi, sejmApi, repo);
+        sut.run();
+
+        verify(faceApi).post("top3 aktywni posłowie w ciągu ostatnich 30 dni :AN,JK,XD");
+
+    }
+
+    @Test
     public void findMaxDateTest() throws Exception {
         var jk = new MP("JK", 0, null, true);
         var an = new MP("AN", 1, null, true);
@@ -60,11 +93,6 @@ public class SejmStreamTest {
 
         var actual = SejmStream.findMaxDate(votingsMap);
         Assertions.assertThat(actual).isNull();
-
-    }
-
-    @Test
-    public void isRepeating() {
 
     }
 
