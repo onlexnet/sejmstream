@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.SequencedMap;
+import java.util.SortedMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,60 +42,40 @@ public class SejmStream implements CommandLineRunner {
         // 2️⃣ Pobieramy listę posłów
         var listMP = sejmApi.getMPs(activeTerm.num());
 
-        // 3️⃣ Tworzymy listę statystyk posłów
-        List<MpStats> statsList = new ArrayList<>();
-        for (var mp : listMP) {
-            statsList.add(new MpStats(mp.id(), mp.firstLastName()));
-        }
-
         // 4️⃣ Iterujemy po posłach i ich głosowaniach, liczymy frekwencję
         var votingStats = new HashMap<MP, List<VotingStats>>();
         for (var mp : listMP) {
             log.info("Wczytujemy dane posła {}", mp.firstLastName());
             List<VotingStats> votings = sejmApi.getVotingStats(activeTerm.num(), mp.id());
             votingStats.put(mp, votings);
-            for (VotingStats v : votings) {
-                boolean wasPresent = (v.numVotings() - v.numMissed()) > 0;
-
-                // aktualizujemy statystyki posła
-                statsList.stream()
-                        .filter(s -> s.getMpId() == mp.id())
-                        .findFirst()
-                        .ifPresent(s -> s.addVote(wasPresent));
-            }
-
         }
 
-        // List<MpStatsDb> statsDbList = new ArrayList<>();
-        // for (var it : statsList) {
-        // var dbo = new MpStatsDb();
-        // dbo.setFirstLastName(it.getFirstLastName());
-        // dbo.setMpId(it.getMpId());
-        // // dbo.setPresentCount(0);
-        // // dbo.setTotalVotings(0);
-        // statsDbList.add(dbo);
-        // }
-
-        // Zapisujemy statystyki do bazy danych
-        // mpStatsRepository.saveAll(statsDbList);
-        // log.info("Zapisano {} statystyk posłów do bazy danych", statsList.size());
-
-        // 5️⃣ Wyświetlamy frekwencję i oznaczamy posłów widm
-        double threshold = 0.2; // 20%
-        for (MpStats s : statsList) {
-            double attendance = s.getAttendance();
-            if (attendance < threshold) {
-                log.warn("{} – frekwencja: {}% – poseł widmo!",
-                        s.getFirstLastName(), attendance);
-            } else {
-                log.info("{} – frekwencja: {}%", s.getFirstLastName(), attendance);
+        var statsMap = new HashMap<MP, MpStats>();
+        for (var kv : votingStats.entrySet()) {
+            var mp = kv.getKey();
+            var vStats = kv.getValue();
+            var mpStats = new MpStats();
+            statsMap.put(mp, mpStats);
+            for (var it : vStats) {
+                mpStats.addVotingStats(it);
             }
         }
-
-        var activeCount = listMP.stream().filter(MP::active).count();
 
         faceApi.deleteAllPost();
 
+        var sortedStatMap = byAttendanceDesc(statsMap);
+        var sb = new StringBuilder();
+        sb.append("top 3+ aktywni posłowie w ciągu ostatnich 30 dni :");
+        for (var kv : sortedStatMap.entrySet()) {
+            var mp = kv.getKey();
+            // var mpStats = kv.getValue();
+            sb.append(mp.firstLastName());
+            sb.append(",");
+        }
+        var message3 = sb.toString();
+        faceApi.post(message3);
+
+        var activeCount = listMP.stream().filter(MP::active).count();
         var message = String.format("Lista posłów: %s, kadencja nr %s", activeCount, activeTerm.num());
         faceApi.post(message);
         log.info(message);
@@ -106,6 +88,11 @@ public class SejmStream implements CommandLineRunner {
         faceApi.post(message2);
         log.info(message2);
 
+    }
+
+    // returns top3+ the most active MPs
+    static Map<MP, MpStats> byAttendanceDesc(Map<MP, MpStats> input) {
+        return input;
     }
 
     static LocalDate findMaxDate(Map<MP, List<VotingStats>> votingsMap) {

@@ -35,6 +35,7 @@ public class SejmStreamTest {
         verify(faceApi).post("Lista posłów: 1, kadencja nr 10");
     }
 
+    // Publish+3 the most active MPs in last 30 days
     @Test
     public void shouldWorkingActive() throws Exception {
         var faceApi = Mockito.mock(FaceApi.class);
@@ -74,8 +75,8 @@ public class SejmStreamTest {
         var an = new MP("AN", 1, null, true);
         var jkVoting1 = new VotingStats(false, LocalDate.of(2024, 1, 1), 1, 10, 9, 1);
         var jkVoting2 = new VotingStats(false, LocalDate.of(2025, 1, 1), 0, 10, 10, 2);
-        var anVoting1 = new VotingStats(false, LocalDate.of(2023, 5, 5), 2, 8, 6, 1);
-        var anVoting2 = new VotingStats(false, LocalDate.of(2026, 6, 6), 0, 8, 8, 2);
+        var anVoting1 = new VotingStats(false, LocalDate.of(2023, 5, 5), 4, 8, 6, 1);
+        var anVoting2 = new VotingStats(false, LocalDate.of(2026, 6, 6), 2, 8, 8, 2);
         Map<MP, List<VotingStats>> votingsMap = new HashMap<>();
         votingsMap.put(jk, List.of(jkVoting1, jkVoting2));
         votingsMap.put(an, List.of(anVoting1, anVoting2));
@@ -94,6 +95,35 @@ public class SejmStreamTest {
         var actual = SejmStream.findMaxDate(votingsMap);
         Assertions.assertThat(actual).isNull();
 
+    }
+
+    @Test
+    void shouldOrderByAttendanceDesc() {
+        var input = new HashMap<MP, MpStats>();
+        input.put(newMP(1), newMpStats(1, 9));
+        input.put(newMP(2), newMpStats(0, 10));
+        input.put(newMP(3), newMpStats(4, 6));
+        input.put(newMP(4), newMpStats(2, 8));
+
+        var actual = SejmStream.byAttendanceDesc(input);
+
+        var expected = Map.of(
+            newMP(2),newMpStats(0, 10),
+            newMP(1),newMpStats(1, 9),
+            newMP(4),newMpStats(2, 8)
+        );
+        Assertions.assertThat(actual).isEqualTo(expected);
+    }
+
+    static MP newMP(int id) {
+        return new MP("MP" + id, id, null, true);
+    }
+
+    static MpStats newMpStats(int totalAbsent, int totalPresent) {
+        var result = new MpStats();
+        var votingStats = new VotingStats(false, null, totalAbsent, 0, totalPresent, 0);
+        result.addVotingStats(votingStats);
+        return result;
     }
 
 }

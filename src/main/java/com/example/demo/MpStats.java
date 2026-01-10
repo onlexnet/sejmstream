@@ -1,31 +1,20 @@
 package com.example.demo;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-
-
 public class MpStats {
-   
 
-    @Getter
-    private String firstLastName;
-    @Getter
-    private int mpId;
+    private int totalAbsent;
+    private int totalPresent;
 
-    private int totalVotings;
-    private int presentCount;
-
-    public MpStats(int mpId, String firstLastName) {
-        this.mpId = mpId;
-        this.firstLastName = firstLastName;
-    }
-
-    public void addVote(boolean wasPresent) {
-        totalVotings++;
-        if (wasPresent) presentCount++;
+    public void addVotingStats(VotingStats votingStats) {
+        totalPresent += votingStats.numVoted();
+        totalAbsent += votingStats.numMissed();
     }
 
     public double getAttendance() {
-        return totalVotings == 0 ? 100.0 : (double) presentCount / totalVotings * 100.0;
+        var count = totalPresent + totalAbsent;
+
+        return count == 0
+                ? 100
+                : totalPresent / count;
     }
 }
