@@ -48,11 +48,11 @@ public class SejmStreamTest {
         var mp3 = new MP("CN", 3, null, true);
         var mp4 = new MP("XD", 4, null, true);
 
-        var statDay1 = LocalDate.of(2024, 1, 1);
+        var statDay1 = LocalDate.of(2025, 12, 18);
         var mp1Voting = new VotingStats(false, statDay1, 1, 10, 9, 2);
         var mp2Voting = new VotingStats(false, statDay1, 0, 10, 10, 2);
-        var mp3Voting = new VotingStats(false, statDay1, 2, 10, 6, 2);
-        var mp4Voting = new VotingStats(false, statDay1, 0, 10, 8, 2);
+        var mp3Voting = new VotingStats(false, statDay1, 4, 10, 6, 2);
+        var mp4Voting = new VotingStats(false, statDay1, 2, 10, 8, 2);
 
         when(sejmApi.getMPs(10)).thenReturn(List.of(mp1, mp2, mp3, mp4));
 
@@ -64,7 +64,7 @@ public class SejmStreamTest {
         var sut = new SejmStream(faceApi, sejmApi, repo);
         sut.run();
 
-        verify(faceApi).post("top3 aktywni posłowie w ciągu ostatnich 30 dni :AN,JK,XD");
+        verify(faceApi).post("top 3+ aktywni posłowie w ciągu ostatnich 30 dni :AN,JK,XD,");
 
     }
 
