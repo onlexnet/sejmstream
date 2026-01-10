@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -19,18 +20,19 @@ public class SejmStreamTest {
         var sejmApi = Mockito.mock(SejmApi.class);
         var repo = Mockito.mock(MpStatsRepository.class);
 
-        when(sejmApi.getTerms()).thenReturn(List.of(new Term(true, null, 1, null)));
+        when(sejmApi.getTerms()).thenReturn(List.of(new Term(true, null, 10, null)));
 
         when(sejmApi.getVotingStats(10, 1)).thenReturn(List.of(
                 new VotingStats(false, LocalDate.of(2026, 6, 6), 0, 8, 8, 2)));
 
         var jk = new MP("JK", 1, null, true);
-        when(sejmApi.getMPs(1)).thenReturn(List.of(jk));
+        when(sejmApi.getMPs(10)).thenReturn(List.of(jk));
 
         var sut = new SejmStream(faceApi, sejmApi, repo);
         sut.run();
 
-        Mockito.verify(faceApi).post("najnowsze głosowanie odbyło się dnia : 2026, czerwiec, 6-tego");
+        verify(faceApi).post("najnowsze głosowanie odbyło się dnia : 6 czerwca 2026");
+        verify(faceApi).post("Lista posłów: 1, kadencja nr 10");
     }
 
     @Test

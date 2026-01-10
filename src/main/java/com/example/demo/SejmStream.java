@@ -1,9 +1,11 @@
 package com.example.demo;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -45,9 +47,11 @@ public class SejmStream implements CommandLineRunner {
         }
 
         // 4️⃣ Iterujemy po posłach i ich głosowaniach, liczymy frekwencję
+        var votingStats = new HashMap<MP, List<VotingStats>>();
         for (var mp : listMP) {
             log.info("Wczytujemy dane posła {}", mp.firstLastName());
             List<VotingStats> votings = sejmApi.getVotingStats(activeTerm.num(), mp.id());
+            votingStats.put(mp, votings);
             for (VotingStats v : votings) {
                 boolean wasPresent = (v.numVotings() - v.numMissed()) > 0;
 
@@ -92,9 +96,11 @@ public class SejmStream implements CommandLineRunner {
         faceApi.post(message);
         log.info(message);
 
-        var maxDate = findMaxDate();
-
-        var message2 = String.format("najnowsze głosowanie odbyło się dnia : 2026, czerwiec, 6-tego");
+        var maxDate = findMaxDate(votingStats);
+        Locale locale = Locale.forLanguageTag("pl-PL");
+        var formatter = DateTimeFormatter.ofPattern("d MMMM yyyy", locale);
+        var maxDateString = formatter.format(maxDate);
+        var message2 = String.format("najnowsze głosowanie odbyło się dnia : %s", maxDateString);
         faceApi.post(message2);
         log.info(message2);
 
