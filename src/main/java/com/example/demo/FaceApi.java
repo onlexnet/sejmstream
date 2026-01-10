@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.restfb.Connection;
 import com.restfb.DefaultFacebookClient;
@@ -9,31 +10,25 @@ import com.restfb.types.Page;
 import com.restfb.types.Post;
 
 public interface FaceApi {
+
     void post(String message);
+
+    void deleteAllPost();
 }
 
+@Component
 class FaceApiImpl implements FaceApi {
-    @Value("${FB_TOKEN}")
-    String fbToken;
+
+    private final DefaultFacebookClient pageClient;
+    
+
+    public FaceApiImpl(DefaultFacebookClient pageClient) {
+        this.pageClient = pageClient;
+    }
 
     @Override
     public void post(String message) {
 
-        var fbClient = new DefaultFacebookClient(fbToken, Version.LATEST);
-        var pages = fbClient.fetchConnection("me/accounts", Page.class);
-
-        var pat = pages.getData().stream()
-                .filter(it -> it.getName().equals("SejmStream2"))
-                .findFirst()
-                .get()
-                .getAccessToken();
-        var pageClient = new DefaultFacebookClient(pat, Version.LATEST);
-        var feed = pageClient.fetchConnection("me/feed", Post.class);
-        for (var post : feed.getData()) {
-            System.out.println("delete post: " + post.getMessage());
-            var postId = post.getId();
-            pageClient.deleteObject(postId);
-        }
         // // generate a simple image and publish in the feed
         // var imageUrl =
         // "https://www.yttags.com/blog/wp-content/uploads/2023/02/image-urls-for-testing.webp";
@@ -51,5 +46,17 @@ class FaceApiImpl implements FaceApi {
                 com.restfb.Parameter.with("message", message),
                 com.restfb.Parameter.with("is_published", false));
 
+    }
+
+    @Override
+    public void deleteAllPost() {
+       
+        
+        var feed = pageClient.fetchConnection("me/feed", Post.class);
+        for (var post : feed.getData()) {
+            System.out.println("delete post: " + post.getMessage());
+            var postId = post.getId();
+            pageClient.deleteObject(postId);
+        }
     }
 }

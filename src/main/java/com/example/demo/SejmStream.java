@@ -92,6 +92,8 @@ public class SejmStream implements CommandLineRunner {
 
         var activeCount = listMP.stream().filter(MP::active).count();
 
+        faceApi.deleteAllPost();
+
         var message = String.format("Lista posłów: %s, kadencja nr %s", activeCount, activeTerm.num());
         faceApi.post(message);
         log.info(message);

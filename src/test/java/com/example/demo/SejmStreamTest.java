@@ -63,4 +63,9 @@ public class SejmStreamTest {
 
     }
 
+    @Test
+    public void isRepeating() {
+
+    }
+
 }
