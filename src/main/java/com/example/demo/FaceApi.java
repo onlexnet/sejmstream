@@ -41,10 +41,10 @@ class FaceApiImpl implements FaceApi {
 
         // create a post
 
-        var publishPost = pageClient.publish("me/feed",
-                com.restfb.types.FacebookType.class,
-                com.restfb.Parameter.with("message", message),
-                com.restfb.Parameter.with("is_published", false));
+        // var publishPost = pageClient.publish("me/feed",
+        //         com.restfb.types.FacebookType.class,
+        //         com.restfb.Parameter.with("message", message),
+        //         com.restfb.Parameter.with("is_published", false));
 
     }
 

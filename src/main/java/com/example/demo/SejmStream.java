@@ -81,7 +81,7 @@ public class SejmStream implements CommandLineRunner {
         log.info(message);
 
         var maxDate = findMaxDate(votingStats);
-        Locale locale = Locale.forLanguageTag("pl-PL");
+        var locale = Locale.forLanguageTag("pl-PL");
         var formatter = DateTimeFormatter.ofPattern("d MMMM yyyy", locale);
         var maxDateString = formatter.format(maxDate);
         var message2 = String.format("najnowsze głosowanie odbyło się dnia : %s", maxDateString);
