@@ -1,12 +1,8 @@
 package com.example.demo;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.restfb.Connection;
 import com.restfb.DefaultFacebookClient;
-import com.restfb.Version;
-import com.restfb.types.Page;
 import com.restfb.types.Post;
 
 public interface FaceApi {
@@ -51,7 +47,6 @@ class FaceApiImpl implements FaceApi {
     @Override
     public void deleteAllPost() {
        
-        
         var feed = pageClient.fetchConnection("me/feed", Post.class);
         for (var post : feed.getData()) {
             System.out.println("delete post: " + post.getMessage());
