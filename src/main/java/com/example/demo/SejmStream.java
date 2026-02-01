@@ -87,7 +87,6 @@ public class SejmStream implements CommandLineRunner {
         var message2 = String.format("najnowsze głosowanie odbyło się dnia : %s", maxDateString);
         faceApi.post(message2);
         log.info(message2);
-
     }
 
     // returns top3+ the most active MPs

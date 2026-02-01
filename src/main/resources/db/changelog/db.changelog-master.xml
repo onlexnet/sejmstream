@@ -7,4 +7,6 @@
 
     <include file="db/changelog/changes/001-create-mp-stats-table.xml" relativeToChangelogFile="false"/>
 
+    <include file="db/changelog/changes/002-create-voting-stats-table.xml" relativeToChangelogFile="false"/>
+
 </databaseChangeLog>
