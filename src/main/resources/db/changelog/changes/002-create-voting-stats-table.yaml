@@ -1,0 +1,45 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-voting-stats-table
+      author: copilot
+      changes:
+        - createTable:
+            tableName: voting_stats
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: absence_excuse
+                  type: BOOLEAN
+                  constraints:
+                    nullable: false
+              - column:
+                  name: date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: num_missed
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: num_votings
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: num_voted
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: sitting
+                  type: INT
+                  constraints:
+                    nullable: false

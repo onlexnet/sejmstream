@@ -1,0 +1,43 @@
+databaseChangeLog:
+  - changeSet:
+      id: 001-create-mp-stats-table
+      author: aleksander
+      changes:
+        - createTable:
+            tableName: mp_stats
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: mp_id
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_last_name
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: total_votings
+                  type: INT
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: present_count
+                  type: INT
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: mp_stats
+            indexName: idx_mp_id
+            columns:
+              - column:
+                  name: mp_id
