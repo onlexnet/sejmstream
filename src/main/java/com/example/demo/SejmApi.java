@@ -55,7 +55,7 @@ class SejmApiImpl implements SejmApi {
 
         var resultDbo = result.stream().map(it -> {
             return new VotingStatsDb(it.absenceExcuse(), it.date(), it.numMissed(), it.numVotings(), it.numVoted(),
-                    it.sitting());
+                it.sitting()); // Jeśli VotingStats ma date, a VotingStatsDb ma termDate, przekazujemy dalej bez zmiany, bo typ LocalDate się zgadza
         }).toList();
         votingStatsRepo.saveAll(resultDbo);
         return result;
