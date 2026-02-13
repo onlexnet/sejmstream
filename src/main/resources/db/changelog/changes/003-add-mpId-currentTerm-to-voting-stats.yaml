@@ -1,0 +1,18 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-add-mpId-currentTerm-to-voting-stats
+      author: github-copilot
+      changes:
+        - addColumn:
+            tableName: voting_stats
+            columns:
+              - column:
+                  name: mp_id
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: current_term
+                  type: INT
+                  constraints:
+                    nullable: false
