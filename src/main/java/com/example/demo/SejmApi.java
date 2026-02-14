@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.cache.annotation.Cacheable;
@@ -53,11 +54,22 @@ class SejmApiImpl implements SejmApi {
                 .retrieve()
                 .body(type);
 
-        var resultDbo = result.stream().map(it -> {
-            return new VotingStatsDb(it.absenceExcuse(), it.date(), it.numMissed(), it.numVotings(), it.numVoted(),
-                it.sitting()); // Jeśli VotingStats ma date, a VotingStatsDb ma termDate, przekazujemy dalej bez zmiany, bo typ LocalDate się zgadza
-        }).toList();
-        votingStatsRepo.saveAll(resultDbo);
+        List<VotingStatsDb> array = new ArrayList<>();
+        for (var it : result) {
+            var db = new VotingStatsDb();
+            db.setCurrentTerm(termNumber);
+            db.setAbsenceExcuse(it.absenceExcuse());
+            db.setMpId(mpId);
+            db.setNumMissed(it.numMissed());
+            db.setNumVoted(it.numVoted());
+            db.setNumVotings(it.numVotings());
+            db.setSitting(it.sitting());
+            db.setTermDate(it.date());
+            array.add(db);
+            votingStatsRepo.save(db);
+        }
+
+        votingStatsRepo.saveAll(array);
         return result;
     }
 }

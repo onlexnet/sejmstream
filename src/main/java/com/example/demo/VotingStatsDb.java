@@ -1,3 +1,4 @@
+
 package com.example.demo;
 
 import jakarta.persistence.*;
@@ -6,6 +7,11 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "voting_stats")
 public class VotingStatsDb {
+    @Column(nullable = false)
+    private int mpId;
+
+    @Column(nullable = false)
+    private int currentTerm;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -32,13 +38,30 @@ public class VotingStatsDb {
     }
 
     public VotingStatsDb(boolean absenceExcuse, LocalDate termDate, int numMissed, int numVotings, int numVoted,
-            int sitting) {
+            int sitting, int mpId, int currentTerm) {
         this.absenceExcuse = absenceExcuse;
         this.termDate = termDate;
         this.numMissed = numMissed;
         this.numVotings = numVotings;
         this.numVoted = numVoted;
         this.sitting = sitting;
+        this.mpId = mpId;
+        this.currentTerm = currentTerm;
+    }
+    public int getMpId() {
+        return mpId;
+    }
+
+    public void setMpId(int mpId) {
+        this.mpId = mpId;
+    }
+
+    public int getCurrentTerm() {
+        return currentTerm;
+    }
+
+    public void setCurrentTerm(int currentTerm) {
+        this.currentTerm = currentTerm;
     }
 
     public Long getId() {

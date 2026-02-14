@@ -46,7 +46,9 @@ public class SejmStream implements CommandLineRunner {
         var votingStats = new HashMap<MP, List<VotingStats>>();
         for (var mp : listMP) {
             log.info("Wczytujemy dane posła {}", mp.firstLastName());
+
             List<VotingStats> votings = sejmApi.getVotingStats(activeTerm.num(), mp.id());
+            
             votingStats.put(mp, votings);
         }
 
