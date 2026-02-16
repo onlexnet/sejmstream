@@ -47,6 +47,7 @@ class SejmApiImpl implements SejmApi {
     @Override
     @Cacheable("votingStats")
     public List<VotingStats> getVotingStats(int termNumber, int mpId) {
+        
         var type = new ParameterizedTypeReference<List<VotingStats>>() {
         };
         var result = restClient.get()
@@ -54,8 +55,7 @@ class SejmApiImpl implements SejmApi {
                 .retrieve()
                 .body(type);
 
-        List<VotingStatsDb> array = new ArrayList<>();
-        for (var it : result) {
+        var resultDb = result.stream().map(it -> {
             var db = new VotingStatsDb();
             db.setCurrentTerm(termNumber);
             db.setAbsenceExcuse(it.absenceExcuse());
@@ -65,11 +65,10 @@ class SejmApiImpl implements SejmApi {
             db.setNumVotings(it.numVotings());
             db.setSitting(it.sitting());
             db.setTermDate(it.date());
-            array.add(db);
-            votingStatsRepo.save(db);
-        }
+            return db;
+        }).toList();
 
-        votingStatsRepo.saveAll(array);
+        votingStatsRepo.saveAll(resultDb);
         return result;
     }
 }
