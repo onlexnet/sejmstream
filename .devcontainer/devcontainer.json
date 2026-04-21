@@ -5,6 +5,13 @@
   ],
   "service": "app",
   "workspaceFolder": "/sejmstream",
+  
+  // https://containers.dev/features
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/copilot-cli:1": {}
+  },
+
   "forwardPorts": [
     8080,
     5432

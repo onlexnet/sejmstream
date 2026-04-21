@@ -13,7 +13,7 @@ RUN apt update && apt upgrade -y && apt install -y \
     graphviz \
     curl
 
-# Let use some unsername instead of default root
+# Let use some username as 'worker' instead of default root
 RUN useradd -ms /bin/bash worker
 
 #  Add new user worker to sudo group
@@ -26,6 +26,9 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 # Switch to the worker user
 USER worker
+
+# Ensure ~/.local/bin is in PATH (needed for tools like GitHub Copilot CLI)
+ENV PATH="/home/worker/.local/bin:$PATH"
 
 # Install SDKMAN
 RUN curl -s "https://get.sdkman.io" | bash
