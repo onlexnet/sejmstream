@@ -1,0 +1,5 @@
+# Restrict changes in infra to a single code owner
+/infra/ slawomir@siudek.net
+
+# Protect CODEOWNERS itself from unauthorized edits
+/.github/CODEOWNERS slawomir@siudek.net
