@@ -6,16 +6,9 @@
 # Configure Azure authentication separately in the workspace with ARM_* environment variables.
 # ARM_SUBSCRIPTION_ID is part of provider authentication and is not a Terraform input variable.
 
-name_prefix                = "sejmstr"
-environment                = "dev"
-location                   = "westeurope"
-postgres_database_name     = "sejmstream"
-postgres_admin_username    = "sejmadmin"
-postgres_version           = "16"
-postgres_sku_name          = "B_Standard_B1ms"  # Must start with B_, GP_, or MO_; cost optimized: 1 vCPU, 1GB RAM
-postgres_storage_mb        = 32768              # Minimum Azure supported size
-postgres_backup_retention_days = 7
-developer_public_ip        = null  # Optional: developer's public IP for firewall access
+spring_datasource_url      = null  # e.g. jdbc:postgresql://<neon-host>/<db>?sslmode=require
+spring_datasource_username = null
+spring_datasource_password = null
 facebook_token             = null
 
 tags = {

@@ -47,3 +47,20 @@ Add these workspace environment variables:
 - The `Terraform Cloud` workflow can also be started manually to run either a remote `plan` or `apply`.
 
 Local `terraform plan` and `terraform apply` still work, but the actual execution happens remotely in Terraform Cloud because of the `cloud` block in `providers.tf`.
+
+## Passing Key Vault endpoint to Spring Boot
+
+Use Terraform output `key_vault_uri` as the single source of truth for the app runtime endpoint.
+
+Example:
+
+```bash
+export AZURE_KEYVAULT_ENABLED=true
+export AZURE_KEYVAULT_ENDPOINT="$(terraform output -raw key_vault_uri)"
+```
+
+Then start the app from the repository root:
+
+```bash
+mvn spring-boot:run
+```
