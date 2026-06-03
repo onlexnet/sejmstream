@@ -15,9 +15,19 @@ Vault URI is usually not a secret; secrets are values stored inside Key Vault.
 
 ### Local run (recommended)
 
-Start app directly:
+This repository is now a Maven monorepo with app module in `fun_sejmlive`.
 
-- `mvn spring-boot:run`
+Run from monorepo root:
+
+- `mvn -pl fun_sejmlive -am spring-boot:run`
+
+Run from module directory:
+
+- `cd fun_sejmlive && mvn spring-boot:run`
+
+Build and test from monorepo root:
+
+- `mvn -pl fun_sejmlive -am test`
 
 ## Useful links
 - [How to create a Facebook access token](https://www.youtube.com/watch?v=RMLcmDdOSxw)
