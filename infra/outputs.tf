@@ -34,28 +34,16 @@ output "key_vault_uri" {
   value = azurerm_key_vault.main.vault_uri
 }
 
-output "postgres_server_id" {
-  value = azurerm_postgresql_flexible_server.main.id
-}
-
-output "postgres_server_fqdn" {
-  value = azurerm_postgresql_flexible_server.main.fqdn
-}
-
-output "postgres_database_name" {
-  value = azurerm_postgresql_flexible_server_database.app.name
-}
-
 output "spring_datasource_url_secret_versionless_id" {
-  value = azurerm_key_vault_secret.spring_datasource_url.versionless_id
+  value = try(azurerm_key_vault_secret.spring_datasource_url[0].versionless_id, null)
 }
 
 output "spring_datasource_username_secret_versionless_id" {
-  value = azurerm_key_vault_secret.spring_datasource_username.versionless_id
+  value = try(azurerm_key_vault_secret.spring_datasource_username[0].versionless_id, null)
 }
 
 output "spring_datasource_password_secret_versionless_id" {
-  value     = azurerm_key_vault_secret.spring_datasource_password.versionless_id
+  value     = try(azurerm_key_vault_secret.spring_datasource_password[0].versionless_id, null)
   sensitive = true
 }
 

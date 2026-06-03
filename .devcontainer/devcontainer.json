@@ -10,13 +10,18 @@
   "features": {
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/copilot-cli:1": {},
-    "ghcr.io/devcontainers/features/terraform:1": {}
+    "ghcr.io/devcontainers/features/azure-cli:1": {},
+    "ghcr.io/devcontainers/features/terraform:1": {},
+    "ghcr.io/devcontainers/features/java:1": { }
   },
 
   "forwardPorts": [
     8080,
     5432
   ],
+  "remoteEnv": {
+    "AZURE_SUBSCRIPTION_NAME": "${localEnv:AZURE_SUBSCRIPTION_NAME}"
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -26,7 +31,11 @@
         "GitHub.copilot-chat",
         "eamodio.gitlens",
         "mtxr.sqltools",
-        "mtxr.sqltools-driver-pg"
+        "mtxr.sqltools-driver-pg",
+        "vmware.vscode-boot-dev-pack",
+        "github.vscode-github-actions",
+        "GitHub.vscode-pull-request-github",
+        "databricks.neon-local-connect"
       ],
       "settings": {
         "java.configuration.detectJdksAtStart": true,
@@ -34,5 +43,7 @@
       }
     }
   },
+  // why: named volumes may be recreated as root-owned, which breaks tools that need write access
+  "postStartCommand": "mkdir -p /home/worker/.ssh /home/worker/.terraform.d && sudo chown -R worker:worker /home/worker/.ssh /home/worker/.terraform.d && chmod 700 /home/worker/.ssh /home/worker/.terraform.d && command -v mvn >/dev/null 2>&1 || (sudo apt-get update && sudo apt-get install -y maven) && bash /sejmstream/.devcontainer/scripts/azure-init.sh",
   "remoteUser": "worker"
 }

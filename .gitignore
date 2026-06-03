@@ -19,3 +19,8 @@ override.tf.json
 *_override.tf.json
 *.tfvars
 !*.tfvars.example
+
+### Local Spring Boot secrets overrides ###
+src/main/resources/application-local.properties
+src/main/resources/application-secrets.properties
+src/main/resources/application-*.local.properties

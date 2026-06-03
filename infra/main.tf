@@ -6,40 +6,38 @@ resource "random_string" "suffix" {
   special = false
 }
 
-resource "random_password" "postgres_admin" {
-  length           = 24
-  special          = true
-  override_special = "_%@"
-  min_lower        = 1
-  min_upper        = 1
-  min_numeric      = 1
-  min_special      = 1
-}
-
 locals {
-  resource_prefix = "${var.name_prefix}-${var.environment}"
-  global_suffix   = random_string.suffix.result
+  name_prefix                        = "sejmstr"
+  environment                        = "dev"
+  location                           = "westeurope"
+  sejmstream_support_group_object_id = "71bccddd-af6e-4f54-921b-407b6094ed61"
+  resource_prefix                    = "${local.name_prefix}-${local.environment}"
+  global_suffix                      = random_string.suffix.result
 
   common_tags = merge(
     {
       application = "sejmstream"
-      environment = var.environment
+      environment = local.environment
       managed_by  = "terraform"
     },
     var.tags
   )
 
-  acr_name               = "${var.name_prefix}${var.environment}${local.global_suffix}"
-  key_vault_name         = "${var.name_prefix}-${var.environment}-kv-${local.global_suffix}"
-  postgres_server_name   = "${var.name_prefix}-${var.environment}-psql-${local.global_suffix}"
-  jdbc_connection_string = "jdbc:postgresql://${azurerm_postgresql_flexible_server.main.fqdn}:5432/${azurerm_postgresql_flexible_server_database.app.name}?sslmode=require"
+  acr_name       = "${local.name_prefix}${local.environment}${local.global_suffix}"
+  key_vault_name = "${local.name_prefix}-${local.environment}-kv-${local.global_suffix}"
 }
 
 resource "azurerm_resource_group" "main" {
   name     = "${local.resource_prefix}-rg"
-  location = var.location
+  location = local.location
   tags     = local.common_tags
 }
+
+# resource "azurerm_role_assignment" "sejmstream_support_contributor" {
+#   scope                = azurerm_resource_group.main.id
+#   role_definition_name = "Contributor"
+#   principal_id         = local.sejmstream_support_group_object_id
+# }
 
 resource "azurerm_log_analytics_workspace" "main" {
   name                = "${local.resource_prefix}-law"
@@ -91,74 +89,36 @@ resource "azurerm_key_vault" "main" {
       "Set",
     ]
   }
-}
 
-resource "azurerm_postgresql_flexible_server" "main" {
-  name                   = local.postgres_server_name
-  resource_group_name    = azurerm_resource_group.main.name
-  location               = azurerm_resource_group.main.location
-  version                = var.postgres_version
-  administrator_login    = var.postgres_admin_username
-  administrator_password = random_password.postgres_admin.result
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = local.sejmstream_support_group_object_id
 
-  # Azure PostgreSQL Flexible Server SKU must include a tier prefix (B_, GP_, MO_).
-  sku_name                      = var.postgres_sku_name
-  storage_mb                    = var.postgres_storage_mb
-  backup_retention_days         = var.postgres_backup_retention_days
-  auto_grow_enabled             = true
-  public_network_access_enabled = false
-  tags                          = local.common_tags
-}
-
-resource "azurerm_postgresql_flexible_server_database" "app" {
-  name      = var.postgres_database_name
-  server_id = azurerm_postgresql_flexible_server.main.id
-  collation = "en_US.utf8"
-  charset   = "UTF8"
-}
-
-resource "azurerm_postgresql_flexible_server_firewall_rule" "azure_services" {
-  name             = "allow-azure-services"
-  server_id        = azurerm_postgresql_flexible_server.main.id
-  start_ip_address = "0.0.0.0"
-  end_ip_address   = "0.0.0.0"
-}
-
-resource "azurerm_postgresql_flexible_server_firewall_rule" "developer_ip" {
-  count            = var.developer_public_ip == null ? 0 : 1
-  name             = "allow-developer-ip"
-  server_id        = azurerm_postgresql_flexible_server.main.id
-  start_ip_address = var.developer_public_ip
-  end_ip_address   = var.developer_public_ip
-}
-
-resource "azurerm_postgresql_flexible_server_firewall_rule" "office" {
-  name             = "allow-office-ip"
-  server_id        = azurerm_postgresql_flexible_server.main.id
-  start_ip_address = "188.241.29.152"
-  end_ip_address   = "188.241.29.152"
-}
-
-resource "azurerm_advanced_threat_protection" "postgres" {
-  target_resource_id = azurerm_postgresql_flexible_server.main.id
-  enabled            = true
+    secret_permissions = [
+      "Get",
+      "List",
+    ]
+  }
 }
 
 resource "azurerm_key_vault_secret" "spring_datasource_url" {
+  count        = var.spring_datasource_url == null ? 0 : 1
   name         = "spring-datasource-url"
-  value        = local.jdbc_connection_string
+  value        = var.spring_datasource_url
   key_vault_id = azurerm_key_vault.main.id
 }
 
 resource "azurerm_key_vault_secret" "spring_datasource_username" {
+  count        = var.spring_datasource_username == null ? 0 : 1
   name         = "spring-datasource-username"
-  value        = var.postgres_admin_username
+  value        = var.spring_datasource_username
   key_vault_id = azurerm_key_vault.main.id
 }
 
 resource "azurerm_key_vault_secret" "spring_datasource_password" {
+  count        = var.spring_datasource_password == null ? 0 : 1
   name         = "spring-datasource-password"
-  value        = random_password.postgres_admin.result
+  value        = var.spring_datasource_password
   key_vault_id = azurerm_key_vault.main.id
 }
 

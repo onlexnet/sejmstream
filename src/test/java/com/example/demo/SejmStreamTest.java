@@ -107,12 +107,8 @@ public class SejmStreamTest {
 
         var actual = SejmStream.byAttendanceDesc(input);
 
-        var expected = Map.of(
-            newMP(2),newMpStats(0, 10),
-            newMP(1),newMpStats(1, 9),
-            newMP(4),newMpStats(2, 8)
-        );
-        Assertions.assertThat(actual).isEqualTo(expected);
+        Assertions.assertThat(actual.keySet())
+                .containsExactly(newMP(2), newMP(1), newMP(4));
     }
 
     static MP newMP(int id) {

@@ -26,21 +26,21 @@ class FaceApiImpl implements FaceApi {
     public void post(String message) {
 
         // // generate a simple image and publish in the feed
-        // var imageUrl =
-        // "https://www.yttags.com/blog/wp-content/uploads/2023/02/image-urls-for-testing.webp";
-        // var publishPhoto = pageClient.publish("me/photos",
-        // com.restfb.types.FacebookType.class,
-        // com.restfb.Parameter.with("url", imageUrl),
-        // com.restfb.Parameter.with("caption", "Hello from RestFB!"),
-        // com.restfb.Parameter.with("is_published", false));
-        // System.out.println("Published photo ID: " + publishPhoto.getId());
+        var imageUrl =
+        "https://www.yttags.com/blog/wp-content/uploads/2023/02/image-urls-for-testing.webp";
+        var publishPhoto = pageClient.publish("me/photos",
+        com.restfb.types.FacebookType.class,
+        com.restfb.Parameter.with("url", imageUrl),
+        com.restfb.Parameter.with("caption", "Hello from RestFB!"),
+        com.restfb.Parameter.with("is_published", false));
+        System.out.println("Published photo ID: " + publishPhoto.getId());
 
         // create a post
 
-        // var publishPost = pageClient.publish("me/feed",
-        //         com.restfb.types.FacebookType.class,
-        //         com.restfb.Parameter.with("message", message),
-        //         com.restfb.Parameter.with("is_published", false));
+        var publishPost = pageClient.publish("me/feed",
+                com.restfb.types.FacebookType.class,
+                com.restfb.Parameter.with("message", message),
+                com.restfb.Parameter.with("is_published", false));
 
     }
 

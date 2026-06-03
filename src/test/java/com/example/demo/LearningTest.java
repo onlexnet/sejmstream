@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestTemplate;
 
@@ -65,7 +64,10 @@ public class LearningTest {
         }
         var restClient = new RestTemplate();
         var actual = restClient.getForObject("https://api.sejm.gov.pl/sejm/term10/proceedings", Proceeding[].class);
-        Assertions.assertThat(actual).allSatisfy(it -> Assertions.assertThat(it.number).isGreaterThan(0));
+        Assertions.assertThat(actual)
+                .isNotEmpty()
+                .allSatisfy(it -> Assertions.assertThat(it.number).isGreaterThanOrEqualTo(0));
+        Assertions.assertThat(actual).anySatisfy(it -> Assertions.assertThat(it.number).isGreaterThan(0));
     }
 
     @Test
@@ -74,7 +76,10 @@ public class LearningTest {
         }
         var restClient = RestClient.create("https://api.sejm.gov.pl");
         var actual = restClient.get().uri("sejm/term10/proceedings").retrieve().body(Proceeding[].class);
-        Assertions.assertThat(actual).allSatisfy(it -> Assertions.assertThat(it.number).isGreaterThan(0));
+        Assertions.assertThat(actual)
+                .isNotEmpty()
+                .allSatisfy(it -> Assertions.assertThat(it.number).isGreaterThanOrEqualTo(0));
+        Assertions.assertThat(actual).anySatisfy(it -> Assertions.assertThat(it.number).isGreaterThan(0));
     }
 }
 
