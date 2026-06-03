@@ -15,6 +15,6 @@ public class MpStats {
 
         return count == 0
                 ? 100
-                : totalPresent / count;
+                : (double) totalPresent / count;
     }
 }

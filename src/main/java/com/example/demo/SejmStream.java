@@ -2,13 +2,11 @@ package com.example.demo;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.SequencedMap;
-import java.util.SortedMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +91,31 @@ public class SejmStream implements CommandLineRunner {
 
     // returns top3+ the most active MPs
     static Map<MP, MpStats> byAttendanceDesc(Map<MP, MpStats> input) {
-        return input;
+        var sorted = input.entrySet().stream()
+                .sorted((left, right) -> {
+                    var byAttendance = Double.compare(right.getValue().getAttendance(), left.getValue().getAttendance());
+                    return byAttendance != 0
+                            ? byAttendance
+                            : Integer.compare(left.getKey().id(), right.getKey().id());
+                })
+                .toList();
+
+        if (sorted.size() <= 3) {
+            var result = new LinkedHashMap<MP, MpStats>();
+            for (var entry : sorted) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+            return result;
+        }
+
+        var threshold = sorted.get(2).getValue().getAttendance();
+        var result = new LinkedHashMap<MP, MpStats>();
+        for (var entry : sorted) {
+            if (Double.compare(entry.getValue().getAttendance(), threshold) >= 0) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return result;
     }
 
     static LocalDate findMaxDate(Map<MP, List<VotingStats>> votingsMap) {

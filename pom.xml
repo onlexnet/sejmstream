@@ -3,7 +3,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.5.0</version>
+		<version>4.0.6</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.example</groupId>
@@ -15,7 +15,7 @@
 	<properties>
 		<java.version>25</java.version>
 		<restfb.version>2026.1.0-RC6</restfb.version>
-		<spring-cloud-azure.version>6.0.0</spring-cloud-azure.version>
+		<spring-cloud-azure.version>7.3.0</spring-cloud-azure.version>
 	</properties>
 
 	<dependencyManagement>
@@ -60,7 +60,7 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
+			<artifactId>spring-boot-starter-restclient</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

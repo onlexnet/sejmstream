@@ -34,7 +34,8 @@
         "mtxr.sqltools-driver-pg",
         "vmware.vscode-boot-dev-pack",
         "github.vscode-github-actions",
-        "GitHub.vscode-pull-request-github"
+        "GitHub.vscode-pull-request-github",
+        "databricks.neon-local-connect"
       ],
       "settings": {
         "java.configuration.detectJdksAtStart": true,
