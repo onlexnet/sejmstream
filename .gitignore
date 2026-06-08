@@ -24,3 +24,6 @@ override.tf.json
 src/main/resources/application-local.properties
 src/main/resources/application-secrets.properties
 src/main/resources/application-*.local.properties
+
+### Local Azure Functions secrets overrides ###
+fun_sejmapi/local.settings.json

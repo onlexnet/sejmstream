@@ -1,0 +1,90 @@
+name: fun_sejmapi CI
+
+'on':
+  push:
+    branches:
+      - main
+    paths:
+      - 'fun_sejmapi/**'
+      - 'pom.xml'
+      - '.github/workflows/fun_sejmapi-ci.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'fun_sejmapi/**'
+      - 'pom.xml'
+      - '.github/workflows/fun_sejmapi-ci.yml'
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  build-test-and-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21 (Temurin) with Maven cache
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Run fun_sejmapi tests from root reactor
+        run: mvn -B -q -pl fun_sejmapi -am test
+
+      - name: Package fun_sejmapi Azure Functions artifact from root reactor
+        run: mvn -B -q -pl fun_sejmapi -am -DskipTests package
+
+      - name: Upload Surefire reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fun_sejmapi-surefire-reports
+          path: fun_sejmapi/target/surefire-reports/**
+          if-no-files-found: warn
+
+      - name: Upload Azure Functions package output
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fun_sejmapi-azure-functions-package
+          path: |
+            fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/host.json
+            fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/bin/**
+            fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/**/function.json
+            !fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/local.settings.json
+          if-no-files-found: error
+
+  deploy-main:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build-test-and-package
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AZURE_FUNCTIONAPP_NAME: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+
+    steps:
+      - name: Download Azure Functions package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: fun_sejmapi-azure-functions-package
+          path: fun_sejmapi-package
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy package to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: fun_sejmapi-package

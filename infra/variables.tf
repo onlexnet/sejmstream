@@ -15,6 +15,23 @@ variable "log_analytics_retention_in_days" {
   default     = 30
 }
 
+variable "function_durable_hub_name" {
+  description = "Durable Functions task hub name used by the fun_sejmapi demo slice."
+  type        = string
+  default     = "SejmApiDemoHub"
+
+  validation {
+    condition     = can(regex("^[A-Za-z][A-Za-z0-9]{2,44}$", var.function_durable_hub_name))
+    error_message = "function_durable_hub_name must start with a letter and contain 3-45 alphanumeric characters."
+  }
+}
+
+variable "enable_application_insights" {
+  description = "Enable Azure Application Insights for the Function App runtime telemetry."
+  type        = bool
+  default     = false
+}
+
 variable "spring_datasource_url" {
   description = "Optional JDBC URL for external PostgreSQL (for example Neon)."
   type        = string
@@ -43,6 +60,45 @@ variable "facebook_token" {
   default     = null
   nullable    = true
   sensitive   = true
+}
+
+variable "github_owner" {
+  description = "GitHub organization or user owning the repository."
+  type        = string
+  default     = "onlexnet"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name that hosts the deployment workflow."
+  type        = string
+  default     = "sejmstream"
+}
+
+variable "github_app_id" {
+  description = "GitHub App ID used for provider authentication."
+  type        = string
+}
+
+variable "github_app_installation_id" {
+  description = "GitHub App installation ID used for provider authentication."
+  type        = string
+}
+
+variable "github_app_pem" {
+  description = "GitHub App private key PEM content used for provider authentication."
+  type        = string
+  sensitive   = true
+}
+
+variable "github_environments" {
+  description = "GitHub environments that should receive deployment secrets."
+  type = map(object({
+    wait_timer          = optional(number, 0)
+    prevent_self_review = optional(bool, false)
+  }))
+  default = {
+    prod = {}
+  }
 }
 
 variable "tags" {

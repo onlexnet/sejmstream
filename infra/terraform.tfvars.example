@@ -11,6 +11,16 @@ spring_datasource_username = null
 spring_datasource_password = null
 facebook_token             = null
 
+# GitHub App authentication (recommended; no PAT required)
+github_owner              = "onlexnet"
+github_repo               = "sejmstream"
+github_app_id             = "<github-app-id>"
+github_app_installation_id = "<github-app-installation-id>"
+github_app_pem_file       = "<github-app-private-key-pem>"
+github_environments = {
+  prod = {}
+}
+
 tags = {
   owner = "team-sejmstream"
 }

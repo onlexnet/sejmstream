@@ -22,6 +22,59 @@ output "container_registry_login_server" {
   value = azurerm_container_registry.main.login_server
 }
 
+output "function_app_id" {
+  value = azurerm_linux_function_app.main.id
+}
+
+output "function_app_name" {
+  value = azurerm_linux_function_app.main.name
+}
+
+output "function_app_default_hostname" {
+  value = azurerm_linux_function_app.main.default_hostname
+}
+
+output "function_app_principal_id" {
+  value = azurerm_linux_function_app.main.identity[0].principal_id
+}
+
+output "application_insights_enabled" {
+  value = var.enable_application_insights
+}
+
+output "application_insights_connection_string" {
+  value     = try(azurerm_application_insights.main[0].connection_string, null)
+  sensitive = true
+}
+
+output "function_service_plan_id" {
+  value = azurerm_service_plan.function_app.id
+}
+
+output "function_service_plan_name" {
+  value = azurerm_service_plan.function_app.name
+}
+
+output "function_storage_account_id" {
+  value = azurerm_storage_account.function_app.id
+}
+
+output "function_storage_account_name" {
+  value = azurerm_storage_account.function_app.name
+}
+
+output "function_storage_blob_service_endpoint" {
+  value = azurerm_storage_account.function_app.primary_blob_endpoint
+}
+
+output "function_storage_queue_service_endpoint" {
+  value = azurerm_storage_account.function_app.primary_queue_endpoint
+}
+
+output "function_storage_table_service_endpoint" {
+  value = azurerm_storage_account.function_app.primary_table_endpoint
+}
+
 output "key_vault_id" {
   value = azurerm_key_vault.main.id
 }
