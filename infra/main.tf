@@ -25,6 +25,10 @@ locals {
 
   acr_name       = "${local.name_prefix}${local.environment}${local.global_suffix}"
   key_vault_name = "${local.name_prefix}-${local.environment}-kv-${local.global_suffix}"
+
+  function_service_plan_name    = "${local.resource_prefix}-func-plan"
+  function_storage_account_name = "${local.name_prefix}${local.environment}fn${local.global_suffix}"
+  function_app_name             = "${local.resource_prefix}-func-${local.global_suffix}"
 }
 
 resource "azurerm_resource_group" "main" {
@@ -64,6 +68,96 @@ resource "azurerm_container_registry" "main" {
   sku                 = var.container_registry_sku
   admin_enabled       = false
   tags                = local.common_tags
+}
+
+resource "azurerm_service_plan" "function_app" {
+  name                = local.function_service_plan_name
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  os_type             = "Linux"
+  sku_name            = "Y1"
+  tags                = local.common_tags
+}
+
+resource "azurerm_storage_account" "function_app" {
+  name                     = local.function_storage_account_name
+  resource_group_name      = azurerm_resource_group.main.name
+  location                 = azurerm_resource_group.main.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  min_tls_version          = "TLS1_2"
+  tags                     = local.common_tags
+}
+
+resource "azurerm_linux_function_app" "main" {
+  name                = local.function_app_name
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  service_plan_id               = azurerm_service_plan.function_app.id
+  storage_account_name          = azurerm_storage_account.function_app.name
+  storage_uses_managed_identity = true
+
+  https_only                  = true
+  functions_extension_version = "~4"
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  site_config {
+    always_on = false
+
+    application_stack {
+      java_version = "21"
+    }
+  }
+
+  # TASK-002 runtime key parity: FUNCTIONS_WORKER_RUNTIME + AzureWebJobsStorage.
+  # TASK-003 behavior parity: durable hub name is configurable via Terraform input.
+  app_settings = {
+    FUNCTIONS_WORKER_RUNTIME                                = "java"
+    AzureWebJobsStorage__accountName                        = azurerm_storage_account.function_app.name
+    AzureWebJobsStorage__blobServiceUri                     = azurerm_storage_account.function_app.primary_blob_endpoint
+    AzureWebJobsStorage__queueServiceUri                    = azurerm_storage_account.function_app.primary_queue_endpoint
+    AzureWebJobsStorage__tableServiceUri                    = azurerm_storage_account.function_app.primary_table_endpoint
+    AzureWebJobsStorage__credential                         = "managedidentity"
+    AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
+  }
+
+  tags = local.common_tags
+}
+
+resource "azurerm_role_assignment" "function_storage_blob_data_contributor" {
+  scope                = azurerm_storage_account.function_app.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "function_storage_queue_data_contributor" {
+  scope                = azurerm_storage_account.function_app.id
+  role_definition_name = "Storage Queue Data Contributor"
+  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
+  scope                = azurerm_storage_account.function_app.id
+  role_definition_name = "Storage Table Data Contributor"
+  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+}
+
+resource "azurerm_monitor_diagnostic_setting" "function_app" {
+  name                       = "function-app-diagnostics"
+  target_resource_id         = azurerm_linux_function_app.main.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
+
+  enabled_log {
+    category = "FunctionAppLogs"
+  }
+
+  enabled_metric {
+    category = "AllMetrics"
+  }
 }
 
 resource "azurerm_key_vault" "main" {
