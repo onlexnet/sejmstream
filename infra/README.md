@@ -48,6 +48,47 @@ Add these workspace environment variables:
 
 Local `terraform plan` and `terraform apply` still work, but the actual execution happens remotely in Terraform Cloud because of the `cloud` block in `providers.tf`.
 
+## fun_sejmapi Function App resources
+
+`infra/main.tf` now provisions the Azure resources required by the demo `fun_sejmapi` Durable Functions module:
+
+- Linux Consumption Function service plan (`azurerm_service_plan`, SKU `Y1`)
+- Dedicated storage account for Function host and Durable state (`azurerm_storage_account`)
+- Linux Function App on Java 21 (`azurerm_linux_function_app`)
+- System-assigned managed identity on the Function App
+- Storage data-plane role assignments for that identity:
+   - `Storage Blob Data Contributor`
+   - `Storage Queue Data Contributor`
+   - `Storage Table Data Contributor`
+- Diagnostic settings routing Function logs and metrics to Log Analytics
+
+The Function App runtime settings include durable host storage via managed identity (`AzureWebJobsStorage__*`) and a configurable task hub name (`function_durable_hub_name`).
+
+## Relevant non-secret outputs
+
+Use these outputs to discover the deployed Function infrastructure without exposing secrets:
+
+- `function_app_name`
+- `function_app_default_hostname`
+- `function_app_id`
+- `function_service_plan_name`
+- `function_service_plan_id`
+- `function_storage_account_name`
+- `function_storage_account_id`
+- `function_storage_blob_service_endpoint`
+- `function_storage_queue_service_endpoint`
+- `function_storage_table_service_endpoint`
+
+Example:
+
+```bash
+terraform output -raw function_app_name
+terraform output -raw function_app_default_hostname
+terraform output -raw function_storage_account_name
+```
+
+Do not print or share sensitive outputs in logs or documentation.
+
 ## Passing Key Vault endpoint to Spring Boot
 
 Use Terraform output `key_vault_uri` as the single source of truth for the app runtime endpoint.

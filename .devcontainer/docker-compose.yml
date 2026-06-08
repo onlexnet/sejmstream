@@ -25,6 +25,8 @@ services:
       - devcontainer-ssh:/home/worker/.ssh
       # Persist container-local Terraform credentials
       - devcontainer-terraform:/home/worker/.terraform.d
+      # Persist result of az login
+      - devcontainer-azure:/home/worker/.azure/
 
     # Overrides default command so things don't shut down after the process ends.
     command: /bin/sh -c "while sleep 1000; do :; done"
@@ -32,3 +34,4 @@ services:
 volumes:
   devcontainer-ssh:
   devcontainer-terraform:
+  devcontainer-azure:
