@@ -167,6 +167,12 @@ resource "azurerm_role_assignment" "function_storage_blob_data_contributor" {
   principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
 }
 
+resource "azurerm_role_assignment" "deployment_storage_blob_data_contributor" {
+  scope                = azurerm_storage_account.function_app.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = data.azurerm_client_config.current.object_id
+}
+
 resource "azurerm_role_assignment" "function_storage_queue_data_contributor" {
   scope                = azurerm_storage_account.function_app.id
   role_definition_name = "Storage Queue Data Contributor"
@@ -283,4 +289,3 @@ resource "github_actions_environment_secret" "azure" {
 
   depends_on = [github_repository_environment.deployment]
 }
-

@@ -80,6 +80,7 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
    - `Storage Blob Data Contributor`
    - `Storage Queue Data Contributor`
    - `Storage Table Data Contributor`
+- Storage blob data-plane role assignment for the deployment principal (`data.azurerm_client_config.current.object_id`) used by the GitHub OIDC deploy job
 - Key Vault secret read access for the Function App managed identity via `Key Vault Secrets User`
 - Optional Application Insights telemetry behind `enable_application_insights` (default `false`)
 - Diagnostic settings routing Function logs and metrics to Log Analytics
