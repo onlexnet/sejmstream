@@ -134,8 +134,8 @@ resource "azurerm_function_app_flex_consumption" "main" {
 
   service_plan_id = azurerm_service_plan.function_app.id
 
-  storage_container_type      = "blobContainer"
-  storage_container_endpoint  = azurerm_storage_container.function_app_deployment.id
+  storage_container_type     = "blobContainer"
+  storage_container_endpoint = "${azurerm_storage_account.function_app.primary_blob_endpoint}${azurerm_storage_container.function_app_deployment.name}"
   # TODO: Switch back to SystemAssignedIdentity once Flex Consumption + Managed Identity
   # deployment is fully supported by Azure. As of mid-2026 the Kudu SCM host on Flex
   # Consumption cannot obtain an MSI token (IMDS returns 400), causing all Kudu-based
