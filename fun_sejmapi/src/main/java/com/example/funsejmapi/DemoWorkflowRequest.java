@@ -46,6 +46,23 @@ public record DemoWorkflowRequest(String correlationId, int sampleSize) {
     }
 
     /**
+     * Maps OpenAPI-generated request model to the internal workflow request.
+     *
+     * @param request generated request model or null
+     * @return internal workflow request
+     */
+    public static DemoWorkflowRequest fromOpenApi(
+            final com.example.funsejmapi.openapi.model.DemoWorkflowRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        return new DemoWorkflowRequest(
+                request.getCorrelationId(),
+                request.getSampleSize() == null ? 0 : request.getSampleSize());
+    }
+
+    /**
      * Normalizes request values for the orchestrator path without randomness.
      *
      * @param request incoming request or null

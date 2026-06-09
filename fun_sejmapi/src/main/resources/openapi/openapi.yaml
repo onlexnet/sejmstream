@@ -1,0 +1,72 @@
+openapi: 3.0.3
+info:
+  title: Sejm API Demo Durable Functions
+  version: 1.0.0
+  description: Demo-only Durable Functions workflow endpoints for Sejm API scaffolding.
+paths:
+  /api/SejmApiDemo_HttpStart:
+    post:
+      summary: Start demo durable orchestration
+      description: Starts a new orchestration and returns status-query URLs.
+      security:
+        - functionKey: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DemoWorkflowRequest'
+      responses:
+        '202':
+          description: Accepted. Includes durable status URLs.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  statusQueryGetUri:
+                    type: string
+                  sendEventPostUri:
+                    type: string
+                  terminatePostUri:
+                    type: string
+                  rewindPostUri:
+                    type: string
+                  purgeHistoryDeleteUri:
+                    type: string
+        '401':
+          description: Unauthorized. Provide a valid function key via the x-functions-key header.
+components:
+  securitySchemes:
+    functionKey:
+      type: apiKey
+      in: header
+      name: x-functions-key
+      description: Azure Function key. Obtain from Azure Portal under Functions -> App keys or Function keys.
+  schemas:
+    DemoWorkflowRequest:
+      type: object
+      properties:
+        correlationId:
+          type: string
+          example: demo-123
+        sampleSize:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 20
+          example: 3
+    DemoWorkflowResult:
+      type: object
+      properties:
+        correlationId:
+          type: string
+        source:
+          type: string
+          example: demo-only
+        demoRows:
+          type: array
+          items:
+            type: string
