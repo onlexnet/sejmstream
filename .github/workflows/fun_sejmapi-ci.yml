@@ -92,12 +92,25 @@ jobs:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: fun_sejmapi-package
 
-      - name: Wait before deployment retry
+      - name: Wait before deployment retry (between attempts 1 and 2)
         if: steps.deploy_attempt_1.outcome == 'failure'
-        run: sleep 60
+        run: sleep 120
 
       - name: Deploy package to Azure Functions (attempt 2)
+        id: deploy_attempt_2
+        continue-on-error: true
         if: steps.deploy_attempt_1.outcome == 'failure'
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: fun_sejmapi-package
+
+      - name: Wait before deployment retry (between attempts 2 and 3)
+        if: steps.deploy_attempt_2.outcome == 'failure'
+        run: sleep 120
+
+      - name: Deploy package to Azure Functions (attempt 3)
+        if: steps.deploy_attempt_2.outcome == 'failure'
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
