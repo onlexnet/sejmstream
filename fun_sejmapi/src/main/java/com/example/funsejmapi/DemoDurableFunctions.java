@@ -39,7 +39,7 @@ public final class DemoDurableFunctions {
     public HttpResponseMessage httpStart(
             @HttpTrigger(name = "request", methods = {
                     HttpMethod.POST },
-                    authLevel = AuthorizationLevel.ANONYMOUS)
+                    authLevel = AuthorizationLevel.FUNCTION)
                     final HttpRequestMessage<
                             Optional<DemoWorkflowRequest>> request,
             @DurableClientInput(name = "durableContext")

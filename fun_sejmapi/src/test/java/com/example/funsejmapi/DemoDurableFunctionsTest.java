@@ -98,7 +98,7 @@ class DemoDurableFunctionsTest {
     }
 
     @Test
-    void givenHttpStarter_whenCheckingTriggerAuthLevel_thenAnonymousIsAllowed()
+    void givenHttpStarter_whenCheckingTriggerAuthLevel_thenFunctionLevelIsRequired()
             throws NoSuchMethodException {
         var method = DemoDurableFunctions.class.getDeclaredMethod(
                 "httpStart",
@@ -109,7 +109,7 @@ class DemoDurableFunctionsTest {
 
         assertThat(trigger).isNotNull();
         assertThat(trigger.authLevel())
-            .isEqualTo(AuthorizationLevel.ANONYMOUS);
+            .isEqualTo(AuthorizationLevel.FUNCTION);
     }
 
     @Test
