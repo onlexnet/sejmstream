@@ -94,10 +94,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          resource_group=$(az functionapp show --name "${AZURE_FUNCTIONAPP_NAME}" --query "resourceGroup" -o tsv)
+          function_app_id=$(az functionapp list \
+            --query "[?name=='${AZURE_FUNCTIONAPP_NAME}'].id | [0]" \
+            -o tsv)
+
+          if [[ -z "${function_app_id}" ]]; then
+            echo "::error::Function App '${AZURE_FUNCTIONAPP_NAME}' was not found in the current subscription context."
+            exit 1
+          fi
+
           storage_value=$(az functionapp show \
-            --name "${AZURE_FUNCTIONAPP_NAME}" \
-            --resource-group "${resource_group}" \
+            --ids "${function_app_id}" \
             --query "properties.functionAppConfig.deployment.storage.value" \
             -o tsv)
 
