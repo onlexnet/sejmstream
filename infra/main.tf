@@ -136,7 +136,13 @@ resource "azurerm_function_app_flex_consumption" "main" {
 
   storage_container_type      = "blobContainer"
   storage_container_endpoint  = azurerm_storage_container.function_app_deployment.id
-  storage_authentication_type = "SystemAssignedIdentity"
+  # TODO: Switch back to SystemAssignedIdentity once Flex Consumption + Managed Identity
+  # deployment is fully supported by Azure. As of mid-2026 the Kudu SCM host on Flex
+  # Consumption cannot obtain an MSI token (IMDS returns 400), causing all Kudu-based
+  # deployments to fail with MSITokenUnavailableException. Tracking issue:
+  # https://github.com/hashicorp/terraform-provider-azurerm/issues/29993
+  storage_authentication_type = "StorageAccountConnectionString"
+  storage_access_key          = azurerm_storage_account.function_app.primary_access_key
 
   runtime_name           = "java"
   runtime_version        = "21"
@@ -154,6 +160,9 @@ resource "azurerm_function_app_flex_consumption" "main" {
   app_settings = merge(
     {
       AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
+      # Required for Flex Consumption when using connection-string storage auth.
+      # Remove together with storage_access_key above once MSI is fully supported.
+      AzureWebJobsStorage = azurerm_storage_account.function_app.primary_connection_string
     },
     var.enable_application_insights ? {
       APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.main[0].connection_string
