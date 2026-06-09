@@ -90,7 +90,7 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Validate Flex deployment storage endpoint
+      - name: Validate and repair Flex deployment storage endpoint
         shell: bash
         run: |
           set -euo pipefail
@@ -108,8 +108,38 @@ jobs:
             --query "properties.functionAppConfig.deployment.storage.value" \
             -o tsv)
 
-          if [[ -z "${storage_value}" || ! "${storage_value}" =~ ^https:// ]]; then
-            echo "::error::Invalid Function App deployment storage endpoint: '${storage_value}'. Expected an https:// blob container URL. Apply Terraform from infra/ to update functionAppConfig.deployment.storage.value."
+          if [[ -z "${storage_value}" || ! "${storage_value}" =~ ^https://[^/]+\.blob\.[^/]+/[^/]+$ ]]; then
+            echo "Invalid deployment storage endpoint detected: '${storage_value}'. Attempting repair via az functionapp deployment config set..."
+
+            azure_webjobs_storage=$(az functionapp config appsettings list \
+              --ids "${function_app_id}" \
+              --query "[?name=='AzureWebJobsStorage'].value | [0]" \
+              -o tsv)
+
+            storage_account_name=$(printf '%s' "${azure_webjobs_storage}" | sed -n 's/.*AccountName=\([^;]*\).*/\1/p')
+
+            if [[ -z "${storage_account_name}" ]]; then
+              echo "::error::Cannot derive storage account name from AzureWebJobsStorage app setting."
+              exit 1
+            fi
+
+            az functionapp deployment config set \
+              --ids "${function_app_id}" \
+              --deployment-storage-name "${storage_account_name}" \
+              --deployment-storage-container-name "function-deploy" \
+              --deployment-storage-auth-type "StorageAccountConnectionString" \
+              --deployment-storage-auth-value "AzureWebJobsStorage" \
+              --only-show-errors \
+              -o none
+
+            storage_value=$(az functionapp show \
+              --ids "${function_app_id}" \
+              --query "properties.functionAppConfig.deployment.storage.value" \
+              -o tsv)
+          fi
+
+          if [[ -z "${storage_value}" || ! "${storage_value}" =~ ^https://[^/]+\.blob\.[^/]+/[^/]+$ ]]; then
+            echo "::error::Invalid Function App deployment storage endpoint after repair: '${storage_value}'. Run Terraform apply in infra/."
             exit 1
           fi
 
