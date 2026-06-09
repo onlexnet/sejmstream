@@ -14,6 +14,24 @@ locals {
   resource_prefix                    = "${local.name_prefix}-${local.environment}"
   global_suffix                      = random_string.suffix.result
 
+  github_secret_values = {
+    AZURE_CLIENT_ID        = data.azurerm_client_config.current.client_id
+    AZURE_TENANT_ID        = data.azurerm_client_config.current.tenant_id
+    AZURE_SUBSCRIPTION_ID  = data.azurerm_client_config.current.subscription_id
+    AZURE_FUNCTIONAPP_NAME = azurerm_linux_function_app.main.name
+  }
+
+  github_environment_secret_entries = flatten([
+    for env_name, _ in var.github_environments : [
+      for secret_name, secret_value in local.github_secret_values : {
+        key             = "${env_name}:${secret_name}"
+        environment     = env_name
+        secret_name     = secret_name
+        plaintext_value = secret_value
+      }
+    ]
+  ])
+
   common_tags = merge(
     {
       application = "sejmstream"
@@ -70,6 +88,16 @@ resource "azurerm_container_registry" "main" {
   tags                = local.common_tags
 }
 
+resource "azurerm_application_insights" "main" {
+  count               = var.enable_application_insights ? 1 : 0
+  name                = "${local.resource_prefix}-appi"
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  application_type    = "web"
+  workspace_id        = azurerm_log_analytics_workspace.main.id
+  tags                = local.common_tags
+}
+
 resource "azurerm_service_plan" "function_app" {
   name                = local.function_service_plan_name
   location            = azurerm_resource_group.main.location
@@ -115,15 +143,20 @@ resource "azurerm_linux_function_app" "main" {
 
   # TASK-002 runtime key parity: FUNCTIONS_WORKER_RUNTIME + AzureWebJobsStorage.
   # TASK-003 behavior parity: durable hub name is configurable via Terraform input.
-  app_settings = {
-    FUNCTIONS_WORKER_RUNTIME                                = "java"
-    AzureWebJobsStorage__accountName                        = azurerm_storage_account.function_app.name
-    AzureWebJobsStorage__blobServiceUri                     = azurerm_storage_account.function_app.primary_blob_endpoint
-    AzureWebJobsStorage__queueServiceUri                    = azurerm_storage_account.function_app.primary_queue_endpoint
-    AzureWebJobsStorage__tableServiceUri                    = azurerm_storage_account.function_app.primary_table_endpoint
-    AzureWebJobsStorage__credential                         = "managedidentity"
-    AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
-  }
+  app_settings = merge(
+    {
+      FUNCTIONS_WORKER_RUNTIME                                = "java"
+      AzureWebJobsStorage__accountName                        = azurerm_storage_account.function_app.name
+      AzureWebJobsStorage__blobServiceUri                     = azurerm_storage_account.function_app.primary_blob_endpoint
+      AzureWebJobsStorage__queueServiceUri                    = azurerm_storage_account.function_app.primary_queue_endpoint
+      AzureWebJobsStorage__tableServiceUri                    = azurerm_storage_account.function_app.primary_table_endpoint
+      AzureWebJobsStorage__credential                         = "managedidentity"
+      AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
+    },
+    var.enable_application_insights ? {
+      APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.main[0].connection_string
+    } : {}
+  )
 
   tags = local.common_tags
 }
@@ -143,6 +176,12 @@ resource "azurerm_role_assignment" "function_storage_queue_data_contributor" {
 resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
   scope                = azurerm_storage_account.function_app.id
   role_definition_name = "Storage Table Data Contributor"
+  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "function_key_vault_secrets_user" {
+  scope                = azurerm_key_vault.main.id
+  role_definition_name = "Key Vault Secrets User"
   principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
 }
 
@@ -221,5 +260,27 @@ resource "azurerm_key_vault_secret" "facebook_token" {
   name         = "fb-token"
   value        = var.facebook_token
   key_vault_id = azurerm_key_vault.main.id
+}
+
+resource "github_repository_environment" "deployment" {
+  for_each = var.github_environments
+
+  repository          = var.github_repo
+  environment         = each.key
+  wait_timer          = each.value.wait_timer
+  prevent_self_review = each.value.prevent_self_review
+}
+
+resource "github_actions_environment_secret" "azure" {
+  for_each = {
+    for entry in local.github_environment_secret_entries : entry.key => entry
+  }
+
+  repository      = var.github_repo
+  environment     = each.value.environment
+  secret_name     = each.value.secret_name
+  plaintext_value = each.value.plaintext_value
+
+  depends_on = [github_repository_environment.deployment]
 }
 

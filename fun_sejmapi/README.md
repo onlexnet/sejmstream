@@ -80,6 +80,23 @@ Expected start response:
 Then poll `statusQueryGetUri` from the start response until `runtimeStatus` is `Completed`.
 When completed, output contains a demo payload (`correlationId`, `source="demo-only"`, `demoRows`).
 
+## Deployment workflow
+
+The GitHub Actions workflow in `.github/workflows/fun_sejmapi-ci.yml` now:
+
+- runs tests and packaging on pull requests and main pushes;
+- uploads the packaged Azure Functions content as an artifact;
+- deploys that artifact to the existing Azure Function App only on `main`.
+
+To enable the deployment job, make sure the `prod` GitHub environment contains these environment secrets (Terraform-managed by `infra/`):
+
+- `AZURE_CLIENT_ID`
+- `AZURE_TENANT_ID`
+- `AZURE_SUBSCRIPTION_ID`
+- `AZURE_FUNCTIONAPP_NAME`
+
+The `AZURE_FUNCTIONAPP_NAME` value should match the Terraform-managed Function App name already provisioned by the infra stack.
+
 ## After deployment
 
 For a deployed Function App, the same paths are available under your app host:
@@ -102,6 +119,7 @@ For a deployed Function App, the same paths are available under your app host:
   - `AzureWebJobsStorage__queueServiceUri`
   - `AzureWebJobsStorage__tableServiceUri`
   - `AzureWebJobsStorage__credential=managedidentity`
+  - `AzureFunctionsJobHost__extensions__durableTask__hubName` (configured via Terraform variable `function_durable_hub_name`, default `SejmApiDemoHub`)
 - Do not configure the Function App in Azure with direct `AzureWebJobsStorage=<connection string>`.
 
 ## Observed Packaging Output Path

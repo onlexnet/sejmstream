@@ -26,6 +26,12 @@ variable "function_durable_hub_name" {
   }
 }
 
+variable "enable_application_insights" {
+  description = "Enable Azure Application Insights for the Function App runtime telemetry."
+  type        = bool
+  default     = false
+}
+
 variable "spring_datasource_url" {
   description = "Optional JDBC URL for external PostgreSQL (for example Neon)."
   type        = string
@@ -54,6 +60,45 @@ variable "facebook_token" {
   default     = null
   nullable    = true
   sensitive   = true
+}
+
+variable "github_owner" {
+  description = "GitHub organization or user owning the repository."
+  type        = string
+  default     = "onlexnet"
+}
+
+variable "github_repo" {
+  description = "GitHub repository name that hosts the deployment workflow."
+  type        = string
+  default     = "sejmstream"
+}
+
+variable "github_app_id" {
+  description = "GitHub App ID used for provider authentication."
+  type        = string
+}
+
+variable "github_app_installation_id" {
+  description = "GitHub App installation ID used for provider authentication."
+  type        = string
+}
+
+variable "github_app_pem" {
+  description = "GitHub App private key PEM content used for provider authentication."
+  type        = string
+  sensitive   = true
+}
+
+variable "github_environments" {
+  description = "GitHub environments that should receive deployment secrets."
+  type = map(object({
+    wait_timer          = optional(number, 0)
+    prevent_self_review = optional(bool, false)
+  }))
+  default = {
+    prod = {}
+  }
 }
 
 variable "tags" {
