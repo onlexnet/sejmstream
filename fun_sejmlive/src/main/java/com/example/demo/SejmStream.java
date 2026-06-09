@@ -10,15 +10,11 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 @Component
 public class SejmStream implements CommandLineRunner {
-    @Value("${FB_TOKEN}")
-    String fbToken;
-
     private final static Logger log = LoggerFactory.getLogger(SejmStream.class);
     private final FaceApi faceApi;
     private final SejmApi sejmApi;

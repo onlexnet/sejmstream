@@ -1,5 +1,7 @@
 package com.example.demo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import com.restfb.DefaultFacebookClient;
@@ -15,8 +17,9 @@ public interface FaceApi {
 @Component
 class FaceApiImpl implements FaceApi {
 
+    private static final Logger log = LoggerFactory.getLogger(FaceApiImpl.class);
+
     private final DefaultFacebookClient pageClient;
-    
 
     public FaceApiImpl(DefaultFacebookClient pageClient) {
         this.pageClient = pageClient;
@@ -25,33 +28,26 @@ class FaceApiImpl implements FaceApi {
     @Override
     public void post(String message) {
 
-        // // generate a simple image and publish in the feed
-        var imageUrl =
-        "https://www.yttags.com/blog/wp-content/uploads/2023/02/image-urls-for-testing.webp";
+        var imageUrl = "https://www.yttags.com/blog/wp-content/uploads/2023/02/image-urls-for-testing.webp";
         var publishPhoto = pageClient.publish("me/photos",
-        com.restfb.types.FacebookType.class,
-        com.restfb.Parameter.with("url", imageUrl),
-        com.restfb.Parameter.with("caption", "Hello from RestFB!"),
-        com.restfb.Parameter.with("is_published", false));
-        System.out.println("Published photo ID: " + publishPhoto.getId());
+                com.restfb.types.FacebookType.class,
+                com.restfb.Parameter.with("url", imageUrl),
+                com.restfb.Parameter.with("caption", "Hello from RestFB!"),
+                com.restfb.Parameter.with("is_published", false));
+        log.debug("Published photo id={}", publishPhoto.getId());
 
-        // create a post
-
-        var publishPost = pageClient.publish("me/feed",
+        pageClient.publish("me/feed",
                 com.restfb.types.FacebookType.class,
                 com.restfb.Parameter.with("message", message),
                 com.restfb.Parameter.with("is_published", false));
-
     }
 
     @Override
     public void deleteAllPost() {
-       
         var feed = pageClient.fetchConnection("me/feed", Post.class);
         for (var post : feed.getData()) {
-            System.out.println("delete post: " + post.getMessage());
-            var postId = post.getId();
-            pageClient.deleteObject(postId);
+            log.debug("Deleting post id={}", post.getId());
+            pageClient.deleteObject(post.getId());
         }
     }
 }

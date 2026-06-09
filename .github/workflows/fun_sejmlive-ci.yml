@@ -16,6 +16,9 @@ on:
       - 'pom.xml'
       - '.github/workflows/fun_sejmlive-ci.yml'
 
+permissions:
+  contents: read
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
