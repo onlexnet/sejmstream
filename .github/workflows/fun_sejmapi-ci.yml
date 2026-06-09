@@ -84,7 +84,20 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy package to Azure Functions
+      - name: Deploy package to Azure Functions (attempt 1)
+        id: deploy_attempt_1
+        continue-on-error: true
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: fun_sejmapi-package
+
+      - name: Wait before deployment retry
+        if: steps.deploy_attempt_1.outcome == 'failure'
+        run: sleep 60
+
+      - name: Deploy package to Azure Functions (attempt 2)
+        if: steps.deploy_attempt_1.outcome == 'failure'
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
