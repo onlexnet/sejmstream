@@ -67,7 +67,9 @@ jobs:
           if-no-files-found: error
 
   deploy-main:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     needs: build-test-and-package
     runs-on: ubuntu-latest
     environment: prod
@@ -87,6 +89,24 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate Flex deployment storage endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          resource_group=$(az functionapp show --name "${AZURE_FUNCTIONAPP_NAME}" --query "resourceGroup" -o tsv)
+          storage_value=$(az functionapp show \
+            --name "${AZURE_FUNCTIONAPP_NAME}" \
+            --resource-group "${resource_group}" \
+            --query "properties.functionAppConfig.deployment.storage.value" \
+            -o tsv)
+
+          if [[ -z "${storage_value}" || ! "${storage_value}" =~ ^https:// ]]; then
+            echo "::error::Invalid Function App deployment storage endpoint: '${storage_value}'. Expected an https:// blob container URL. Apply Terraform from infra/ to update functionAppConfig.deployment.storage.value."
+            exit 1
+          fi
+
+          echo "Detected deployment storage endpoint: ${storage_value}"
 
       - name: Deploy package to Azure Functions
         uses: Azure/functions-action@v1
