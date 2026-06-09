@@ -82,6 +82,14 @@
 							<name>FUNCTIONS_WORKER_RUNTIME</name>
 							<value>java</value>
 						</property>
+						<property>
+							<name>AzureWebJobsStorage</name>
+							<value>UseDevelopmentStorage=true</value>
+						</property>
+						<property>
+							<name>Storage</name>
+							<value>UseDevelopmentStorage=true</value>
+						</property>
 					</appSettings>
 				</configuration>
 				<executions>

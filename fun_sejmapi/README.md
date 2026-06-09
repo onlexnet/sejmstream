@@ -32,6 +32,24 @@ Durable Functions needs a working storage connection for orchestration state.
 
 If you use `UseDevelopmentStorage=true`, make sure Azurite is running before starting Functions.
 
+### Start Azurite locally
+
+Install Azurite once if needed:
+
+- `npm install -g azurite`
+
+Start the emulator from the module root:
+
+- `azurite --silent --location /tmp/azurite`
+
+You should see lines like:
+
+- `Azurite Blob service is successfully listening at http://127.0.0.1:10000`
+- `Azurite Queue service is successfully listening at http://127.0.0.1:10001`
+- `Azurite Table service is successfully listening at http://127.0.0.1:10002`
+
+If you prefer a one-liner for local development, run it in a separate terminal before `mvn azure-functions:run`.
+
 ## Local execution
 
 Run tests and package from repository root:
