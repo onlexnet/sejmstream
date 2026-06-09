@@ -72,7 +72,23 @@ Default local endpoint:
 Swagger/OpenAPI endpoints:
 
 - `http://localhost:7071/api/swagger`
-- `http://localhost:7071/api/openapi.json`
+- `http://localhost:7071/api/openapi.yaml`
+
+## OpenAPI code generation (minimal)
+
+The module is wired with `openapi-generator-maven-plugin` to generate Java models from:
+
+- `src/main/resources/openapi/openapi.yaml`
+
+Run generation only:
+
+- `mvn generate-sources`
+
+Generated classes are placed under:
+
+- `target/generated-sources/openapi/src/main/java/com/example/funsejmapi/openapi/model`
+
+The generation is automatically executed before compile/package because it is bound to the `generate-sources` Maven phase.
 
 ## HTTP start/status flow (Durable)
 
@@ -120,7 +136,7 @@ The `AZURE_FUNCTIONAPP_NAME` value should match the Terraform-managed Function A
 For a deployed Function App, the same paths are available under your app host:
 
 - `https://<function-app-name>.azurewebsites.net/api/swagger`
-- `https://<function-app-name>.azurewebsites.net/api/openapi.json`
+- `https://<function-app-name>.azurewebsites.net/api/openapi.yaml`
 
 ## Notes
 

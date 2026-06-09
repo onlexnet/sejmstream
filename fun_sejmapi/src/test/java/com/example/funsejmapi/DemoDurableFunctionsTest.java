@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.lang.reflect.InvocationHandler;
 import java.net.URI;
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.time.Duration;
 import java.util.List;
@@ -52,7 +51,7 @@ class DemoDurableFunctionsTest {
     assertThat(trigger.methods()).containsExactly(HttpMethod.GET);
     assertThat(trigger.authLevel())
         .isEqualTo(AuthorizationLevel.ANONYMOUS);
-    assertThat(trigger.route()).isEqualTo("openapi.json");
+    assertThat(trigger.route()).isEqualTo("openapi.yaml");
     }
 
     @Test
@@ -66,22 +65,22 @@ class DemoDurableFunctionsTest {
         .isEqualTo("text/html; charset=utf-8");
     assertThat(response.getBody().toString())
         .contains("swagger-ui")
-        .contains("/api/openapi.json");
+        .contains("/api/openapi.yaml");
     }
 
     @Test
-    void givenOpenApiFunction_whenInvoked_thenReturnsJsonWithStarterPath() {
+    void givenOpenApiFunction_whenInvoked_thenReturnsYamlWithStarterPath() {
     var request = new FakeHttpRequestMessage<String>(Optional.empty());
 
     var response = new ApiDocumentationFunctions().openApi(request);
 
     assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
     assertThat(response.getHeader("Content-Type"))
-        .isEqualTo("application/json; charset=utf-8");
+        .isEqualTo("application/yaml; charset=utf-8");
     assertThat(response.getBody().toString())
-        .contains("\"openapi\": \"3.0.3\"")
+        .contains("openapi: 3.0.3")
         .contains("/api/SejmApiDemo_HttpStart")
-        .contains("\"functionKey\"")
+        .contains("functionKey")
         .contains("x-functions-key");
     }
 
@@ -140,8 +139,11 @@ class DemoDurableFunctionsTest {
     @Test
     void givenHttpStarter_whenInvoked_thenSchedulesAndReturnsAcceptedContract() {
         var functions = new DemoDurableFunctions();
+        var openApiRequest = new com.example.funsejmapi.openapi.model.DemoWorkflowRequest()
+            .correlationId("corr-200")
+            .sampleSize(2);
         var request = new FakeHttpRequestMessage<>(
-                Optional.of(new DemoWorkflowRequest("corr-200", 2)));
+            Optional.of(openApiRequest));
         var context = new TestDurableClientContext();
 
         var response = functions.httpStart(request, context);

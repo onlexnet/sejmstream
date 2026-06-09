@@ -41,12 +41,14 @@ public final class DemoDurableFunctions {
                     HttpMethod.POST },
                     authLevel = AuthorizationLevel.FUNCTION)
                     final HttpRequestMessage<
-                            Optional<DemoWorkflowRequest>> request,
+                            Optional<com.example.funsejmapi.openapi.model.DemoWorkflowRequest>> request,
             @DurableClientInput(name = "durableContext")
                     final DurableClientContext durableContext) {
 
-        var normalizedRequest =
-                DemoWorkflowRequest.normalize(request.getBody().orElse(null));
+        var openApiRequest = request.getBody().orElse(null);
+        var normalizedRequest = com.example.funsejmapi.DemoWorkflowRequest
+                .normalize(com.example.funsejmapi.DemoWorkflowRequest
+                        .fromOpenApi(openApiRequest));
         var instanceId = durableContext.getClient()
                 .scheduleNewOrchestrationInstance(
                         ORCHESTRATOR_FUNCTION_NAME,
