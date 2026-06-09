@@ -80,7 +80,9 @@ class DemoDurableFunctionsTest {
         .isEqualTo("application/json; charset=utf-8");
     assertThat(response.getBody().toString())
         .contains("\"openapi\": \"3.0.3\"")
-        .contains("/api/SejmApiDemo_HttpStart");
+        .contains("/api/SejmApiDemo_HttpStart")
+        .contains("\"functionKey\"")
+        .contains("x-functions-key");
     }
 
     @Test

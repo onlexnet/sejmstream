@@ -33,6 +33,9 @@ public final class ApiDocumentationFunctions {
                   "post": {
                     "summary": "Start demo durable orchestration",
                     "description": "Starts a new orchestration and returns status-query URLs.",
+                    "security": [
+                      { "functionKey": [] }
+                    ],
                     "requestBody": {
                       "required": false,
                       "content": {
@@ -73,12 +76,23 @@ public final class ApiDocumentationFunctions {
                             }
                           }
                         }
+                      },
+                      "401": {
+                        "description": "Unauthorized. Provide a valid function key via the x-functions-key header."
                       }
                     }
                   }
                 }
               },
               "components": {
+                "securitySchemes": {
+                  "functionKey": {
+                    "type": "apiKey",
+                    "in": "header",
+                    "name": "x-functions-key",
+                    "description": "Azure Function key. Obtain from the Azure Portal under Functions → App keys or Function keys."
+                  }
+                },
                 "schemas": {
                   "DemoWorkflowRequest": {
                     "type": "object",
@@ -134,7 +148,8 @@ public final class ApiDocumentationFunctions {
               <script>
                 SwaggerUIBundle({
                   url: '/api/openapi.json',
-                  dom_id: '#swagger-ui'
+                  dom_id: '#swagger-ui',
+                  persistAuthorization: true
                 });
               </script>
             </body>
