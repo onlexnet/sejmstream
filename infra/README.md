@@ -72,7 +72,7 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
 
 `infra/main.tf` now provisions the Azure resources required by the demo `fun_sejmapi` Durable Functions module:
 
-- Linux Consumption Function service plan (`azurerm_service_plan`, SKU `Y1`)
+- Flex Consumption Function service plan (`azurerm_service_plan`, SKU `FC1`)
 - Dedicated storage account for Function host and Durable state (`azurerm_storage_account`)
 - Linux Function App on Java 21 (`azurerm_linux_function_app`)
 - System-assigned managed identity on the Function App
@@ -91,7 +91,7 @@ The Function App runtime settings include durable host storage via managed ident
 
 The current hosting baseline has been verified against the repo state and matches the existing `fun_sejmapi` runtime contract:
 
-- Linux Consumption plan (`sku_name = "Y1"`) with Java 21 runtime on `azurerm_linux_function_app`.
+- Flex Consumption plan (`sku_name = "FC1"`) with Java 21 runtime on `azurerm_linux_function_app`.
 - System-assigned managed identity plus storage RBAC for blobs, queues, and tables.
 - Durable host app settings in `infra/main.tf`:
   - `FUNCTIONS_WORKER_RUNTIME=java`

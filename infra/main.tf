@@ -18,7 +18,7 @@ locals {
     AZURE_CLIENT_ID        = data.azurerm_client_config.current.client_id
     AZURE_TENANT_ID        = data.azurerm_client_config.current.tenant_id
     AZURE_SUBSCRIPTION_ID  = data.azurerm_client_config.current.subscription_id
-    AZURE_FUNCTIONAPP_NAME = azurerm_linux_function_app.main.name
+    AZURE_FUNCTIONAPP_NAME = azurerm_function_app_flex_consumption.main.name
   }
 
   github_environment_secret_entries = flatten([
@@ -44,9 +44,9 @@ locals {
   acr_name       = "${local.name_prefix}${local.environment}${local.global_suffix}"
   key_vault_name = "${local.name_prefix}-${local.environment}-kv-${local.global_suffix}"
 
-  function_service_plan_name    = "${local.resource_prefix}-func-plan"
+  function_service_plan_name    = "${local.resource_prefix}-func-plan-flex"
   function_storage_account_name = "${local.name_prefix}${local.environment}fn${local.global_suffix}"
-  function_app_name             = "${local.resource_prefix}-func-${local.global_suffix}"
+  function_app_name             = "${local.resource_prefix}-func-flex-${local.global_suffix}"
 }
 
 resource "azurerm_resource_group" "main" {
@@ -103,8 +103,12 @@ resource "azurerm_service_plan" "function_app" {
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
   os_type             = "Linux"
-  sku_name            = "Y1"
+  sku_name            = "FC1"
   tags                = local.common_tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "azurerm_storage_account" "function_app" {
@@ -117,40 +121,38 @@ resource "azurerm_storage_account" "function_app" {
   tags                     = local.common_tags
 }
 
-resource "azurerm_linux_function_app" "main" {
+resource "azurerm_storage_container" "function_app_deployment" {
+  name                  = "function-deploy"
+  storage_account_id    = azurerm_storage_account.function_app.id
+  container_access_type = "private"
+}
+
+resource "azurerm_function_app_flex_consumption" "main" {
   name                = local.function_app_name
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
 
-  service_plan_id               = azurerm_service_plan.function_app.id
-  storage_account_name          = azurerm_storage_account.function_app.name
-  storage_uses_managed_identity = true
+  service_plan_id = azurerm_service_plan.function_app.id
 
-  https_only                  = true
-  functions_extension_version = "~4"
+  storage_container_type      = "blobContainer"
+  storage_container_endpoint  = azurerm_storage_container.function_app_deployment.id
+  storage_authentication_type = "SystemAssignedIdentity"
+
+  runtime_name           = "java"
+  runtime_version        = "21"
+  maximum_instance_count = 100
+  instance_memory_in_mb  = 2048
+
+  https_only = true
 
   identity {
     type = "SystemAssigned"
   }
 
-  site_config {
-    always_on = false
+  site_config {}
 
-    application_stack {
-      java_version = "21"
-    }
-  }
-
-  # TASK-002 runtime key parity: FUNCTIONS_WORKER_RUNTIME + AzureWebJobsStorage.
-  # TASK-003 behavior parity: durable hub name is configurable via Terraform input.
   app_settings = merge(
     {
-      FUNCTIONS_WORKER_RUNTIME                                = "java"
-      AzureWebJobsStorage__accountName                        = azurerm_storage_account.function_app.name
-      AzureWebJobsStorage__blobServiceUri                     = azurerm_storage_account.function_app.primary_blob_endpoint
-      AzureWebJobsStorage__queueServiceUri                    = azurerm_storage_account.function_app.primary_queue_endpoint
-      AzureWebJobsStorage__tableServiceUri                    = azurerm_storage_account.function_app.primary_table_endpoint
-      AzureWebJobsStorage__credential                         = "managedidentity"
       AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
     },
     var.enable_application_insights ? {
@@ -159,12 +161,16 @@ resource "azurerm_linux_function_app" "main" {
   )
 
   tags = local.common_tags
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "azurerm_role_assignment" "function_storage_blob_data_contributor" {
   scope                = azurerm_storage_account.function_app.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "deployment_storage_blob_data_contributor" {
@@ -176,24 +182,24 @@ resource "azurerm_role_assignment" "deployment_storage_blob_data_contributor" {
 resource "azurerm_role_assignment" "function_storage_queue_data_contributor" {
   scope                = azurerm_storage_account.function_app.id
   role_definition_name = "Storage Queue Data Contributor"
-  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
   scope                = azurerm_storage_account.function_app.id
   role_definition_name = "Storage Table Data Contributor"
-  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "function_key_vault_secrets_user" {
   scope                = azurerm_key_vault.main.id
   role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_linux_function_app.main.identity[0].principal_id
+  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
 resource "azurerm_monitor_diagnostic_setting" "function_app" {
   name                       = "function-app-diagnostics"
-  target_resource_id         = azurerm_linux_function_app.main.id
+  target_resource_id         = azurerm_function_app_flex_consumption.main.id
   log_analytics_workspace_id = azurerm_log_analytics_workspace.main.id
 
   enabled_log {
@@ -282,10 +288,10 @@ resource "github_actions_environment_secret" "azure" {
     for entry in local.github_environment_secret_entries : entry.key => entry
   }
 
-  repository      = var.github_repo
-  environment     = each.value.environment
-  secret_name     = each.value.secret_name
-  plaintext_value = each.value.plaintext_value
+  repository  = var.github_repo
+  environment = each.value.environment
+  secret_name = each.value.secret_name
+  value       = each.value.plaintext_value
 
   depends_on = [github_repository_environment.deployment]
 }

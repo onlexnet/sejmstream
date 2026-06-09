@@ -23,19 +23,19 @@ output "container_registry_login_server" {
 }
 
 output "function_app_id" {
-  value = azurerm_linux_function_app.main.id
+  value = azurerm_function_app_flex_consumption.main.id
 }
 
 output "function_app_name" {
-  value = azurerm_linux_function_app.main.name
+  value = azurerm_function_app_flex_consumption.main.name
 }
 
 output "function_app_default_hostname" {
-  value = azurerm_linux_function_app.main.default_hostname
+  value = azurerm_function_app_flex_consumption.main.default_hostname
 }
 
 output "function_app_principal_id" {
-  value = azurerm_linux_function_app.main.identity[0].principal_id
+  value = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
 output "application_insights_enabled" {
