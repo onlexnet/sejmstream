@@ -27,10 +27,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Java 21 (Temurin) with Maven cache
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '21'
@@ -44,7 +44,7 @@ jobs:
 
       - name: Upload Surefire reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fun_sejmapi-surefire-reports
           path: fun_sejmapi/target/surefire-reports/**
@@ -52,18 +52,16 @@ jobs:
 
       - name: Upload Azure Functions package output
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fun_sejmapi-azure-functions-package
           path: |
-            fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/host.json
-            fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/bin/**
-            fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/**/function.json
+            fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/**
             !fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/local.settings.json
           if-no-files-found: error
 
   deploy-main:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     needs: build-test-and-package
     runs-on: ubuntu-latest
     environment: prod
@@ -84,34 +82,11 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy package to Azure Functions (attempt 1)
-        id: deploy_attempt_1
-        continue-on-error: true
+      - name: Deploy package to Azure Functions
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
           package: fun_sejmapi-package
-
-      - name: Wait before deployment retry (between attempts 1 and 2)
-        if: steps.deploy_attempt_1.outcome == 'failure'
-        run: sleep 120
-
-      - name: Deploy package to Azure Functions (attempt 2)
-        id: deploy_attempt_2
-        continue-on-error: true
-        if: steps.deploy_attempt_1.outcome == 'failure'
-        uses: Azure/functions-action@v1
-        with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: fun_sejmapi-package
-
-      - name: Wait before deployment retry (between attempts 2 and 3)
-        if: steps.deploy_attempt_2.outcome == 'failure'
-        run: sleep 120
-
-      - name: Deploy package to Azure Functions (attempt 3)
-        if: steps.deploy_attempt_2.outcome == 'failure'
-        uses: Azure/functions-action@v1
-        with:
-          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: fun_sejmapi-package
+          sku: flexconsumption
+          respect-pom-xml: true
+          remote-build: false
