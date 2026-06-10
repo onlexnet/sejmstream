@@ -27,7 +27,7 @@
 		<assertj.version>3.27.4</assertj.version>
 		<maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
 		<maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
-		<openapi.generator.maven.plugin.version>7.6.0</openapi.generator.maven.plugin.version>
+		<openapi.generator.maven.plugin.version>7.23.0</openapi.generator.maven.plugin.version>
 	</properties>
 
 	<dependencies>
