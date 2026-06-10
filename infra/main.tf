@@ -41,7 +41,8 @@ locals {
     var.tags
   )
 
-  acr_name       = "${local.name_prefix}${local.environment}${local.global_suffix}"
+  # ACR config kept for potential future re-enable.
+  # acr_name       = "${local.name_prefix}${local.environment}${local.global_suffix}"
   key_vault_name = "${local.name_prefix}-${local.environment}-kv-${local.global_suffix}"
 
   function_service_plan_name    = "${local.resource_prefix}-func-plan-flex"
@@ -79,14 +80,14 @@ resource "azurerm_container_app_environment" "main" {
   tags                       = local.common_tags
 }
 
-resource "azurerm_container_registry" "main" {
-  name                = local.acr_name
-  resource_group_name = azurerm_resource_group.main.name
-  location            = azurerm_resource_group.main.location
-  sku                 = var.container_registry_sku
-  admin_enabled       = false
-  tags                = local.common_tags
-}
+# resource "azurerm_container_registry" "main" {
+#   name                = local.acr_name
+#   resource_group_name = azurerm_resource_group.main.name
+#   location            = azurerm_resource_group.main.location
+#   sku                 = var.container_registry_sku
+#   admin_enabled       = false
+#   tags                = local.common_tags
+# }
 
 resource "azurerm_application_insights" "main" {
   count               = var.enable_application_insights ? 1 : 0
