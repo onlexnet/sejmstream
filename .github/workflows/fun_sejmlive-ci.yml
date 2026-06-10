@@ -6,14 +6,14 @@ on:
       - main
     paths:
       - 'fun_sejmlive/**'
-      - 'pom.xml'
+      - 'fun_sejmlive/pom.xml'
       - '.github/workflows/fun_sejmlive-ci.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'fun_sejmlive/**'
-      - 'pom.xml'
+      - 'fun_sejmlive/pom.xml'
       - '.github/workflows/fun_sejmlive-ci.yml'
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
           while [[ $attempt -le $max_attempts ]]; do
             echo "Running tests (attempt $attempt/$max_attempts)..."
 
-            if mvn -B -q -pl fun_sejmlive -am test; then
+            if mvn -B -q -f fun_sejmlive/pom.xml test; then
               echo "Tests passed on attempt $attempt."
               exit 0
             fi

@@ -13,7 +13,7 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 class FacebookPublishingFunctionsTest {
 
     @Test
-    void givenFacebookPublishFunction_whenInspectingTimerTrigger_thenRunsDailyAtElevenAmPolishTime()
+    void givenFacebookPublishFunction_whenInspectingTimerTrigger_thenRunsEveryTenMinutes()
             throws NoSuchMethodException {
         var method = FacebookPublishingFunctions.class.getDeclaredMethod(
                 "publishHelloMessage",
@@ -26,7 +26,7 @@ class FacebookPublishingFunctionsTest {
         assertThat(functionName).isNotNull();
         assertThat(functionName.value()).isEqualTo("SejmApiDemo_FacebookPublish");
         assertThat(trigger).isNotNull();
-        assertThat(trigger.schedule()).isEqualTo("0 0 11 * * *");
+        assertThat(trigger.schedule()).isEqualTo("0 */10 * * * *");
     }
 
     @Test
@@ -36,7 +36,7 @@ class FacebookPublishingFunctionsTest {
 
         function.publishHelloMessage("timer", new FakeExecutionContext());
 
-        assertThat(capturedMessage.toString()).isEqualTo("Hello");
+        assertThat(capturedMessage.toString()).startsWith("Hello at ");
     }
 
     private static final class FakeExecutionContext implements ExecutionContext {
