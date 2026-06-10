@@ -35,7 +35,7 @@ public final class FacebookPublishingFunctions {
 
     @FunctionName(FUNCTION_NAME)
     public void publishHelloMessage(
-            @TimerTrigger(name = "timer", schedule = "0 */5 * * * *")
+            @TimerTrigger(name = "timer", schedule = "0 0 6 * * *")
             final String timerInfo,
             final ExecutionContext executionContext) {
 
