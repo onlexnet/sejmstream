@@ -41,7 +41,7 @@ public final class DemoDurableFunctions {
                     HttpMethod.POST },
                     authLevel = AuthorizationLevel.FUNCTION)
                     final HttpRequestMessage<
-                            Optional<com.example.funsejmapi.openapi.model.DemoWorkflowRequest>> request,
+                            Optional<DemoWorkflowRequest>> request,
             @DurableClientInput(name = "durableContext")
                     final DurableClientContext durableContext) {
 

@@ -139,9 +139,7 @@ class DemoDurableFunctionsTest {
     @Test
     void givenHttpStarter_whenInvoked_thenSchedulesAndReturnsAcceptedContract() {
         var functions = new DemoDurableFunctions();
-        var openApiRequest = new com.example.funsejmapi.openapi.model.DemoWorkflowRequest()
-            .correlationId("corr-200")
-            .sampleSize(2);
+        var openApiRequest = new DemoWorkflowRequest("corr-200", 2);
         var request = new FakeHttpRequestMessage<>(
             Optional.of(openApiRequest));
         var context = new TestDurableClientContext();
