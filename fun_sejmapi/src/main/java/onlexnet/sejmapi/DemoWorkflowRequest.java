@@ -1,4 +1,4 @@
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
 
 import java.util.UUID;
 
@@ -6,7 +6,7 @@ import java.util.UUID;
  * Input payload for the demo durable workflow.
  *
  * @param correlationId correlation identifier for status tracking
- * @param sampleSize number of demo rows requested by the caller
+ * @param sampleSize    number of demo rows requested by the caller
  */
 public record DemoWorkflowRequest(String correlationId, int sampleSize) {
 
@@ -51,23 +51,20 @@ public record DemoWorkflowRequest(String correlationId, int sampleSize) {
      * @param request generated request model or null
      * @return internal workflow request
      */
-    public static DemoWorkflowRequest fromOpenApi(
-            final com.example.funsejmapi.openapi.model.DemoWorkflowRequest request) {
+    public static DemoWorkflowRequest fromOpenApi(DemoWorkflowRequest request) {
         if (request == null) {
             return null;
         }
 
-        return new DemoWorkflowRequest(
-                request.getCorrelationId(),
-                request.getSampleSize() == null ? 0 : request.getSampleSize());
+        return new DemoWorkflowRequest(request.correlationId(), request.sampleSize());
     }
 
     /**
      * Normalizes request values for the orchestrator path without randomness.
      *
-     * @param request incoming request or null
+     * @param request               incoming request or null
      * @param fallbackCorrelationId deterministic correlation id to use when
-     *        the request does not provide one
+     *                              the request does not provide one
      * @return normalized request
      */
     public static DemoWorkflowRequest normalizeForOrchestrator(

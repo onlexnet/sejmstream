@@ -1,15 +1,10 @@
 <project>
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>com.example</groupId>
-		<artifactId>sejmstream</artifactId>
-		<version>0.0.1-SNAPSHOT</version>
-		<relativePath>../pom.xml</relativePath>
-	</parent>
+	<groupId>onlexnet</groupId>
+	<artifactId>sejmapi</artifactId>
+	<version>0.0.1-SNAPSHOT</version>
 
-	<artifactId>fun_sejmapi</artifactId>
 	<packaging>jar</packaging>
-	<name>fun_sejmapi</name>
 	<description>Azure Functions module for Sejm API demo workflows</description>
 
 	<properties>
@@ -104,7 +99,7 @@
 							<generatorName>java</generatorName>
 							<library>native</library>
 							<output>${project.build.directory}/generated-sources/openapi</output>
-							<modelPackage>com.example.funsejmapi.openapi.model</modelPackage>
+							<modelPackage>onlexnet.sejmapi.openapi.model</modelPackage>
 							<generateModels>true</generateModels>
 							<generateApis>false</generateApis>
 							<generateSupportingFiles>false</generateSupportingFiles>

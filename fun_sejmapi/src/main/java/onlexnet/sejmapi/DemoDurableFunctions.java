@@ -1,4 +1,4 @@
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
 
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -41,13 +41,13 @@ public final class DemoDurableFunctions {
                     HttpMethod.POST },
                     authLevel = AuthorizationLevel.FUNCTION)
                     final HttpRequestMessage<
-                            Optional<com.example.funsejmapi.openapi.model.DemoWorkflowRequest>> request,
+                            Optional<DemoWorkflowRequest>> request,
             @DurableClientInput(name = "durableContext")
                     final DurableClientContext durableContext) {
 
         var openApiRequest = request.getBody().orElse(null);
-        var normalizedRequest = com.example.funsejmapi.DemoWorkflowRequest
-                .normalize(com.example.funsejmapi.DemoWorkflowRequest
+        var normalizedRequest = onlexnet.sejmapi.DemoWorkflowRequest
+                .normalize(onlexnet.sejmapi.DemoWorkflowRequest
                         .fromOpenApi(openApiRequest));
         var instanceId = durableContext.getClient()
                 .scheduleNewOrchestrationInstance(

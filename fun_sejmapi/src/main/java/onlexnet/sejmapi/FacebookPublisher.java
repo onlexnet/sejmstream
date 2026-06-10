@@ -1,4 +1,4 @@
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
 
 /**
  * Publishes a Facebook post.

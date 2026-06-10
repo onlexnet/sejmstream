@@ -2,6 +2,8 @@ package com.microsoft.durabletask;
 
 import java.util.concurrent.CompletableFuture;
 
+import com.microsoft.durabletask.Task;
+
 /**
  * Completed task implementation for unit tests.
  *

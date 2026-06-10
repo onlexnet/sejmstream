@@ -1,4 +1,4 @@
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
 
 import java.io.IOException;
 import java.io.InputStream;

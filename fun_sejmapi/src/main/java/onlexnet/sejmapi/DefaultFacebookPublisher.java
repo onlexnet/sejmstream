@@ -1,4 +1,4 @@
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

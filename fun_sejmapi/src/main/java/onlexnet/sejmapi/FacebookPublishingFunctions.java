@@ -1,11 +1,13 @@
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
+
+import java.time.Instant;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
 /**
- * Publishes a daily Facebook hello post at 11:00 Central European Time.
+ * Publishes a Facebook hello post every 10 minutes with the current timestamp.
  */
 public final class FacebookPublishingFunctions {
 
@@ -23,12 +25,15 @@ public final class FacebookPublishingFunctions {
 
     @FunctionName(FUNCTION_NAME)
     public void publishHelloMessage(
-            @TimerTrigger(name = "timer", schedule = "0 0 11 * * *")
+            @TimerTrigger(name = "timer", schedule = "0 */10 * * * *")
             final String timerInfo,
             final ExecutionContext executionContext) {
 
+        final String message = "Hello at " + Instant.now();
+
         executionContext.getLogger().info(
-                "Publishing daily Facebook hello message. Trigger: " + timerInfo);
-        this.facebookPublisher.publish("Hello");
+                "Publishing Facebook hello message every 10 minutes. Trigger: " + timerInfo
+                        + ", message: " + message);
+        this.facebookPublisher.publish(message);
     }
 }

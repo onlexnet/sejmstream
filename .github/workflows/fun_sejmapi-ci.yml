@@ -7,14 +7,14 @@ name: fun_sejmapi CI
       - main
     paths:
       - 'fun_sejmapi/**'
-      - 'pom.xml'
+      - 'fun_sejmapi/pom.xml'
       - '.github/workflows/fun_sejmapi-ci.yml'
   pull_request:
     branches:
       - main
     paths:
       - 'fun_sejmapi/**'
-      - 'pom.xml'
+      - 'fun_sejmapi/pom.xml'
       - '.github/workflows/fun_sejmapi-ci.yml'
 
 permissions:
@@ -36,11 +36,11 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Run fun_sejmapi tests from root reactor
-        run: mvn -B -q -pl fun_sejmapi -am test
+      - name: Run fun_sejmapi tests from its own pom.xml
+        run: mvn -B -q -f fun_sejmapi/pom.xml test
 
-      - name: Package fun_sejmapi Azure Functions artifact from root reactor
-        run: mvn -B -q -pl fun_sejmapi -am -DskipTests package
+      - name: Package fun_sejmapi Azure Functions artifact from its own pom.xml
+        run: mvn -B -q -f fun_sejmapi/pom.xml -DskipTests package
 
       - name: Upload Surefire reports
         if: always()

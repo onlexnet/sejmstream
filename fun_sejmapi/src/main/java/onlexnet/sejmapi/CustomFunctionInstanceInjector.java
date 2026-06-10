@@ -1,4 +1,4 @@
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
 
 import com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector;
 

@@ -1,4 +1,4 @@
 /**
  * Demo Azure Durable Functions for the fun_sejmapi module.
  */
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
