@@ -14,13 +14,13 @@ output "container_app_environment_default_domain" {
   value = azurerm_container_app_environment.main.default_domain
 }
 
-output "container_registry_id" {
-  value = azurerm_container_registry.main.id
-}
-
-output "container_registry_login_server" {
-  value = azurerm_container_registry.main.login_server
-}
+# output "container_registry_id" {
+#   value = azurerm_container_registry.main.id
+# }
+#
+# output "container_registry_login_server" {
+#   value = azurerm_container_registry.main.login_server
+# }
 
 output "function_app_id" {
   value = azurerm_function_app_flex_consumption.main.id

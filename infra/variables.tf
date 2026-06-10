@@ -1,13 +1,13 @@
-variable "container_registry_sku" {
-  description = "SKU for Azure Container Registry."
-  type        = string
-  default     = "Basic"
-
-  validation {
-    condition     = contains(["Basic", "Standard", "Premium"], var.container_registry_sku)
-    error_message = "container_registry_sku must be Basic, Standard or Premium."
-  }
-}
+# variable "container_registry_sku" {
+#   description = "SKU for Azure Container Registry."
+#   type        = string
+#   default     = "Basic"
+#
+#   validation {
+#     condition     = contains(["Basic", "Standard", "Premium"], var.container_registry_sku)
+#     error_message = "container_registry_sku must be Basic, Standard or Premium."
+#   }
+# }
 
 variable "log_analytics_retention_in_days" {
   description = "Log retention for the shared Log Analytics workspace. Minimum 30 days as required by Azure."
