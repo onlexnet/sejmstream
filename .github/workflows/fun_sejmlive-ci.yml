@@ -1,4 +1,4 @@
-name: fun_sejmapi CI
+name: fun_sejmlive CI
 
 'on':
   workflow_dispatch:
@@ -6,16 +6,16 @@ name: fun_sejmapi CI
     branches:
       - main
     paths:
-      - 'fun_sejmapi/**'
-      - 'fun_sejmapi/pom.xml'
-      - '.github/workflows/fun_sejmapi-ci.yml'
+      - 'fun_sejmlive/**'
+      - 'fun_sejmlive/pom.xml'
+      - '.github/workflows/fun_sejmlive-ci.yml'
   pull_request:
     branches:
       - main
     paths:
-      - 'fun_sejmapi/**'
-      - 'fun_sejmapi/pom.xml'
-      - '.github/workflows/fun_sejmapi-ci.yml'
+      - 'fun_sejmlive/**'
+      - 'fun_sejmlive/pom.xml'
+      - '.github/workflows/fun_sejmlive-ci.yml'
 
 permissions:
   contents: read
@@ -36,34 +36,34 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Run fun_sejmapi tests from its own pom.xml
-        run: mvn -B -q -f fun_sejmapi/pom.xml test
+      - name: Run fun_sejmlive tests from its own pom.xml
+        run: mvn -B -q -f fun_sejmlive/pom.xml test
 
-      - name: Package fun_sejmapi Azure Functions artifact from its own pom.xml
-        run: mvn -B -q -f fun_sejmapi/pom.xml -DskipTests package
+      - name: Package fun_sejmlive Azure Functions artifact from its own pom.xml
+        run: mvn -B -q -f fun_sejmlive/pom.xml -DskipTests package
 
       - name: Upload Surefire reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: fun_sejmapi-surefire-reports
-          path: fun_sejmapi/target/surefire-reports/**
+          name: fun_sejmlive-surefire-reports
+          path: fun_sejmlive/target/surefire-reports/**
           if-no-files-found: warn
 
       - name: Prepare Azure Functions deployment package
         if: success()
         run: |
-          rm -rf fun_sejmapi-package
-          mkdir -p fun_sejmapi-package
-          cp -R fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/. fun_sejmapi-package/
-          rm -f fun_sejmapi-package/local.settings.json
+          rm -rf fun_sejmlive-package
+          mkdir -p fun_sejmlive-package
+          cp -R fun_sejmlive/target/azure-functions/sejmstream-fun-sejmlive-local/. fun_sejmlive-package/
+          rm -f fun_sejmlive-package/local.settings.json
 
       - name: Upload Azure Functions package output
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fun_sejmapi-azure-functions-package
-          path: fun_sejmapi-package/**
+          name: fun_sejmlive-azure-functions-package
+          path: fun_sejmlive-package/**
           if-no-files-found: error
 
   deploy-main:
@@ -80,8 +80,8 @@ jobs:
       - name: Download Azure Functions package artifact
         uses: actions/download-artifact@v4
         with:
-          name: fun_sejmapi-azure-functions-package
-          path: fun_sejmapi-package
+          name: fun_sejmlive-azure-functions-package
+          path: fun_sejmlive-package
 
       - name: Azure login with OIDC
         uses: azure/login@v2
@@ -94,4 +94,4 @@ jobs:
         uses: Azure/functions-action@v1
         with:
           app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
-          package: fun_sejmapi-package
+          package: fun_sejmlive-package

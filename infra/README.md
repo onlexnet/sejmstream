@@ -68,9 +68,9 @@ terraform apply
 
 Local `terraform plan` and `terraform apply` still work, but the actual execution happens remotely in Terraform Cloud because of the `cloud` block in `providers.tf`.
 
-## fun_sejmapi Function App resources
+## fun_sejmlive Function App resources
 
-`infra/main.tf` now provisions the Azure resources required by the demo `fun_sejmapi` Durable Functions module:
+`infra/main.tf` now provisions the Azure resources required by the demo `fun_sejmlive` Durable Functions module:
 
 - Flex Consumption Function service plan (`azurerm_service_plan`, SKU `FC1`)
 - Dedicated storage account for Function host and Durable state (`azurerm_storage_account`)
@@ -89,7 +89,7 @@ The Function App runtime settings include durable host storage via managed ident
 
 ## Phase 1 baseline confirmation
 
-The current hosting baseline has been verified against the repo state and matches the existing `fun_sejmapi` runtime contract:
+The current hosting baseline has been verified against the repo state and matches the existing `fun_sejmlive` runtime contract:
 
 - Flex Consumption plan (`sku_name = "FC1"`) with Java 21 runtime on `azurerm_linux_function_app`.
 - System-assigned managed identity plus storage RBAC for blobs, queues, and tables.
@@ -104,7 +104,7 @@ Verified commands from this baseline review:
 
 - `terraform fmt -check -recursive && terraform validate` → passed
 - `terraform plan -refresh=false -no-color` → remote plan is additive for the current hosting resources
-- `mvn -B -q -pl fun_sejmapi -am test && mvn -B -q -pl fun_sejmapi -am -DskipTests package` → passed
+- `mvn -B -q -pl fun_sejmlive -am test && mvn -B -q -pl fun_sejmlive -am -DskipTests package` → passed
 
 No phase 1 infrastructure changes are required beyond this documented baseline confirmation.
 

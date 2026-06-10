@@ -218,7 +218,7 @@
 				<version>${azure.functions.maven.plugin.version}</version>
 				<configuration>
 					<resourceGroup>sejmstream-placeholder-rg</resourceGroup>
-					<appName>sejmstream-fun-sejmapi-local</appName>
+					<appName>sejmstream-fun-sejmlive-local</appName>
 					<region>westeurope</region>
 					<runtime>
 						<os>linux</os>
