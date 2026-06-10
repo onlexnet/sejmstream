@@ -25,7 +25,7 @@ For the new scheduled Facebook publishing trigger, set these values in local set
 - `facebook_token=<FACEBOOK_TOKEN_OR_KEYVAULT_REFERENCE>`
 - `WEBSITE_TIME_ZONE=Europe/Warsaw`
 
-The timer expression is `0 0 6 * * *`, which resolves to 06:00 in the configured Poland time zone.
+The timer expression is `0 0 11 * * *`, which resolves to 11:00 in the configured Poland time zone.
 
 
 1. Copy `local.settings.json.example` to `local.settings.json`.
