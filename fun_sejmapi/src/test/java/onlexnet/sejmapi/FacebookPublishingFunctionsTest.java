@@ -1,4 +1,4 @@
-package com.funsejmapi;
+package onlexnet.sejmapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
-
-import onlexnet.sejmapi.FacebookPublishingFunctions;
 
 class FacebookPublishingFunctionsTest {
 

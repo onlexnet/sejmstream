@@ -1,4 +1,4 @@
-package com.example.funsejmapi;
+package onlexnet.sejmapi;
 
 /**
  * Tiny service used to demonstrate constructor injection in Azure Functions.
