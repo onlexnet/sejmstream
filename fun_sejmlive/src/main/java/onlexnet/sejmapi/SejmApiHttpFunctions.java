@@ -12,6 +12,8 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
+import onlexnet.app.ports.out.SejmApiClient;
+
 /**
  * Exposes a simple anonymous HTTP endpoint for Sejm API data.
  */
