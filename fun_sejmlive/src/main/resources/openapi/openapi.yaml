@@ -3,20 +3,15 @@ info:
   title: Sejm API Demo Durable Functions
   version: 1.0.0
   description: Demo-only Durable Functions workflow endpoints for Sejm API scaffolding.
+servers:
+  - url: /
+    description: Current host
 paths:
   /api/sejm-api/simple:
     get:
       summary: Sejm API simple data
       description: Returns the live Sejm terms dataset from the public Sejm API.
       operationId: getSejmSimpleData
-      parameters:
-        - in: query
-          name: path
-          required: false
-          schema:
-            type: string
-            default: sejm/term
-          description: Relative Sejm API path to fetch.
       responses:
         '200':
           description: Live Sejm term list.
