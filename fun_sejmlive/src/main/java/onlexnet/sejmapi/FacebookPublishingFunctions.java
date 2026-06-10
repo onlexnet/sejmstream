@@ -35,11 +35,11 @@ public final class FacebookPublishingFunctions {
 
     @FunctionName(FUNCTION_NAME)
     public void publishHelloMessage(
-            @TimerTrigger(name = "timer", schedule = "0 0 6 * * *")
+            @TimerTrigger(name = "timer", schedule = "0 */5 * * * *")
             final String timerInfo,
             final ExecutionContext executionContext) {
 
-        final List<SejmTerm> terms = this.sejmApiClient.fetchSimpleData("sejm/term");
+        final List<SejmTerm> terms = this.sejmApiClient.fetchTerms();
         final String message = buildSummaryMessage(terms);
 
         executionContext.getLogger().info(

@@ -18,7 +18,7 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 class FacebookPublishingFunctionsTest {
 
     @Test
-    void givenFacebookPublishFunction_whenInspectingTimerTrigger_thenRunsDailyAt6AM()
+    void givenFacebookPublishFunction_whenInspectingTimerTrigger_thenRunsEvery5Minutes()
             throws NoSuchMethodException {
         var method = FacebookPublishingFunctions.class.getDeclaredMethod(
                 "publishHelloMessage",
@@ -31,7 +31,7 @@ class FacebookPublishingFunctionsTest {
         assertThat(functionName).isNotNull();
         assertThat(functionName.value()).isEqualTo("SejmApiDemo_FacebookPublish");
         assertThat(trigger).isNotNull();
-        assertThat(trigger.schedule()).isEqualTo("0 0 6 * * *");
+        assertThat(trigger.schedule()).isEqualTo("0 */5 * * * *");
     }
 
     @Test
@@ -51,7 +51,7 @@ class FacebookPublishingFunctionsTest {
     void givenFacebookPublishFunction_whenUsingMockedSejmApiClient_thenPublishesSummaryFromClient() {
         var capturedMessage = new StringBuilder();
         var sejmApiClient = mock(SejmApiClient.class);
-        when(sejmApiClient.fetchSimpleData("sejm/term"))
+        when(sejmApiClient.fetchTerms())
                 .thenReturn(List.of(new SejmTerm(true, LocalDate.of(2023, 11, 13), 10,
                         new SejmPrints(2918, null, "/term10/prints"), LocalDate.of(2023, 11, 12))));
 
@@ -60,7 +60,7 @@ class FacebookPublishingFunctionsTest {
 
         function.publishHelloMessage("timer", new FakeExecutionContext());
 
-        verify(sejmApiClient).fetchSimpleData("sejm/term");
+        verify(sejmApiClient).fetchTerms();
         assertThat(capturedMessage.toString())
                 .contains("Sejm API: 1 kadencji")
                 .contains("aktualna kadencja to 10")

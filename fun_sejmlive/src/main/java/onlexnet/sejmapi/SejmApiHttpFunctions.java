@@ -18,8 +18,6 @@ import com.microsoft.azure.functions.annotation.HttpTrigger;
 @Component
 public final class SejmApiHttpFunctions {
 
-    private static final String DEFAULT_PATH = "sejm/term";
-
     private final SejmApiClient sejmApiClient;
 
     public SejmApiHttpFunctions(final SejmApiClient sejmApiClient) {
@@ -32,11 +30,9 @@ public final class SejmApiHttpFunctions {
                     HttpMethod.GET }, authLevel = AuthorizationLevel.ANONYMOUS,
                     route = "sejm-api/simple")
                     final HttpRequestMessage<Optional<String>> request) {
-        final String path = request.getQueryParameters().getOrDefault("path", DEFAULT_PATH);
-
         return request.createResponseBuilder(HttpStatus.OK)
                 .header("Content-Type", "application/json; charset=utf-8")
-                .body(this.sejmApiClient.fetchSimpleData(path))
+                .body(this.sejmApiClient.fetchTerms())
                 .build();
     }
 }

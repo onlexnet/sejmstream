@@ -60,8 +60,7 @@ class SejmApiHttpFunctionsTest {
 
     @Test
     void givenRealSejmApiClient_whenInvokedThroughFunction_thenReturnsLivePayload() {
-        var request = new FakeHttpRequestMessage<String>(Optional.empty(),
-                Map.of("path", "sejm/term"));
+        var request = new FakeHttpRequestMessage<String>(Optional.empty(), Map.of());
 
         var response = this.sejmApiHttpFunctions.simpleData(request);
 

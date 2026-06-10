@@ -12,12 +12,11 @@ import org.springframework.web.client.RestClient;
 public interface SejmApiClient {
 
     /**
-     * Fetches a simple Sejm API resource as a generic JSON-compatible object.
+     * Fetches the current list of Sejm terms.
      *
-     * @param path relative Sejm API path such as {@code sejm/term}
-     * @return JSON payload mapped to a generic object
+     * @return list of Sejm terms
      */
-    List<SejmTerm> fetchSimpleData(String path);
+    List<SejmTerm> fetchTerms();
 }
 
 @Component
@@ -27,19 +26,11 @@ class DefaultSejmApiClient implements SejmApiClient {
     private final RestClient restClient = RestClient.create("https://api.sejm.gov.pl");
 
     @Override
-    public List<SejmTerm> fetchSimpleData(String path) {
-        final var normalizedPath = normalizePath(path);
+    public List<SejmTerm> fetchTerms() {
         return this.restClient.get()
-                .uri(normalizedPath)
+                .uri("sejm/term")
                 .retrieve()
                 .body(new ParameterizedTypeReference<List<SejmTerm>>() {
                 });
-    }
-
-    private String normalizePath(final String path) {
-        if (path == null || path.isBlank()) {
-            return "sejm/term";
-        }
-        return path.startsWith("/") ? path.substring(1) : path;
     }
 }
