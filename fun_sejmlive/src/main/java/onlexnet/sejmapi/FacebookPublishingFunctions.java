@@ -10,6 +10,10 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
+import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
+import onlexnet.infra.adapters.out.DefaultSejmApiClient;
+
 @Component
 public final class FacebookPublishingFunctions {
 
@@ -27,7 +31,7 @@ public final class FacebookPublishingFunctions {
     }
 
     @Autowired
-    FacebookPublishingFunctions(final FacebookPublisher facebookPublisher,
+    public FacebookPublishingFunctions(final FacebookPublisher facebookPublisher,
             final SejmApiClient sejmApiClient) {
         this.facebookPublisher = facebookPublisher;
         this.sejmApiClient = sejmApiClient;

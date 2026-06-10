@@ -21,6 +21,9 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
+import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
+
 @SpringBootTest(classes = Program.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class SejmApiHttpFunctionsTest {
 

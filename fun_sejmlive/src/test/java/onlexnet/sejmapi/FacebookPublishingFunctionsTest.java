@@ -15,6 +15,10 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
+import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
+import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
+
 class FacebookPublishingFunctionsTest {
 
     @Test

@@ -3,7 +3,7 @@ package onlexnet.sejmapi;
 /**
  * Publishes a Facebook post.
  */
-interface FacebookPublisher {
+public interface FacebookPublisher {
 
     void publish(String message);
 }
