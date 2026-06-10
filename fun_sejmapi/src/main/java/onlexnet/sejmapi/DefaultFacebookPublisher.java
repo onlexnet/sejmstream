@@ -34,8 +34,7 @@ final class DefaultFacebookPublisher implements FacebookPublisher {
 
         this.client.publish("me/feed",
                 com.restfb.types.FacebookType.class,
-                Parameter.with("message", message),
-                Parameter.with("is_published", false));
+                Parameter.with("message", message));
         log.info("Published Facebook message: {}", message);
     }
 
