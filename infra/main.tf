@@ -90,7 +90,7 @@ resource "azurerm_container_app_environment" "main" {
 # }
 
 resource "azurerm_application_insights" "main" {
-  count               = var.enable_application_insights ? 1 : 0
+  count               = 1
   name                = "${local.resource_prefix}-appi"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
@@ -163,11 +163,10 @@ resource "azurerm_function_app_flex_consumption" "main" {
       AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
       # Required for Flex Consumption when using connection-string storage auth.
       # Remove together with storage_access_key above once MSI is fully supported.
-      AzureWebJobsStorage = azurerm_storage_account.function_app.primary_connection_string
-    },
-    var.enable_application_insights ? {
+      AzureWebJobsStorage                   = azurerm_storage_account.function_app.primary_connection_string
       APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.main[0].connection_string
-    } : {}
+      FB_TOKEN                              = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.facebook_token[0].versionless_id})"
+    }
   )
 
   tags = local.common_tags
@@ -278,7 +277,7 @@ resource "azurerm_key_vault_secret" "spring_datasource_password" {
 }
 
 resource "azurerm_key_vault_secret" "facebook_token" {
-  count        = var.facebook_token == null ? 0 : 1
+  count        = 1
   name         = "fb-token"
   value        = var.facebook_token
   key_vault_id = azurerm_key_vault.main.id
