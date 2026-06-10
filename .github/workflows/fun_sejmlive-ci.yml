@@ -1,6 +1,7 @@
 name: fun_sejmlive CI
 
-on:
+'on':
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -18,45 +19,28 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 jobs:
-  build-and-test:
+  build-test-and-package:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
-      - name: Set up Java 25 (Temurin) with Maven cache
-        uses: actions/setup-java@v4
+      - name: Set up Java 21 (Temurin) with Maven cache
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '25'
+          java-version: '21'
           cache: maven
 
-      - name: Compile and test fun_sejmlive module (with retry)
-        shell: bash
-        run: |
-          max_attempts=3
-          attempt=1
+      - name: Run fun_sejmlive tests from its own pom.xml
+        run: mvn -B -q -f fun_sejmlive/pom.xml test
 
-          while [[ $attempt -le $max_attempts ]]; do
-            echo "Running tests (attempt $attempt/$max_attempts)..."
-
-            if mvn -B -q -f fun_sejmlive/pom.xml test; then
-              echo "Tests passed on attempt $attempt."
-              exit 0
-            fi
-
-            if [[ $attempt -lt $max_attempts ]]; then
-              echo "Tests failed on attempt $attempt. Retrying..."
-            fi
-
-            attempt=$((attempt + 1))
-          done
-
-          echo "Tests failed after $max_attempts attempts."
-          exit 1
+      - name: Package fun_sejmlive Azure Functions artifact from its own pom.xml
+        run: mvn -B -q -f fun_sejmlive/pom.xml -DskipTests package
 
       - name: Upload Surefire reports
         if: always()
@@ -66,10 +50,48 @@ jobs:
           path: fun_sejmlive/target/surefire-reports/**
           if-no-files-found: warn
 
-      - name: Upload built jar
+      - name: Prepare Azure Functions deployment package
+        if: success()
+        run: |
+          rm -rf fun_sejmlive-package
+          mkdir -p fun_sejmlive-package
+          cp -R fun_sejmlive/target/azure-functions/sejmstream-fun-sejmlive-local/. fun_sejmlive-package/
+          rm -f fun_sejmlive-package/local.settings.json
+
+      - name: Upload Azure Functions package output
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: fun_sejmlive-jar
-          path: fun_sejmlive/target/*.jar
-          if-no-files-found: warn
+          name: fun_sejmlive-azure-functions-package
+          path: fun_sejmlive-package/**
+          if-no-files-found: error
+
+  deploy-main:
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    needs: build-test-and-package
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      AZURE_FUNCTIONAPP_NAME: ${{ secrets.AZURE_FUNCTIONAPP_NAME }}
+
+    steps:
+      - name: Download Azure Functions package artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: fun_sejmlive-azure-functions-package
+          path: fun_sejmlive-package
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy package to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.AZURE_FUNCTIONAPP_NAME }}
+          package: fun_sejmlive-package

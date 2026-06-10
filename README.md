@@ -15,7 +15,7 @@ Vault URI is usually not a secret; secrets are values stored inside Key Vault.
 
 ### Local run (recommended)
 
-This repository is a Maven monorepo with modules `fun_sejmlive` and `fun_sejmapi`.
+This repository is a Maven monorepo with modules `fun_sejmlive` and `fun_sejmlive`.
 
 Run `fun_sejmlive` from monorepo root:
 
@@ -29,14 +29,14 @@ Build and test `fun_sejmlive` from monorepo root:
 
 - `mvn -pl fun_sejmlive -am test`
 
-Build and test `fun_sejmapi` from monorepo root:
+Build and test `fun_sejmlive` from monorepo root:
 
-- `mvn -B -q -pl fun_sejmapi -am test`
-- `mvn -B -q -pl fun_sejmapi -am -DskipTests package`
+- `mvn -B -q -pl fun_sejmlive -am test`
+- `mvn -B -q -pl fun_sejmlive -am -DskipTests package`
 
-`fun_sejmapi` packaging output is generated under:
+`fun_sejmlive` packaging output is generated under:
 
-- `fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/`
+- `fun_sejmlive/target/azure-functions/sejmstream-fun-sejmlive-local/`
 
 ## Useful links
 - [How to create a Facebook access token](https://www.youtube.com/watch?v=RMLcmDdOSxw)

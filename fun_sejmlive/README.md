@@ -1,4 +1,4 @@
-# fun_sejmapi
+# fun_sejmlive
 
 Demo-only Azure Functions Java module for Durable Functions scaffolding.
 
@@ -62,12 +62,12 @@ If you prefer a one-liner for local development, run it in a separate terminal b
 
 Run tests and package from repository root:
 
-- `mvn -B -q -pl fun_sejmapi -am test`
-- `mvn -B -q -pl fun_sejmapi -am -DskipTests package`
+- `mvn -B -q -pl fun_sejmlive -am test`
+- `mvn -B -q -pl fun_sejmlive -am -DskipTests package`
 
 Run the function host locally from module root:
 
-- `cd fun_sejmapi && mvn azure-functions:run`
+- `cd fun_sejmlive && mvn azure-functions:run`
 
 Example with explicit local env overrides:
 
@@ -124,7 +124,7 @@ When completed, output contains a demo payload (`correlationId`, `source="demo-o
 
 ## Deployment workflow
 
-The GitHub Actions workflow in `.github/workflows/fun_sejmapi-ci.yml` now:
+The GitHub Actions workflow in `.github/workflows/fun_sejmlive-ci.yml` now:
 
 - runs tests and packaging on pull requests and main pushes;
 - uploads the packaged Azure Functions content as an artifact;
@@ -168,4 +168,4 @@ For a deployed Function App, the same paths are available under your app host:
 
 For CI artifact upload, the module package command currently generates the Azure Functions deployment content under:
 
-- `fun_sejmapi/target/azure-functions/sejmstream-fun-sejmapi-local/`
+- `fun_sejmlive/target/azure-functions/sejmstream-fun-sejmlive-local/`

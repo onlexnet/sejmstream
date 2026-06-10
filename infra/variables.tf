@@ -16,7 +16,7 @@ variable "log_analytics_retention_in_days" {
 }
 
 variable "function_durable_hub_name" {
-  description = "Durable Functions task hub name used by the fun_sejmapi demo slice."
+  description = "Durable Functions task hub name used by the fun_sejmlive demo slice."
   type        = string
   default     = "SejmApiDemoHub"
 
