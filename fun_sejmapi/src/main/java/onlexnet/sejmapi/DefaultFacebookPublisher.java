@@ -1,7 +1,8 @@
 package onlexnet.sejmapi;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+import lombok.extern.slf4j.Slf4j;
 
 import com.restfb.DefaultFacebookClient;
 import com.restfb.Parameter;
@@ -9,12 +10,9 @@ import com.restfb.Version;
 import com.restfb.exception.FacebookOAuthException;
 import com.restfb.types.Page;
 
-/**
- * Uses RestFB to publish the daily Facebook message.
- */
+@Component
+@Slf4j
 final class DefaultFacebookPublisher implements FacebookPublisher {
-
-    private static final Logger log = LoggerFactory.getLogger(DefaultFacebookPublisher.class);
 
     private final DefaultFacebookClient client;
 

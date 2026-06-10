@@ -4,6 +4,28 @@ info:
   version: 1.0.0
   description: Demo-only Durable Functions workflow endpoints for Sejm API scaffolding.
 paths:
+  /api/sejm-api/simple:
+    get:
+      summary: Sejm API simple data
+      description: Returns the live Sejm terms dataset from the public Sejm API.
+      operationId: getSejmSimpleData
+      parameters:
+        - in: query
+          name: path
+          required: false
+          schema:
+            type: string
+            default: sejm/term
+          description: Relative Sejm API path to fetch.
+      responses:
+        '200':
+          description: Live Sejm term list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SejmTerm'
   /api/SejmApiDemo_HttpStart:
     post:
       summary: Start demo durable orchestration
@@ -46,6 +68,31 @@ components:
       name: x-functions-key
       description: Azure Function key. Obtain from Azure Portal under Functions -> App keys or Function keys.
   schemas:
+    SejmTerm:
+      type: object
+      properties:
+        current:
+          type: boolean
+        from:
+          type: string
+          format: date
+        num:
+          type: integer
+        prints:
+          $ref: '#/components/schemas/SejmPrints'
+        to:
+          type: string
+          format: date
+    SejmPrints:
+      type: object
+      properties:
+        count:
+          type: integer
+        lastChanged:
+          type: string
+          format: date-time
+        link:
+          type: string
     DemoWorkflowRequest:
       type: object
       properties:

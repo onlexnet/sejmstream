@@ -12,26 +12,31 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
+/**
+ * Exposes a simple anonymous HTTP endpoint for Sejm API data.
+ */
 @Component
-public final class DiSampleFunctions {
+public final class SejmApiHttpFunctions {
 
-    /** Constructor-injected dependency provided by FunctionInstanceInjector. */
-    private final SimpleMessageService messageService;
+    private static final String DEFAULT_PATH = "sejm/term";
 
-    public DiSampleFunctions(final SimpleMessageService messageService) {
-        this.messageService = messageService;
+    private final SejmApiClient sejmApiClient;
+
+    public SejmApiHttpFunctions(final SejmApiClient sejmApiClient) {
+        this.sejmApiClient = sejmApiClient;
     }
 
-    @FunctionName("SejmApiDemo_DiSample")
-    public HttpResponseMessage diSample(
+    @FunctionName("SejmApiDemo_SimpleData")
+    public HttpResponseMessage simpleData(
             @HttpTrigger(name = "request", methods = {
                     HttpMethod.GET }, authLevel = AuthorizationLevel.ANONYMOUS,
-                    route = "di-sample")
+                    route = "sejm-api/simple")
                     final HttpRequestMessage<Optional<String>> request) {
+        final String path = request.getQueryParameters().getOrDefault("path", DEFAULT_PATH);
 
         return request.createResponseBuilder(HttpStatus.OK)
-                .header("Content-Type", "text/plain; charset=utf-8")
-                .body(this.messageService.buildMessage())
+                .header("Content-Type", "application/json; charset=utf-8")
+                .body(this.sejmApiClient.fetchSimpleData(path))
                 .build();
     }
 }

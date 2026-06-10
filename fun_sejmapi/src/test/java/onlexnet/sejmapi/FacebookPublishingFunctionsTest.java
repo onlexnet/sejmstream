@@ -1,7 +1,12 @@
 package onlexnet.sejmapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
@@ -30,13 +35,37 @@ class FacebookPublishingFunctionsTest {
     }
 
     @Test
-    void givenFacebookPublishFunction_whenInvoked_thenPublishesHelloMessage() {
+    void givenFacebookPublishFunction_whenInvoked_thenPublishesPolishSummaryMessage() {
         var capturedMessage = new StringBuilder();
         var function = new FacebookPublishingFunctions(message -> capturedMessage.append(message));
 
         function.publishHelloMessage("timer", new FakeExecutionContext());
 
-        assertThat(capturedMessage.toString()).startsWith("Hello at ");
+        assertThat(capturedMessage.toString())
+                .contains("Sejm API")
+                .contains("kadencji")
+                .contains("aktualna kadencja");
+    }
+
+    @Test
+    void givenFacebookPublishFunction_whenUsingMockedSejmApiClient_thenPublishesSummaryFromClient() {
+        var capturedMessage = new StringBuilder();
+        var sejmApiClient = mock(SejmApiClient.class);
+        when(sejmApiClient.fetchSimpleData("sejm/term"))
+                .thenReturn(List.of(new SejmTerm(true, LocalDate.of(2023, 11, 13), 10,
+                        new SejmPrints(2918, null, "/term10/prints"), LocalDate.of(2023, 11, 12))));
+
+        var function = new FacebookPublishingFunctions(message -> capturedMessage.append(message),
+                sejmApiClient);
+
+        function.publishHelloMessage("timer", new FakeExecutionContext());
+
+        verify(sejmApiClient).fetchSimpleData("sejm/term");
+        assertThat(capturedMessage.toString())
+                .contains("Sejm API: 1 kadencji")
+                .contains("aktualna kadencja to 10")
+                .contains("2023-11-13")
+                .contains("2023-11-12");
     }
 
     private static final class FakeExecutionContext implements ExecutionContext {
