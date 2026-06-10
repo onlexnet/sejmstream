@@ -7,7 +7,7 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
 /**
- * Publishes a Facebook hello post every 10 minutes with the current timestamp.
+ * Publishes a Facebook hello post every day at 6 AM with the current timestamp.
  */
 public final class FacebookPublishingFunctions {
 
@@ -25,14 +25,14 @@ public final class FacebookPublishingFunctions {
 
     @FunctionName(FUNCTION_NAME)
     public void publishHelloMessage(
-            @TimerTrigger(name = "timer", schedule = "0 */10 * * * *")
+            @TimerTrigger(name = "timer", schedule = "0 0 6 * * *")
             final String timerInfo,
             final ExecutionContext executionContext) {
 
         final String message = "Hello at " + Instant.now();
 
         executionContext.getLogger().info(
-                "Publishing Facebook hello message every 10 minutes. Trigger: " + timerInfo
+                "Publishing Facebook hello message every day at 6 AM. Trigger: " + timerInfo
                         + ", message: " + message);
         this.facebookPublisher.publish(message);
     }
