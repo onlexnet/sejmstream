@@ -5,6 +5,8 @@
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "Storage": "UseDevelopmentStorage=true",
     "JAVA_HOME": "<JAVA_21_HOME_PATH>",
-    "SejmApiDemo_HttpStart": "<FUNCTION_KEY_PLACEHOLDER>"
+    "SejmApiDemo_HttpStart": "<FUNCTION_KEY_PLACEHOLDER>",
+    "facebook_token": "<FACEBOOK_TOKEN_OR_KEYVAULT_REFERENCE>",
+    "WEBSITE_TIME_ZONE": "Europe/Warsaw"
   }
 }

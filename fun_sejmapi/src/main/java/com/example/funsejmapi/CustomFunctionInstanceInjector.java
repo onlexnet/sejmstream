@@ -15,6 +15,9 @@ public final class CustomFunctionInstanceInjector implements FunctionInstanceInj
         if (DiSampleFunctions.class.equals(functionClass)) {
             return functionClass.cast(new DiSampleFunctions(MESSAGE_SERVICE));
         }
+        if (FacebookPublishingFunctions.class.equals(functionClass)) {
+            return functionClass.cast(new FacebookPublishingFunctions(new DefaultFacebookPublisher()));
+        }
         return functionClass.getDeclaredConstructor().newInstance();
     }
 }

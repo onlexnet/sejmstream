@@ -20,6 +20,14 @@ Durable Functions needs a working storage connection for orchestration state.
 
 ## Local setup
 
+For the new scheduled Facebook publishing trigger, set these values in local settings when you want to run the timer function locally:
+
+- `facebook_token=<FACEBOOK_TOKEN_OR_KEYVAULT_REFERENCE>`
+- `WEBSITE_TIME_ZONE=Europe/Warsaw`
+
+The timer expression is `0 0 6 * * *`, which resolves to 06:00 in the configured Poland time zone.
+
+
 1. Copy `local.settings.json.example` to `local.settings.json`.
 2. Set `AzureWebJobsStorage` in `local.settings.json`:
    - For Azurite, use `UseDevelopmentStorage=true`.
