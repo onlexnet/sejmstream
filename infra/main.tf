@@ -200,12 +200,6 @@ resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
   principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
-resource "azurerm_role_assignment" "function_key_vault_secrets_user" {
-  scope                = azurerm_key_vault.main.id
-  role_definition_name = "Key Vault Secrets User"
-  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
-}
-
 resource "azurerm_monitor_diagnostic_setting" "function_app" {
   name                       = "function-app-diagnostics"
   target_resource_id         = azurerm_function_app_flex_consumption.main.id
@@ -253,6 +247,22 @@ resource "azurerm_key_vault" "main" {
       "List",
     ]
   }
+
+}
+
+# Standalone access policy for the function app's managed identity.
+# Must be a separate resource (not an inline access_policy block) to avoid a
+# dependency cycle: key_vault → function_app → key_vault_secret → key_vault.
+# Note: this vault uses access-policy mode (enable_rbac_authorization = false),
+# so azurerm_role_assignment has no effect — this resource is the correct approach.
+resource "azurerm_key_vault_access_policy" "function_app" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = azurerm_function_app_flex_consumption.main.identity[0].principal_id
+
+  secret_permissions = [
+    "Get",
+  ]
 }
 
 resource "azurerm_key_vault_secret" "spring_datasource_url" {
