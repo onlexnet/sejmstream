@@ -2,6 +2,8 @@ package onlexnet.sejmapi;
 
 import java.util.Optional;
 
+import org.springframework.stereotype.Component;
+
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.HttpResponseMessage;
@@ -10,9 +12,7 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
-/**
- * Simple function demonstrating constructor-based dependency injection.
- */
+@Component
 public final class DiSampleFunctions {
 
     /** Constructor-injected dependency provided by FunctionInstanceInjector. */

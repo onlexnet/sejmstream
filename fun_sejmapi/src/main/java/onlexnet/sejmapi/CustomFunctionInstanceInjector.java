@@ -1,5 +1,9 @@
 package onlexnet.sejmapi;
 
+import org.springframework.beans.BeansException;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ApplicationContext;
+
 import com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector;
 
 /**
@@ -7,17 +11,15 @@ import com.microsoft.azure.functions.spi.inject.FunctionInstanceInjector;
  */
 public final class CustomFunctionInstanceInjector implements FunctionInstanceInjector {
 
-    private static final SimpleMessageService MESSAGE_SERVICE =
-            new SimpleMessageService("from FunctionInstanceInjector");
+    private static final ApplicationContext APPLICATION_CONTEXT =
+            SpringApplication.run(Program.class);
 
     @Override
     public <T> T getInstance(final Class<T> functionClass) throws Exception {
-        if (DiSampleFunctions.class.equals(functionClass)) {
-            return functionClass.cast(new DiSampleFunctions(MESSAGE_SERVICE));
+        try {
+            return APPLICATION_CONTEXT.getBean(functionClass);
+        } catch (final BeansException exception) {
+            return functionClass.getDeclaredConstructor().newInstance();
         }
-        if (FacebookPublishingFunctions.class.equals(functionClass)) {
-            return functionClass.cast(new FacebookPublishingFunctions(new DefaultFacebookPublisher()));
-        }
-        return functionClass.getDeclaredConstructor().newInstance();
     }
 }

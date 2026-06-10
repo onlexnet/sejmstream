@@ -5,10 +5,9 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.azure.identity.DefaultAzureCredentialBuilder;
+
+import lombok.extern.slf4j.Slf4j;
 import com.azure.security.keyvault.secrets.SecretClient;
 import com.azure.security.keyvault.secrets.SecretClientBuilder;
 
@@ -20,9 +19,8 @@ import com.azure.security.keyvault.secrets.SecretClientBuilder;
  * on the Kudu SCM host). When an unresolved {@code @Microsoft.KeyVault(...)} reference
  * is detected, this class fetches the secret directly via the Azure Key Vault SDK.
  */
+@Slf4j
 final class FacebookTokenProvider {
-
-    private static final Logger log = LoggerFactory.getLogger(FacebookTokenProvider.class);
 
     private static final List<String> ENVIRONMENT_VARIABLE_CANDIDATES = List.of("FB_TOKEN");
 

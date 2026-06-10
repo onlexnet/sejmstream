@@ -2,13 +2,14 @@ package onlexnet.sejmapi;
 
 import java.time.Instant;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
-/**
- * Publishes a Facebook hello post every day at 6 AM with the current timestamp.
- */
+@Component
 public final class FacebookPublishingFunctions {
 
     private static final String FUNCTION_NAME = "SejmApiDemo_FacebookPublish";
@@ -19,6 +20,7 @@ public final class FacebookPublishingFunctions {
         this(new DefaultFacebookPublisher());
     }
 
+    @Autowired
     FacebookPublishingFunctions(final FacebookPublisher facebookPublisher) {
         this.facebookPublisher = facebookPublisher;
     }
