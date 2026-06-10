@@ -5,7 +5,7 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
 /**
- * Publishes a daily Facebook hello post at 06:00 Central European Time.
+ * Publishes a daily Facebook hello post at 11:00 Central European Time.
  */
 public final class FacebookPublishingFunctions {
 
@@ -23,7 +23,7 @@ public final class FacebookPublishingFunctions {
 
     @FunctionName(FUNCTION_NAME)
     public void publishHelloMessage(
-            @TimerTrigger(name = "timer", schedule = "0 0 6 * * *")
+            @TimerTrigger(name = "timer", schedule = "0 0 11 * * *")
             final String timerInfo,
             final ExecutionContext executionContext) {
 
