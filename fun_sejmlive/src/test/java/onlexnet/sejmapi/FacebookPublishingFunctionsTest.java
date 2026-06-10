@@ -18,7 +18,7 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 class FacebookPublishingFunctionsTest {
 
     @Test
-    void givenFacebookPublishFunction_whenInspectingTimerTrigger_thenRunsEvery5Minutes()
+    void givenFacebookPublishFunction_whenInspectingTimerTrigger_thenRunsAt6AmDaily()
             throws NoSuchMethodException {
         var method = FacebookPublishingFunctions.class.getDeclaredMethod(
                 "publishHelloMessage",
@@ -31,7 +31,7 @@ class FacebookPublishingFunctionsTest {
         assertThat(functionName).isNotNull();
         assertThat(functionName.value()).isEqualTo("SejmApiDemo_FacebookPublish");
         assertThat(trigger).isNotNull();
-        assertThat(trigger.schedule()).isEqualTo("0 */5 * * * *");
+        assertThat(trigger.schedule()).isEqualTo("0 0 6 * * *");
     }
 
     @Test
