@@ -1,6 +1,7 @@
 package onlexnet.sejmapi;
 
-import java.time.Instant;
+import java.util.List;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,14 +16,21 @@ public final class FacebookPublishingFunctions {
     private static final String FUNCTION_NAME = "SejmApiDemo_FacebookPublish";
 
     private final FacebookPublisher facebookPublisher;
+    private final SejmApiClient sejmApiClient;
 
     public FacebookPublishingFunctions() {
-        this(new DefaultFacebookPublisher());
+        this(new DefaultFacebookPublisher(), new DefaultSejmApiClient());
+    }
+
+    FacebookPublishingFunctions(final FacebookPublisher facebookPublisher) {
+        this(facebookPublisher, new DefaultSejmApiClient());
     }
 
     @Autowired
-    FacebookPublishingFunctions(final FacebookPublisher facebookPublisher) {
+    FacebookPublishingFunctions(final FacebookPublisher facebookPublisher,
+            final SejmApiClient sejmApiClient) {
         this.facebookPublisher = facebookPublisher;
+        this.sejmApiClient = sejmApiClient;
     }
 
     @FunctionName(FUNCTION_NAME)
@@ -31,11 +39,30 @@ public final class FacebookPublishingFunctions {
             final String timerInfo,
             final ExecutionContext executionContext) {
 
-        final String message = "Hello at " + Instant.now();
+        final List<SejmTerm> terms = this.sejmApiClient.fetchSimpleData("sejm/term");
+        final String message = buildSummaryMessage(terms);
 
         executionContext.getLogger().info(
-                "Publishing Facebook hello message every day at 6 AM. Trigger: " + timerInfo
-                        + ", message: " + message);
+                "Publikowanie podsumowania Sejmu o 6:00. Trigger: " + timerInfo
+                        + ", wiadomość: " + message);
         this.facebookPublisher.publish(message);
+    }
+
+    private String buildSummaryMessage(final List<SejmTerm> terms) {
+        if (terms == null || terms.isEmpty()) {
+            return "Brak danych z Sejmu do publikacji.";
+        }
+
+        final var currentTerm = terms.stream()
+                .filter(SejmTerm::current)
+                .findFirst()
+                .orElse(terms.get(0));
+
+        return String.format(
+                "Sejm API: %d kadencji, aktualna kadencja to %d (od %s do %s).",
+                terms.size(),
+                currentTerm.num(),
+                Objects.toString(currentTerm.from(), "brak daty początku"),
+                Objects.toString(currentTerm.to(), "brak daty końca"));
     }
 }
