@@ -227,37 +227,50 @@ resource "azurerm_key_vault" "main" {
   purge_protection_enabled   = true
   tags                       = local.common_tags
 
-  access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = data.azurerm_client_config.current.object_id
-
-    secret_permissions = [
-      "Delete",
-      "Get",
-      "List",
-      "Purge",
-      "Recover",
-      "Set",
-    ]
-  }
-
-  access_policy {
-    tenant_id = data.azurerm_client_config.current.tenant_id
-    object_id = local.sejmstream_support_group_object_id
-
-    secret_permissions = [
-      "Get",
-      "List",
-    ]
-  }
-
+  # NOTE: Do NOT add inline access_policy blocks here.
+  # The azurerm provider does not support mixing inline access_policy blocks
+  # with standalone azurerm_key_vault_access_policy resources — vault updates
+  # silently drop the standalone policies, causing Key Vault reference
+  # resolution failures ("X Key vault" in the portal).
+  # All policies are managed via azurerm_key_vault_access_policy below.
 }
 
-# Standalone access policy for the function app's managed identity.
-# Must be a separate resource (not an inline access_policy block) to avoid a
-# dependency cycle: key_vault → function_app → key_vault_secret → key_vault.
-# Note: this vault uses access-policy mode (enable_rbac_authorization = false),
-# so azurerm_role_assignment has no effect — this resource is the correct approach.
+# Terraform deployer — full secret management rights.
+resource "azurerm_key_vault_access_policy" "deployer" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = data.azurerm_client_config.current.object_id
+
+  secret_permissions = [
+    "Delete",
+    "Get",
+    "List",
+    "Purge",
+    "Recover",
+    "Set",
+  ]
+}
+
+# Support group — read-only secret access.
+resource "azurerm_key_vault_access_policy" "support_group" {
+  key_vault_id = azurerm_key_vault.main.id
+  tenant_id    = data.azurerm_client_config.current.tenant_id
+  object_id    = local.sejmstream_support_group_object_id
+
+  secret_permissions = [
+    "Get",
+    "List",
+  ]
+}
+
+import {
+  to = azurerm_key_vault_access_policy.support_group
+  id = "/subscriptions/97fd5a20-4541-4f0b-8103-215e5f52833e/resourceGroups/sejmstr-dev-rg/providers/Microsoft.KeyVault/vaults/sejmstr-dev-kv-igaug/objectId/71bccddd-af6e-4f54-921b-407b6094ed61"
+}
+
+# Function App managed identity — read secrets for Key Vault references.
+# Must be a standalone resource (not inline) to avoid a dependency cycle:
+# key_vault → function_app → key_vault_secret → key_vault.
 resource "azurerm_key_vault_access_policy" "function_app" {
   key_vault_id = azurerm_key_vault.main.id
   tenant_id    = data.azurerm_client_config.current.tenant_id
