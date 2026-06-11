@@ -2,7 +2,7 @@ package onlexnet.sejmapi;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
-import com.microsoft.azure.functions.annotation.TimerTrigger;
+import onlexnet.infra.adapters.in.schedule.EveryTenMinutesTimerTrigger;
 
 /**
  * Empty timer-triggered function used to measure how quickly the host executes
@@ -12,7 +12,7 @@ public final class EmptyTimerFunctions {
 
     @FunctionName("SejmApiDemo_EmptyTimer")
     public void runEmptyTimer(
-            @TimerTrigger(name = "timer", schedule = "0 */10 * * * *")
+            @EveryTenMinutesTimerTrigger
             final String timerInfo,
             final ExecutionContext executionContext) {
 
