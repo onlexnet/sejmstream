@@ -1,6 +1,5 @@
 package onlexnet.sejmapi;
 
-import org.springframework.beans.BeansException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
 
@@ -16,10 +15,6 @@ public final class CustomFunctionInstanceInjector implements FunctionInstanceInj
 
     @Override
     public <T> T getInstance(final Class<T> functionClass) throws Exception {
-        try {
-            return APPLICATION_CONTEXT.getBean(functionClass);
-        } catch (final BeansException exception) {
-            return functionClass.getDeclaredConstructor().newInstance();
-        }
+        return APPLICATION_CONTEXT.getBean(functionClass);
     }
 }
