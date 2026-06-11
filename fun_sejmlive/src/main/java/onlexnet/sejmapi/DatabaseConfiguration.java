@@ -19,6 +19,12 @@ public class DatabaseConfiguration {
     public DataSource dataSource(@Value("${spring.datasource.url:}") final String url,
             @Value("${spring.datasource.username:}") final String username,
             @Value("${spring.datasource.password:}") final String password) {
+        if (url.startsWith("@Microsoft.KeyVault")) {
+            throw new IllegalStateException(
+                    "spring.datasource.url contains an unresolved Key Vault reference. " +
+                    "Ensure the Function App has a system-assigned managed identity and the Key Vault " +
+                    "grants it 'get' permission on secrets.");
+        }
         final var dataSource = new DriverManagerDataSource();
         dataSource.setUrl(url);
         dataSource.setUsername(username);
