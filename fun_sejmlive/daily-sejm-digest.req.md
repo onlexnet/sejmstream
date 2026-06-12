@@ -46,6 +46,8 @@ Status: Implemented
 
 ## Phase 2 — Liquibase DB Schema
 
+Status: Implemented
+
 New file: `fun_sejmlive/src/main/resources/db/changelog/changes/002-create-sejm-daily-digest-tables.yaml`
 
 ### Table: `sejm_daily_digest_item`
