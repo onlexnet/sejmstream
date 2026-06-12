@@ -3,39 +3,60 @@ package onlexnet.sejmapi;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
+import java.nio.charset.StandardCharsets;
+import java.sql.DriverManager;
+import java.time.Duration;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+
+import liquibase.integration.spring.SpringLiquibase;
 
 @SpringBootTest(classes = DatabaseConfiguration.class,
         webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@Testcontainers(disabledWithoutDocker = true)
 class LiquibaseSchemaIntegrationTest {
 
-    @Container
-    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>(
-            "postgres:17-alpine")
-            .withDatabaseName("sejmstream")
-            .withUsername("sejmstream")
-            .withPassword("sejmstream");
+    private static final String DB_NAME = "sejmstream";
+    private static final String DB_USERNAME = "sejmstream";
+    private static final String DB_PASSWORD = "sejmstream";
+    private static final Duration STARTUP_TIMEOUT = Duration.ofSeconds(60);
+
+    private static String postgresContainerName;
+    private static String jdbcUrl;
+
+    @AfterAll
+    static void stopPostgresContainer() {
+        if (postgresContainerName != null && !postgresContainerName.isBlank()) {
+            try {
+                runCommand("docker", "stop", postgresContainerName);
+            } catch (RuntimeException ignored) {
+                // Best-effort cleanup.
+            }
+        }
+    }
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+        @Autowired
+        @SuppressWarnings("unused")
+        private SpringLiquibase springLiquibase;
+
     @DynamicPropertySource
     static void configureProperties(final DynamicPropertyRegistry registry) {
-        registry.add("DB_URL", postgres::getJdbcUrl);
-        registry.add("DB_USERNAME", postgres::getUsername);
-        registry.add("DB_PASSWORD", postgres::getPassword);
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
+                ensurePostgresStarted();
+                registry.add("DB_URL", () -> jdbcUrl);
+                registry.add("DB_USERNAME", () -> DB_USERNAME);
+                registry.add("DB_PASSWORD", () -> DB_PASSWORD);
+                registry.add("spring.datasource.url", () -> jdbcUrl);
+                registry.add("spring.datasource.username", () -> DB_USERNAME);
+                registry.add("spring.datasource.password", () -> DB_PASSWORD);
     }
 
     @Test
@@ -175,5 +196,90 @@ class LiquibaseSchemaIntegrationTest {
 
     private record ColumnDefinition(String name, String dataType, boolean nullable, Integer maxLength,
             String defaultValue) {
+    }
+
+    private static synchronized void ensurePostgresStarted() {
+        if (jdbcUrl != null && !jdbcUrl.isBlank()) {
+            return;
+        }
+
+        postgresContainerName = "liquibase-schema-it-" + UUID.randomUUID();
+        runCommand("docker", "run", "-d", "--rm",
+                "--name", postgresContainerName,
+                "-e", "POSTGRES_DB=" + DB_NAME,
+                "-e", "POSTGRES_USER=" + DB_USERNAME,
+                "-e", "POSTGRES_PASSWORD=" + DB_PASSWORD,
+                "-P",
+                "postgres:17-alpine");
+
+        String mappedPort = waitForMappedPort();
+        jdbcUrl = "jdbc:postgresql://localhost:" + mappedPort + "/" + DB_NAME;
+        waitForDatabaseReady();
+    }
+
+    private static String waitForMappedPort() {
+        long deadline = System.nanoTime() + STARTUP_TIMEOUT.toNanos();
+        while (System.nanoTime() < deadline) {
+            try {
+                String port = runCommand("docker", "inspect", "-f",
+                        "{{(index (index .NetworkSettings.Ports \"5432/tcp\") 0).HostPort}}",
+                        postgresContainerName);
+                if (!port.isBlank()) {
+                    return port;
+                }
+            } catch (RuntimeException ignored) {
+                // Container may still be initializing.
+            }
+            sleepMillis(1000);
+        }
+
+        throw new IllegalStateException("Timed out waiting for mapped PostgreSQL port");
+    }
+
+    private static void waitForDatabaseReady() {
+        long deadline = System.nanoTime() + STARTUP_TIMEOUT.toNanos();
+        while (System.nanoTime() < deadline) {
+            try (var ignored = DriverManager.getConnection(jdbcUrl, DB_USERNAME, DB_PASSWORD)) {
+                return;
+            } catch (Exception ignored) {
+                sleepMillis(1000);
+            }
+        }
+
+        throw new IllegalStateException("Timed out waiting for PostgreSQL to accept JDBC connections");
+    }
+
+    private static String runCommand(final String... command) {
+        try {
+            Process process = new ProcessBuilder(command)
+                    .redirectErrorStream(true)
+                    .start();
+
+            String output;
+            try (var in = process.getInputStream()) {
+                output = new String(in.readAllBytes(), StandardCharsets.UTF_8).trim();
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode != 0) {
+                throw new IllegalStateException("Command failed (" + exitCode + "): "
+                        + String.join(" ", command) + "\n" + output);
+            }
+            return output;
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while running command: " + String.join(" ", command), ex);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to run command: " + String.join(" ", command), ex);
+        }
+    }
+
+    private static void sleepMillis(final long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while waiting for PostgreSQL startup", ex);
+        }
     }
 }

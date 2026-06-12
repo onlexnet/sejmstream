@@ -44,10 +44,8 @@ databaseChangeLog:
             tableName: sejm_daily_digest_item
             columnNames: collection_date, data_type, item_key
             constraintName: uk_sejm_daily_digest_item_collection_type_key
-        - addCheckConstraint:
-            tableName: sejm_daily_digest_item
-            constraintName: chk_sejm_daily_digest_item_data_type
-            constraintBody: data_type IN ('VOTING', 'COMMITTEE_SITTING', 'PRINT', 'INTERPELLATION', 'WRITTEN_QUESTION', 'BILL')
+        - sql:
+            sql: ALTER TABLE sejm_daily_digest_item ADD CONSTRAINT chk_sejm_daily_digest_item_data_type CHECK (data_type IN ('VOTING', 'COMMITTEE_SITTING', 'PRINT', 'INTERPELLATION', 'WRITTEN_QUESTION', 'BILL'))
         - createIndex:
             tableName: sejm_daily_digest_item
             indexName: idx_sejm_daily_digest_item_collection_date
