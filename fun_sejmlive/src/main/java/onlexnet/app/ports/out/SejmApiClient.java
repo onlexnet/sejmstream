@@ -22,11 +22,75 @@ public interface SejmApiClient {
     record SejmPrints(int count, LocalDateTime lastChanged, String link) {
     }
 
+    record VotingItem(
+        LocalDateTime date,
+        int sitting,
+        int votingNumber,
+        String topic,
+        int yes,
+        int no,
+        int abstain,
+        int totalVoted,
+        int notParticipating) {
+    }
+
+    record CommitteeSittingItem(
+        String code,
+        LocalDate date,
+        int num,
+        String agenda,
+        String status,
+        String room) {
+    }
+
+    record PrintItem(
+        String number,
+        String title,
+        LocalDateTime changeDate,
+        String deliveryDate) {
+    }
+
+    record InterpellationItem(
+        int num,
+        String title,
+        List<String> to,
+        String sentDate,
+        String lastModified) {
+    }
+
+    record WrittenQuestionItem(
+        int num,
+        String title,
+        List<String> to,
+        String sentDate,
+        String lastModified) {
+    }
+
+    record BillItem(
+        String number,
+        String title,
+        String dateOfReceipt,
+        String submissionType,
+        String status) {
+    }
+
     /**
      * Fetches the current list of Sejm terms.
      *
      * @return list of Sejm terms
      */
     List<SejmTerm> fetchTerms();
+
+    List<VotingItem> fetchVotingsForDate(int termNum, LocalDate date);
+
+    List<CommitteeSittingItem> fetchCommitteeSittingsForDate(int termNum, LocalDate date);
+
+    List<PrintItem> fetchPrintsModifiedSince(int termNum, LocalDate since);
+
+    List<InterpellationItem> fetchInterpellationsModifiedSince(int termNum, LocalDateTime since);
+
+    List<WrittenQuestionItem> fetchWrittenQuestionsModifiedSince(int termNum, LocalDateTime since);
+
+    List<BillItem> fetchBillsReceivedSince(int termNum, LocalDate since);
 }
 

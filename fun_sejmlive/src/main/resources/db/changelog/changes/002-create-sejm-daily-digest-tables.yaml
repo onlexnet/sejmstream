@@ -1,0 +1,86 @@
+databaseChangeLog:
+  - changeSet:
+      id: 002-create-sejm-daily-digest-tables
+      author: sejmstream
+      changes:
+        - createTable:
+            tableName: sejm_daily_digest_item
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: collection_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: data_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: item_key
+                  type: VARCHAR(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: item_title
+                  type: VARCHAR(1000)
+              - column:
+                  name: item_json
+                  type: TEXT
+              - column:
+                  name: collected_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: sejm_daily_digest_item
+            columnNames: collection_date, data_type, item_key
+            constraintName: uk_sejm_daily_digest_item_collection_type_key
+        - sql:
+            sql: ALTER TABLE sejm_daily_digest_item ADD CONSTRAINT chk_sejm_daily_digest_item_data_type CHECK (data_type IN ('VOTING', 'COMMITTEE_SITTING', 'PRINT', 'INTERPELLATION', 'WRITTEN_QUESTION', 'BILL'))
+        - createIndex:
+            tableName: sejm_daily_digest_item
+            indexName: idx_sejm_daily_digest_item_collection_date
+            columns:
+              - column:
+                  name: collection_date
+        - createTable:
+            tableName: sejm_publish_log
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: publish_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: published_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: post_message
+                  type: TEXT
+              - column:
+                  name: success
+                  type: BOOLEAN
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: error_message
+                  type: VARCHAR(1000)
