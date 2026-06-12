@@ -87,6 +87,8 @@ Add `002` include to `db.changelog-master.yaml`.
 
 ## Phase 3 — Repository & Collect Service
 
+Status: Implemented
+
 ### `SejmDailyDigestRepository` (`@Component`, `onlexnet/sejmapi/`)
 
 Uses `JdbcTemplate`. Methods:
