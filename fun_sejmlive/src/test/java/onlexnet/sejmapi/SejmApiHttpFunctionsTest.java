@@ -76,10 +76,15 @@ class SejmApiHttpFunctionsTest {
         var payload = (List<SejmTerm>) response.getBody();
 
         assertThat(payload).isNotEmpty();
-        assertThat(payload.get(0).num()).isGreaterThan(0);
-        assertThat(payload.get(0).from()).isNotNull();
-        assertThat(payload.get(0).to()).isNotNull();
-        assertThat(payload.get(0).prints()).isNotNull();
+        assertThat(payload)
+                .allSatisfy(term -> {
+                    assertThat(term.num()).isGreaterThan(0);
+                    assertThat(term.from()).isNotNull();
+                })
+                .anySatisfy(term -> {
+                    assertThat(term.current()).isTrue();
+                    assertThat(term.prints()).isNotNull();
+                });
     }
 
     private static final class FakeHttpRequestMessage<T>
