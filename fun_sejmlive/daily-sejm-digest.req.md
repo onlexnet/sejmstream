@@ -182,6 +182,8 @@ Constructor: `SejmCollectFunctions(SejmCollectService, SejmApiClient)` — injec
 
 ## Phase 6 — Refactor Publishing Functions
 
+Status: Implemented
+
 In `FacebookPublishingFunctions.java`:
 - Remove direct `SejmApiClient` dependency
 - Inject `SejmDigestService digestService` and `SejmDailyDigestRepository repository`
