@@ -135,6 +135,7 @@ class SejmCollectServiceTest {
 
         assertThat(count).isEqualTo(2);
         assertThat(repository.calls).hasSize(2);
+        assertThat(repository.calls.get(0).date()).isEqualTo(TEST_DATE);
         assertThat(repository.calls.get(0).dataType()).isEqualTo("VOTING");
         assertThat(repository.calls.get(0).itemKey()).isEqualTo("3/10");
         assertThat(repository.calls.get(0).title()).isEqualTo("Topic A");
@@ -177,9 +178,57 @@ class SejmCollectServiceTest {
 
         assertThat(count).isEqualTo(1);
         assertThat(repository.calls).hasSize(1);
+        assertThat(repository.calls.get(0).date()).isEqualTo(TEST_DATE);
         assertThat(repository.calls.get(0).dataType()).isEqualTo("INTERPELLATION");
         assertThat(repository.calls.get(0).itemKey()).isEqualTo("77");
         verify(sejmApiClient).fetchInterpellationsModifiedSince(10, expectedSince);
+    }
+
+    @Test
+    void givenPrintItems_whenCollectPrints_thenCallsPrintApiAndUsesNumberAsKey() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var item = new PrintItem(
+                "123-A",
+                "Projekt ustawy",
+                LocalDateTime.of(2026, 6, 13, 10, 0),
+                "2026-06-13");
+        when(sejmApiClient.fetchPrintsModifiedSince(10, TEST_DATE)).thenReturn(List.of(item));
+
+        var count = service.collectPrints(10, TEST_DATE);
+
+        assertThat(count).isEqualTo(1);
+        assertThat(repository.calls).hasSize(1);
+        assertThat(repository.calls.get(0).dataType()).isEqualTo("PRINT");
+        assertThat(repository.calls.get(0).itemKey()).isEqualTo(item.number());
+        assertThat(repository.calls.get(0).title()).isEqualTo(item.title());
+        verify(sejmApiClient).fetchPrintsModifiedSince(10, TEST_DATE);
+    }
+
+    @Test
+    void givenBillItems_whenCollectBills_thenCallsBillsApiAndUsesNumberAsKey() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var item = new BillItem(
+                "UC-1",
+                "Ustawa o testach",
+                "2026-06-13",
+                "Rządowy",
+                "Nowy");
+        when(sejmApiClient.fetchBillsReceivedSince(10, TEST_DATE)).thenReturn(List.of(item));
+
+        var count = service.collectBills(10, TEST_DATE);
+
+        assertThat(count).isEqualTo(1);
+        assertThat(repository.calls).hasSize(1);
+        assertThat(repository.calls.get(0).dataType()).isEqualTo("BILL");
+        assertThat(repository.calls.get(0).itemKey()).isEqualTo(item.number());
+        assertThat(repository.calls.get(0).title()).isEqualTo(item.title());
+        verify(sejmApiClient).fetchBillsReceivedSince(10, TEST_DATE);
     }
 
     @Test
@@ -275,6 +324,7 @@ class SejmCollectServiceTest {
 
         assertThat(count).isEqualTo(1);
         assertThat(repository.calls).hasSize(1);
+        assertThat(repository.calls.get(0).date()).isEqualTo(TEST_DATE);
         assertThat(repository.calls.get(0).itemKey()).isEqualTo("KOMINF/12");
         assertThat(repository.calls.get(0).dataType()).isEqualTo("COMMITTEE_SITTING");
     }
