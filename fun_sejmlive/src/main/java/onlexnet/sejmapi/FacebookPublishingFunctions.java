@@ -1,11 +1,19 @@
 package onlexnet.sejmapi;
 
 import java.time.LocalDate;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
 import com.microsoft.azure.functions.ExecutionContext;
+import com.microsoft.azure.functions.HttpMethod;
+import com.microsoft.azure.functions.HttpRequestMessage;
+import com.microsoft.azure.functions.HttpResponseMessage;
+import com.microsoft.azure.functions.HttpStatus;
+import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
+import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
 /**
@@ -26,7 +34,9 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 @Component
 public final class FacebookPublishingFunctions {
 
-    private static final String FUNCTION_NAME = "SejmApiDemo_FacebookPublish";
+    static final String TIMER_FUNCTION_NAME = "SejmApiDemo_FacebookPublish";
+    static final String HTTP_FUNCTION_NAME = "SejmApiDemo_FacebookPublishStart";
+    static final String HTTP_FUNCTION_ROUTE = "SejmApiDemo_FacebookPublishStart";
 
     private final FacebookPublisher facebookPublisher;
     private final SejmDigestService digestService;
@@ -51,16 +61,62 @@ public final class FacebookPublishingFunctions {
      * @throws Exception if digest service or publisher fails; original exception is rethrown
      *         even if failure-log write fails
      */
-    @FunctionName(FUNCTION_NAME)
+    @FunctionName(TIMER_FUNCTION_NAME)
     public void publishDailyDigest(
             @TimerTrigger(name = "timer", schedule = "0 30 23 * * *")
             final String timerInfo,
+            final ExecutionContext executionContext) {
+        this.publishDailyDigestInternal(timerInfo, executionContext);
+    }
+
+    /**
+     * HTTP trigger for manually publishing today's Sejm digest to Facebook.
+     *
+     * @param request incoming HTTP request
+     * @param executionContext Azure Functions execution context for logging
+     * @return HTTP response indicating publish result
+     */
+    @FunctionName(HTTP_FUNCTION_NAME)
+    public HttpResponseMessage publishDailyDigestHttp(
+            @HttpTrigger(name = "request", methods = {HttpMethod.POST},
+                    authLevel = AuthorizationLevel.FUNCTION,
+                    route = HTTP_FUNCTION_ROUTE)
+            final HttpRequestMessage<Optional<String>> request,
+            final ExecutionContext executionContext) {
+        try {
+            var result = this.publishDailyDigestInternal("http", executionContext);
+            return switch (result) {
+                case PUBLISHED -> request.createResponseBuilder(HttpStatus.OK)
+                        .body(Map.of(
+                                "status", "PUBLISHED",
+                                "message", "Published daily digest to Facebook."))
+                        .build();
+                case SKIPPED_ALREADY_PUBLISHED -> request.createResponseBuilder(HttpStatus.OK)
+                        .body(Map.of(
+                                "status", "SKIPPED_ALREADY_PUBLISHED",
+                                "message", "Digest for today was already published."))
+                        .build();
+                case SKIPPED_NO_DIGEST -> request.createResponseBuilder(HttpStatus.OK)
+                        .body(Map.of(
+                                "status", "SKIPPED_NO_DIGEST",
+                                "message", "No digest data available for today."))
+                        .build();
+            };
+        } catch (Exception e) {
+            return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to publish daily digest: " + e.getMessage())
+                    .build();
+        }
+    }
+
+    private PublishOutcome publishDailyDigestInternal(
+            final String triggerInfo,
             final ExecutionContext executionContext) {
         var date = LocalDate.now();
         if (this.repository.alreadyPublishedToday(date)) {
             executionContext.getLogger().info(
                     "Pomijanie publikacji - wpis dla dnia " + date + " juz istnieje.");
-            return;
+            return PublishOutcome.SKIPPED_ALREADY_PUBLISHED;
         }
 
         try {
@@ -68,15 +124,16 @@ public final class FacebookPublishingFunctions {
             if (digest.isEmpty()) {
                 executionContext.getLogger().info(
                         "Brak aktywnosci sejmowej dla dnia " + date + ", pomijanie publikacji.");
-                return;
+                return PublishOutcome.SKIPPED_NO_DIGEST;
             }
 
             var message = digest.get();
             executionContext.getLogger().info(
-                    "Publikowanie podsumowania Sejmu. Trigger: " + timerInfo
+                    "Publikowanie podsumowania Sejmu. Trigger: " + triggerInfo
                             + ", wiadomosc: " + message);
             this.facebookPublisher.publish(message);
             this.repository.insertPublishLog(date, message, true, null);
+            return PublishOutcome.PUBLISHED;
         } catch (Exception e) {
             try {
                 this.repository.insertPublishLog(date, null, false, e.getMessage());
@@ -86,5 +143,11 @@ public final class FacebookPublishingFunctions {
             throw e;
         }
 
+    }
+
+    private enum PublishOutcome {
+        PUBLISHED,
+        SKIPPED_ALREADY_PUBLISHED,
+        SKIPPED_NO_DIGEST
     }
 }

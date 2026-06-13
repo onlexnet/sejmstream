@@ -25,7 +25,7 @@ For the new scheduled Facebook publishing trigger, set these values in local set
 - `facebook_token=<FACEBOOK_TOKEN_OR_KEYVAULT_REFERENCE>`
 - `WEBSITE_TIME_ZONE=Europe/Warsaw`
 
-The timer expression is `0 0 11 * * *`, which resolves to 11:00 in the configured Poland time zone.
+The timer expression is `0 30 23 * * *`, which resolves to 23:30 in the configured Poland time zone.
 
 
 1. Copy `local.settings.json.example` to `local.settings.json`.
@@ -82,6 +82,12 @@ Swagger/OpenAPI endpoints:
 - `http://localhost:7071/api/swagger`
 - `http://localhost:7071/api/openapi.yaml`
 
+Callable operations exposed in Swagger:
+
+- `POST /api/SejmApiDemo_CollectStart` (starts SejmData collection orchestration)
+- `POST /api/SejmApiDemo_FacebookPublishStart` (publishes daily digest to Facebook)
+- Security for both operations: function key in `x-functions-key` header
+
 ## OpenAPI code generation (minimal)
 
 The module is wired with `openapi-generator-maven-plugin` to generate Java models from:
@@ -94,7 +100,7 @@ Run generation only:
 
 Generated classes are placed under:
 
-- `target/generated-sources/openapi/src/main/java/com/example/funsejmapi/openapi/model`
+- `target/generated-sources/openapi/src/main/java/onlexnet/sejmapi/openapi/model`
 
 The generation is automatically executed before compile/package because it is bound to the `generate-sources` Maven phase.
 
@@ -103,7 +109,7 @@ The generation is automatically executed before compile/package because it is bo
 Starter function:
 
 - Route: `POST /api/SejmApiDemo_HttpStart`
-- Auth: `AuthorizationLevel.ANONYMOUS`
+- Auth: `AuthorizationLevel.FUNCTION`
 
 Example start request:
 
