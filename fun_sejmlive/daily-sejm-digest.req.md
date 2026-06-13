@@ -156,6 +156,8 @@ Logic:
 
 ## Phase 5 — Collection Durable Functions
 
+Status: Implemented
+
 New file: `fun_sejmlive/src/main/java/onlexnet/sejmapi/SejmCollectFunctions.java`
 
 Mirrors `DemoDurableFunctions.java` pattern exactly:
@@ -179,6 +181,8 @@ Constructor: `SejmCollectFunctions(SejmCollectService, SejmApiClient)` — injec
 ---
 
 ## Phase 6 — Refactor Publishing Functions
+
+Status: Implemented
 
 In `FacebookPublishingFunctions.java`:
 - Remove direct `SejmApiClient` dependency

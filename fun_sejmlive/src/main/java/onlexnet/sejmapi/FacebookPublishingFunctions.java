@@ -1,72 +1,90 @@
 package onlexnet.sejmapi;
 
-import java.util.List;
-import java.util.Objects;
+import java.time.LocalDate;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
-import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
-import onlexnet.infra.adapters.out.DefaultSejmApiClient;
-
+/**
+ * Publishes daily Sejm digests to social media on a scheduled basis.
+ * <p>
+ * This component runs daily at 23:30 (CRON: 0 30 23 * * *) and:
+ * <ol>
+ * <li>Checks for idempotency (skips if digest already published for today)
+ * <li>Builds a Polish-language digest from collected Sejm data
+ * <li>Publishes to Facebook via FacebookPublisher
+ * <li>Logs success or failure to the publish log table
+ * </ol>
+ * <p>
+ * Failure behavior: If publishing fails, the failure is logged. If the failure log write itself
+ * fails, the original exception is preserved as the thrown exception and the log failure is
+ * attached as a suppressed exception.
+ */
 @Component
 public final class FacebookPublishingFunctions {
 
     private static final String FUNCTION_NAME = "SejmApiDemo_FacebookPublish";
 
     private final FacebookPublisher facebookPublisher;
-    private final SejmApiClient sejmApiClient;
+    private final SejmDigestService digestService;
+    private final SejmDailyDigestRepository repository;
 
-    public FacebookPublishingFunctions() {
-        this(new DefaultFacebookPublisher(), new DefaultSejmApiClient());
-    }
-
-    FacebookPublishingFunctions(final FacebookPublisher facebookPublisher) {
-        this(facebookPublisher, new DefaultSejmApiClient());
-    }
-
-    @Autowired
     public FacebookPublishingFunctions(final FacebookPublisher facebookPublisher,
-            final SejmApiClient sejmApiClient) {
+            final SejmDigestService digestService,
+            final SejmDailyDigestRepository repository) {
         this.facebookPublisher = facebookPublisher;
-        this.sejmApiClient = sejmApiClient;
+        this.digestService = digestService;
+        this.repository = repository;
     }
 
+    /**
+     * Publishes today's Sejm digest to Facebook.
+     * <p>
+     * This is the entry point for the scheduled Azure Function timer trigger.
+     * It orchestrates digest building, idempotency checking, publishing, and logging.
+     *
+     * @param timerInfo schedule trigger information (unused but required by timer binding)
+     * @param executionContext Azure Functions execution context for logging
+     * @throws Exception if digest service or publisher fails; original exception is rethrown
+     *         even if failure-log write fails
+     */
     @FunctionName(FUNCTION_NAME)
-    public void publishHelloMessage(
-            @TimerTrigger(name = "timer", schedule = "0 0 6 * * *")
+    public void publishDailyDigest(
+            @TimerTrigger(name = "timer", schedule = "0 30 23 * * *")
             final String timerInfo,
             final ExecutionContext executionContext) {
-
-        final List<SejmTerm> terms = this.sejmApiClient.fetchTerms();
-        final String message = buildSummaryMessage(terms);
-
-        executionContext.getLogger().info(
-                "Publikowanie podsumowania Sejmu o 6:00. Trigger: " + timerInfo
-                        + ", wiadomość: " + message);
-        this.facebookPublisher.publish(message);
-    }
-
-    private String buildSummaryMessage(final List<SejmTerm> terms) {
-        if (terms == null || terms.isEmpty()) {
-            return "Brak danych z Sejmu do publikacji.";
+        var date = LocalDate.now();
+        if (this.repository.alreadyPublishedToday(date)) {
+            executionContext.getLogger().info(
+                    "Pomijanie publikacji - wpis dla dnia " + date + " juz istnieje.");
+            return;
         }
 
-        final var currentTerm = terms.stream()
-                .filter(SejmTerm::current)
-                .findFirst()
-                .orElse(terms.get(0));
+        try {
+            var digest = this.digestService.buildDigest(date);
+            if (digest.isEmpty()) {
+                executionContext.getLogger().info(
+                        "Brak aktywnosci sejmowej dla dnia " + date + ", pomijanie publikacji.");
+                return;
+            }
 
-        return String.format(
-                "Sejm API: %d kadencji, aktualna kadencja to %d (od %s do %s).",
-                terms.size(),
-                currentTerm.num(),
-                Objects.toString(currentTerm.from(), "brak daty początku"),
-                Objects.toString(currentTerm.to(), "brak daty końca"));
+            var message = digest.get();
+            executionContext.getLogger().info(
+                    "Publikowanie podsumowania Sejmu. Trigger: " + timerInfo
+                            + ", wiadomosc: " + message);
+            this.facebookPublisher.publish(message);
+            this.repository.insertPublishLog(date, message, true, null);
+        } catch (Exception e) {
+            try {
+                this.repository.insertPublishLog(date, null, false, e.getMessage());
+            } catch (Exception logError) {
+                e.addSuppressed(logError);
+            }
+            throw e;
+        }
+
     }
 }
