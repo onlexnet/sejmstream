@@ -36,6 +36,9 @@ class SejmApiHttpFunctionsTest {
     @Autowired
     private SejmApiClient sejmApiClient;
 
+    @Autowired
+    private ApiDocumentationFunctions apiDocumentationFunctions;
+
     @Test
     void givenSimpleDataFunction_whenCheckingTriggerContract_thenItIsAnonymousAndRouteIsConfigured()
             throws NoSuchMethodException {
@@ -59,6 +62,12 @@ class SejmApiHttpFunctionsTest {
         assertThat(this.applicationContext).isNotNull();
         assertThat(this.sejmApiClient).isNotNull();
         assertThat(this.sejmApiHttpFunctions).isNotNull();
+    }
+
+    @Test
+    void givenSpringBootContext_whenResolvingApiDocumentationFunctions_thenBeanIsAvailable() {
+        assertThat(this.applicationContext.getBean(ApiDocumentationFunctions.class))
+                .isSameAs(this.apiDocumentationFunctions);
     }
 
     @Test

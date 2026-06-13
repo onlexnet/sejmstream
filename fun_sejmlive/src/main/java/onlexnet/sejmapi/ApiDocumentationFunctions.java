@@ -13,9 +13,12 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
+import org.springframework.stereotype.Component;
+
 /**
  * Exposes a simple OpenAPI document and Swagger UI for this demo Function App.
  */
+@Component
 public final class ApiDocumentationFunctions {
 
     /** Swagger UI function name. */
