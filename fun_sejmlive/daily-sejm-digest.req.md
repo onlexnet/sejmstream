@@ -112,6 +112,8 @@ Methods (each returns count of items inserted/updated):
 
 ## Phase 4 — Digest Service
 
+Status: Implemented
+
 ### `SejmDigestService` (`@Component`, `onlexnet/sejmapi/`)
 
 Dependencies: `SejmDailyDigestRepository`, `ObjectMapper`
