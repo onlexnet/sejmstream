@@ -80,6 +80,8 @@ class DemoDurableFunctionsTest {
     assertThat(response.getBody().toString())
         .contains("openapi: 3.0.3")
         .contains("/api/SejmApiDemo_HttpStart")
+        .contains("/api/SejmApiDemo_CollectStart")
+        .contains("/api/SejmApiDemo_FacebookPublishStart")
         .contains("/api/sejm-api/simple")
         .contains("Sejm API simple data")
         .contains("functionKey")

@@ -55,6 +55,57 @@ paths:
                     type: string
         '401':
           description: Unauthorized. Provide a valid function key via the x-functions-key header.
+  /api/SejmApiDemo_CollectStart:
+    post:
+      summary: Start Sejm data collection orchestration
+      description: Starts the SejmData durable collection workflow and returns status-query URLs.
+      operationId: startSejmDataCollection
+      security:
+        - functionKey: []
+      responses:
+        '202':
+          description: Accepted. Includes durable status URLs.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  statusQueryGetUri:
+                    type: string
+                  sendEventPostUri:
+                    type: string
+                  terminatePostUri:
+                    type: string
+                  rewindPostUri:
+                    type: string
+                  purgeHistoryDeleteUri:
+                    type: string
+        '401':
+          description: Unauthorized. Provide a valid function key via the x-functions-key header.
+  /api/SejmApiDemo_FacebookPublishStart:
+    post:
+      summary: Publish Sejm daily digest to Facebook
+      description: Triggers manual publishing of the daily Sejm digest to Facebook.
+      operationId: publishSejmDailyDigestToFacebook
+      security:
+        - functionKey: []
+      responses:
+        '200':
+          description: Digest publish completed or skipped with status details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacebookPublishResponse'
+        '401':
+          description: Unauthorized. Provide a valid function key via the x-functions-key header.
+        '500':
+          description: Publish failed.
+          content:
+            text/plain:
+              schema:
+                type: string
 components:
   securitySchemes:
     functionKey:
@@ -112,3 +163,14 @@ components:
           type: array
           items:
             type: string
+    FacebookPublishResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - PUBLISHED
+            - SKIPPED_ALREADY_PUBLISHED
+            - SKIPPED_NO_DIGEST
+        message:
+          type: string
