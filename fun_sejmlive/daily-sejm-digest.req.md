@@ -156,6 +156,8 @@ Logic:
 
 ## Phase 5 — Collection Durable Functions
 
+Status: Implemented
+
 New file: `fun_sejmlive/src/main/java/onlexnet/sejmapi/SejmCollectFunctions.java`
 
 Mirrors `DemoDurableFunctions.java` pattern exactly:
