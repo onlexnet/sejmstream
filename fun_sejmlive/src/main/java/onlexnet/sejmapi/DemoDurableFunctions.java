@@ -22,11 +22,11 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 public final class DemoDurableFunctions {
 
     /** Durable HTTP starter function name. */
-    static final String HTTP_STARTER_FUNCTION_NAME = "SejmApiDemo_HttpStart";
+        static final String HTTP_STARTER_FUNCTION_NAME = "Fun_HttpStart";
     /** Durable orchestrator function name. */
-    static final String ORCHESTRATOR_FUNCTION_NAME = "SejmApiDemo_Orchestrator";
+        static final String ORCHESTRATOR_FUNCTION_NAME = "Fun_Orchestrator";
     /** Durable activity function name. */
-    static final String ACTIVITY_FUNCTION_NAME = "SejmApiDemo_Activity";
+        static final String ACTIVITY_FUNCTION_NAME = "Intern_Activity";
 
     /**
      * Starts a new demo orchestration instance and returns durable status URLs.

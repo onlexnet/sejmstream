@@ -20,12 +20,13 @@ Durable Functions needs a working storage connection for orchestration state.
 
 ## Local setup
 
-For the new scheduled Facebook publishing trigger, set these values in local settings when you want to run the timer function locally:
+For the scheduled timer functions, set these values in local settings when you want to run them locally or deploy them to Linux-based Azure Functions:
 
 - `facebook_token=<FACEBOOK_TOKEN_OR_KEYVAULT_REFERENCE>`
+- `TZ=Europe/Warsaw`
 - `WEBSITE_TIME_ZONE=Europe/Warsaw`
 
-The timer expression is `0 30 23 * * *`, which resolves to 23:30 in the configured Poland time zone.
+The timer expression is `0 30 23 * * *`, which resolves to 23:30 in the configured Poland time zone. On Linux-hosted Azure Functions, `TZ` is the setting that keeps the timer aligned with local Warsaw time.
 
 
 1. Copy `local.settings.json.example` to `local.settings.json`.
@@ -84,8 +85,8 @@ Swagger/OpenAPI endpoints:
 
 Callable operations exposed in Swagger:
 
-- `POST /api/SejmApiDemo_CollectStart` (starts SejmData collection orchestration)
-- `POST /api/SejmApiDemo_FacebookPublishStart` (publishes daily digest to Facebook)
+- `POST /api/Fun_CollectStart` (starts SejmData collection orchestration)
+- `POST /api/Fun_FacebookPublishStart` (publishes daily digest to Facebook)
 - Security for both operations: function key in `x-functions-key` header
 
 ## OpenAPI code generation (minimal)
@@ -108,14 +109,14 @@ The generation is automatically executed before compile/package because it is bo
 
 Starter function:
 
-- Route: `POST /api/SejmApiDemo_HttpStart`
+- Route: `POST /api/Fun_HttpStart`
 - Auth: `AuthorizationLevel.FUNCTION`
 
 Example start request:
 
 ```bash
 curl -i -X POST \
-   "http://localhost:7071/api/SejmApiDemo_HttpStart" \
+   "http://localhost:7071/api/Fun_HttpStart" \
    -H "Content-Type: application/json" \
    -d '{"correlationId":"demo-123","sampleSize":2}'
 ```

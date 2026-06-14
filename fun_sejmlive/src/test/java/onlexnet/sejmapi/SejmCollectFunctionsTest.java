@@ -47,7 +47,7 @@ import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 class SejmCollectFunctionsTest {
 
     @Test
-    void givenTimerFunction_whenCheckingTriggerContract_thenRunsDailyAt11Pm()
+    void givenTimerFunction_whenCheckingTriggerContract_thenRunsDailyAt1630()
             throws NoSuchMethodException {
         var method = SejmCollectFunctions.class.getDeclaredMethod(
                 "runTimer",
@@ -61,7 +61,7 @@ class SejmCollectFunctionsTest {
         assertThat(functionName).isNotNull();
         assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.TIMER_FUNCTION_NAME);
         assertThat(trigger).isNotNull();
-        assertThat(trigger.schedule()).isEqualTo("0 0 23 * * *");
+        assertThat(trigger.schedule()).isEqualTo("0 30 16 * * *");
     }
 
     @Test
@@ -508,7 +508,7 @@ class SejmCollectFunctionsTest {
 
         @Override
         public URI getUri() {
-            return URI.create("https://localhost/api/SejmApiDemo_CollectStart");
+            return URI.create("https://localhost/api/Fun_CollectStart");
         }
 
         @Override

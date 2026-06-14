@@ -22,9 +22,9 @@ import org.springframework.stereotype.Component;
 public final class ApiDocumentationFunctions {
 
     /** Swagger UI function name. */
-    static final String SWAGGER_UI_FUNCTION_NAME = "SejmApiDemo_SwaggerUi";
+    static final String SWAGGER_UI_FUNCTION_NAME = "Fun_SwaggerUi";
     /** OpenAPI specification function name. */
-    static final String OPENAPI_FUNCTION_NAME = "SejmApiDemo_OpenApi";
+    static final String OPENAPI_FUNCTION_NAME = "Fun_OpenApi";
     /** OpenAPI resource path inside classpath. */
     static final String OPENAPI_RESOURCE_PATH = "openapi/openapi.yaml";
     /** Swagger UI bootstrap page path inside classpath. */

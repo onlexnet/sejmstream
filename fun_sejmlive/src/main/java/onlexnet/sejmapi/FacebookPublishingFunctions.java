@@ -34,9 +34,9 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 @Component
 public final class FacebookPublishingFunctions {
 
-    static final String TIMER_FUNCTION_NAME = "SejmApiDemo_FacebookPublish";
-    static final String HTTP_FUNCTION_NAME = "SejmApiDemo_FacebookPublishStart";
-    static final String HTTP_FUNCTION_ROUTE = "SejmApiDemo_FacebookPublishStart";
+    static final String TIMER_FUNCTION_NAME = "Fun_FacebookPublish";
+    static final String HTTP_FUNCTION_NAME = "Fun_FacebookPublishStart";
+    static final String HTTP_FUNCTION_ROUTE = "Fun_FacebookPublishStart";
 
     private final FacebookPublisher facebookPublisher;
     private final SejmDigestService digestService;

@@ -29,7 +29,7 @@ import onlexnet.app.ports.out.SejmApiClient;
 /**
  * Azure Durable Functions workflow that collects daily Sejm activity into the database.
  * Implements a 6-activity orchestrator pattern that sequentially collects votings, committee
- * sittings, prints, interpellations, written questions, and bills. Triggered via timer at 11 PM
+ * sittings, prints, interpellations, written questions, and bills. Triggered via timer at 4:30 PM
  * or manually via HTTP POST. Results are persisted in the daily digest tables.
  */
 @Component
@@ -38,23 +38,23 @@ public final class SejmCollectFunctions {
     private static final Logger LOGGER = Logger.getLogger(SejmCollectFunctions.class.getName());
 
     /** Timer trigger function name. */
-    static final String TIMER_FUNCTION_NAME = "SejmApiDemo_CollectTimer";
+    static final String TIMER_FUNCTION_NAME = "Fun_CollectTimer";
     /** HTTP starter function name for manual trigger. */
-    static final String HTTP_STARTER_FUNCTION_NAME = "SejmApiDemo_CollectStart";
+    static final String HTTP_STARTER_FUNCTION_NAME = "Fun_CollectStart";
     /** Durable orchestrator function name. */
-    static final String ORCHESTRATOR_FUNCTION_NAME = "SejmApiDemo_CollectOrchestrator";
+    static final String ORCHESTRATOR_FUNCTION_NAME = "Fun_CollectOrchestrator";
     /** Activity function name for collecting votings. */
-    static final String ACTIVITY_VOTINGS = "SejmApiDemo_CollectVotings";
+    static final String ACTIVITY_VOTINGS = "Intern_CollectVotings";
     /** Activity function name for collecting committee sittings. */
-    static final String ACTIVITY_COMMITTEES = "SejmApiDemo_CollectCommittees";
+    static final String ACTIVITY_COMMITTEES = "Intern_CollectCommittees";
     /** Activity function name for collecting prints. */
-    static final String ACTIVITY_PRINTS = "SejmApiDemo_CollectPrints";
+    static final String ACTIVITY_PRINTS = "Intern_CollectPrints";
     /** Activity function name for collecting interpellations. */
-    static final String ACTIVITY_INTERPELLATIONS = "SejmApiDemo_CollectInterpellations";
+    static final String ACTIVITY_INTERPELLATIONS = "Intern_CollectInterpellations";
     /** Activity function name for collecting written questions. */
-    static final String ACTIVITY_QUESTIONS = "SejmApiDemo_CollectQuestions";
+    static final String ACTIVITY_QUESTIONS = "Intern_CollectQuestions";
     /** Activity function name for collecting bills. */
-    static final String ACTIVITY_BILLS = "SejmApiDemo_CollectBills";
+    static final String ACTIVITY_BILLS = "Intern_CollectBills";
 
     private final SejmCollectService collectService;
     private final SejmApiClient sejmApiClient;
@@ -67,7 +67,7 @@ public final class SejmCollectFunctions {
     }
 
     /**
-     * Timer trigger that starts the collection orchestrator daily at 11 PM.
+     * Timer trigger that starts the collection orchestrator daily at 4:30 PM.
      *
      * @param timerInfo        timer trigger information
      * @param durableContext   durable client context
@@ -75,7 +75,7 @@ public final class SejmCollectFunctions {
      */
     @FunctionName(TIMER_FUNCTION_NAME)
     public void runTimer(
-            @TimerTrigger(name = "timer", schedule = "0 0 23 * * *")
+            @TimerTrigger(name = "timer", schedule = "0 30 16 * * *")
             final String timerInfo,
             @DurableClientInput(name = "durableContext")
             final DurableClientContext durableContext,

@@ -32,7 +32,7 @@ public final class EmptyTimerFunctions {
      */
     private final SpringLiquibase liquibase;
 
-    @FunctionName("SejmApiDemo_EmptyTimer")
+    @FunctionName("Fun_EmptyTimer")
     public void runEmptyTimer(
             @TimerTrigger(name = "timer", schedule = "0 */10 * * * *")
             final String timerInfo,

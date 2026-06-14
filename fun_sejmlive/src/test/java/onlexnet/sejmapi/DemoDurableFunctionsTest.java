@@ -79,9 +79,9 @@ class DemoDurableFunctionsTest {
         .isEqualTo("application/yaml; charset=utf-8");
     assertThat(response.getBody().toString())
         .contains("openapi: 3.0.3")
-        .contains("/api/SejmApiDemo_HttpStart")
-        .contains("/api/SejmApiDemo_CollectStart")
-        .contains("/api/SejmApiDemo_FacebookPublishStart")
+        .contains("/api/Fun_HttpStart")
+        .contains("/api/Fun_CollectStart")
+        .contains("/api/Fun_FacebookPublishStart")
         .contains("/api/sejm-api/simple")
         .contains("Sejm API simple data")
         .contains("functionKey")
@@ -434,7 +434,7 @@ class DemoDurableFunctionsTest {
 
         @Override
         public URI getUri() {
-            return URI.create("https://localhost/api/SejmApiDemo_HttpStart");
+            return URI.create("https://localhost/api/Fun_HttpStart");
         }
 
         @Override

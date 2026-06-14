@@ -21,7 +21,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/SejmTerm'
-  /api/SejmApiDemo_HttpStart:
+  /api/Fun_HttpStart:
     post:
       summary: Start demo durable orchestration
       description: Starts a new orchestration and returns status-query URLs.
@@ -55,7 +55,7 @@ paths:
                     type: string
         '401':
           description: Unauthorized. Provide a valid function key via the x-functions-key header.
-  /api/SejmApiDemo_CollectStart:
+  /api/Fun_CollectStart:
     post:
       summary: Start Sejm data collection orchestration
       description: Starts the SejmData durable collection workflow and returns status-query URLs.
@@ -84,7 +84,7 @@ paths:
                     type: string
         '401':
           description: Unauthorized. Provide a valid function key via the x-functions-key header.
-  /api/SejmApiDemo_FacebookPublishStart:
+  /api/Fun_FacebookPublishStart:
     post:
       summary: Publish Sejm daily digest to Facebook
       description: Triggers manual publishing of the daily Sejm digest to Facebook.

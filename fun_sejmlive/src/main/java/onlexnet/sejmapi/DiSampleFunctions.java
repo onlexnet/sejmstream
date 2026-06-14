@@ -22,7 +22,7 @@ public final class DiSampleFunctions {
         this.messageService = messageService;
     }
 
-    @FunctionName("SejmApiDemo_DiSample")
+    @FunctionName("Fun_DiSample")
     public HttpResponseMessage diSample(
             @HttpTrigger(name = "request", methods = {
                     HttpMethod.GET }, authLevel = AuthorizationLevel.ANONYMOUS,

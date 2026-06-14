@@ -6,6 +6,7 @@
     "Storage": "UseDevelopmentStorage=true",
     "JAVA_HOME": "/usr/local/sdkman/candidates/java/current",
     "facebook_token": "",
+    "TZ": "Europe/Warsaw",
     "WEBSITE_TIME_ZONE": "Europe/Warsaw"
   }
 }
