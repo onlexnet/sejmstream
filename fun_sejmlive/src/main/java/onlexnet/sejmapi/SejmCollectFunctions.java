@@ -29,7 +29,7 @@ import onlexnet.app.ports.out.SejmApiClient;
 /**
  * Azure Durable Functions workflow that collects daily Sejm activity into the database.
  * Implements a 6-activity orchestrator pattern that sequentially collects votings, committee
- * sittings, prints, interpellations, written questions, and bills. Triggered via timer at 4:30 PM
+ * sittings, prints, interpellations, written questions, and bills. Triggered via timer every hour
  * or manually via HTTP POST. Results are persisted in the daily digest tables.
  */
 @Component
@@ -66,8 +66,8 @@ public final class SejmCollectFunctions {
         this.sejmApiClient = Objects.requireNonNull(sejmApiClient, "sejmApiClient must not be null");
     }
 
-    /**
-     * Timer trigger that starts the collection orchestrator daily at 4:30 PM.
+        /**
+         * Timer trigger that starts the collection orchestrator at the top of every hour.
      *
      * @param timerInfo        timer trigger information
      * @param durableContext   durable client context
@@ -75,7 +75,7 @@ public final class SejmCollectFunctions {
      */
     @FunctionName(TIMER_FUNCTION_NAME)
     public void runTimer(
-            @TimerTrigger(name = "timer", schedule = "0 30 16 * * *")
+            @TimerTrigger(name = "timer", schedule = "0 0 * * * *")
             final String timerInfo,
             @DurableClientInput(name = "durableContext")
             final DurableClientContext durableContext,
