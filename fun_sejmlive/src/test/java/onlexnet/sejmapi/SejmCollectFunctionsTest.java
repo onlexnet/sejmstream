@@ -61,7 +61,7 @@ class SejmCollectFunctionsTest {
         assertThat(functionName).isNotNull();
         assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.TIMER_FUNCTION_NAME);
         assertThat(trigger).isNotNull();
-        assertThat(trigger.schedule()).isEqualTo("0 30 16 * * *");
+        assertThat(trigger.schedule()).isEqualTo("0 0 * * * *");
     }
 
     @Test
