@@ -82,7 +82,7 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
    - `Storage Table Data Contributor`
 - Storage blob data-plane role assignment for the deployment principal (`data.azurerm_client_config.current.object_id`) used by the GitHub OIDC deploy job
 - Key Vault secret read access for the Function App managed identity via `Key Vault Secrets User`
-- Optional Application Insights telemetry behind `enable_application_insights` (default `false`)
+- Application Insights telemetry enabled by default for the Function App runtime
 - Diagnostic settings routing Function logs and metrics to Log Analytics
 
 The Function App runtime settings include durable host storage via managed identity (`AzureWebJobsStorage__*`) and a configurable task hub name (`function_durable_hub_name`).
@@ -108,7 +108,7 @@ Verified commands from this baseline review:
 
 No phase 1 infrastructure changes are required beyond this documented baseline confirmation.
 
-Phase 2 hardening adds explicit Key Vault secret read access for the Function App managed identity and an optional Application Insights connection string for runtime telemetry when `enable_application_insights = true`.
+Phase 2 hardening adds explicit Key Vault secret read access for the Function App managed identity and Application Insights runtime telemetry.
 
 ## Relevant non-secret outputs
 

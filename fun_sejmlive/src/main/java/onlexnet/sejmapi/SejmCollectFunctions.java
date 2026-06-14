@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.springframework.stereotype.Component;
 
@@ -24,6 +22,7 @@ import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableClientInput;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
+import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 
 /**
@@ -33,12 +32,11 @@ import onlexnet.app.ports.out.SejmApiClient;
  * or manually via HTTP POST. Results are persisted in the daily digest tables.
  */
 @Component
+@Slf4j
 public final class SejmCollectFunctions {
 
-    private static final Logger LOGGER = Logger.getLogger(SejmCollectFunctions.class.getName());
-
     /** Timer trigger function name. */
-    static final String TIMER_FUNCTION_NAME = "Fun_CollectTimer";
+    static final String TIMER_FUNCTION_NAME = "Fun_SejmCollectTimer";
     /** HTTP starter function name for manual trigger. */
     static final String HTTP_STARTER_FUNCTION_NAME = "Fun_CollectStart";
     /** Durable orchestrator function name. */
@@ -66,8 +64,8 @@ public final class SejmCollectFunctions {
         this.sejmApiClient = Objects.requireNonNull(sejmApiClient, "sejmApiClient must not be null");
     }
 
-        /**
-         * Timer trigger that starts the collection orchestrator at the top of every hour.
+    /**
+     * Timer trigger that starts the collection orchestrator at the top of every hour.
      *
      * @param timerInfo        timer trigger information
      * @param durableContext   durable client context
@@ -86,9 +84,9 @@ public final class SejmCollectFunctions {
                 .scheduleNewOrchestrationInstance(ORCHESTRATOR_FUNCTION_NAME, (Object) null);
             executionContext.getLogger().info(
                     "Successfully scheduled collect orchestration, instanceId=" + instanceId);
-            LOGGER.fine("Collect orchestrator triggered by timer: " + instanceId);
+            log.debug("Collect orchestrator triggered by timer: {}", instanceId);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to schedule collect orchestration", e);
+            log.error("Failed to schedule collect orchestration", e);
             executionContext.getLogger().severe("Error scheduling orchestration: " + e.getMessage());
             throw new IllegalStateException("Failed to start collection orchestration", e);
         }
@@ -108,15 +106,20 @@ public final class SejmCollectFunctions {
                     authLevel = AuthorizationLevel.FUNCTION)
             final HttpRequestMessage<Optional<String>> request,
             @DurableClientInput(name = "durableContext")
-            final DurableClientContext durableContext) {
+            final DurableClientContext durableContext,
+            final ExecutionContext executionContext) {
 
         try {
             var instanceId = durableContext.getClient()
                     .scheduleNewOrchestrationInstance(ORCHESTRATOR_FUNCTION_NAME, (Object) null);
-            LOGGER.fine("Manual collect orchestrator triggered: " + instanceId);
+            executionContext.getLogger().info(
+                "Manually scheduled collect orchestration, instanceId=" + instanceId);
+            log.debug("Manual collect orchestrator triggered: {}", instanceId);
             return durableContext.createCheckStatusResponse(request, instanceId);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failed to schedule collect orchestration via HTTP", e);
+            log.error("Failed to schedule collect orchestration via HTTP", e);
+            executionContext.getLogger().severe(
+                "Failed to schedule collect orchestration via HTTP: " + e.getMessage());
             return request.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to start collection: " + e.getMessage())
                     .build();
@@ -153,7 +156,7 @@ public final class SejmCollectFunctions {
 
             return new CollectResult(Map.copyOf(counts));
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Orchestrator failed", e);
+            log.error("Orchestrator failed", e);
             throw new IllegalStateException("Collection orchestration failed", e);
         }
     }
@@ -173,11 +176,18 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
+            executionContext.getLogger().info(
+                    "Starting votings collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectVotings(termNum, date);
-            LOGGER.fine("Activity collectVotings completed: " + count + " items");
+            executionContext.getLogger().info(
+                    "Completed votings collection, count=" + count + ", term=" + termNum
+                            + ", date=" + date);
+            log.debug("Activity collectVotings completed: {} items", count);
             return count;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Activity collectVotings failed", e);
+            log.error("Activity collectVotings failed", e);
+            executionContext.getLogger().severe(
+                    "Activity collectVotings failed: " + e.getMessage());
             throw new IllegalStateException("Failed to collect votings", e);
         }
     }
@@ -197,11 +207,18 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
+            executionContext.getLogger().info(
+                    "Starting committees collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectCommitteeSittings(termNum, date);
-            LOGGER.fine("Activity collectCommittees completed: " + count + " items");
+            executionContext.getLogger().info(
+                    "Completed committees collection, count=" + count + ", term=" + termNum
+                            + ", date=" + date);
+            log.debug("Activity collectCommittees completed: {} items", count);
             return count;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Activity collectCommittees failed", e);
+            log.error("Activity collectCommittees failed", e);
+            executionContext.getLogger().severe(
+                    "Activity collectCommittees failed: " + e.getMessage());
             throw new IllegalStateException("Failed to collect committee sittings", e);
         }
     }
@@ -221,11 +238,18 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
+            executionContext.getLogger().info(
+                    "Starting prints collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectPrints(termNum, date);
-            LOGGER.fine("Activity collectPrints completed: " + count + " items");
+            executionContext.getLogger().info(
+                    "Completed prints collection, count=" + count + ", term=" + termNum
+                            + ", date=" + date);
+            log.debug("Activity collectPrints completed: {} items", count);
             return count;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Activity collectPrints failed", e);
+            log.error("Activity collectPrints failed", e);
+            executionContext.getLogger().severe(
+                    "Activity collectPrints failed: " + e.getMessage());
             throw new IllegalStateException("Failed to collect prints", e);
         }
     }
@@ -245,11 +269,18 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
+            executionContext.getLogger().info(
+                    "Starting interpellations collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectInterpellations(termNum, date);
-            LOGGER.fine("Activity collectInterpellations completed: " + count + " items");
+            executionContext.getLogger().info(
+                    "Completed interpellations collection, count=" + count + ", term=" + termNum
+                            + ", date=" + date);
+            log.debug("Activity collectInterpellations completed: {} items", count);
             return count;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Activity collectInterpellations failed", e);
+            log.error("Activity collectInterpellations failed", e);
+            executionContext.getLogger().severe(
+                    "Activity collectInterpellations failed: " + e.getMessage());
             throw new IllegalStateException("Failed to collect interpellations", e);
         }
     }
@@ -269,11 +300,18 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
+            executionContext.getLogger().info(
+                    "Starting written questions collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectWrittenQuestions(termNum, date);
-            LOGGER.fine("Activity collectQuestions completed: " + count + " items");
+            executionContext.getLogger().info(
+                    "Completed written questions collection, count=" + count + ", term=" + termNum
+                            + ", date=" + date);
+            log.debug("Activity collectQuestions completed: {} items", count);
             return count;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Activity collectQuestions failed", e);
+            log.error("Activity collectQuestions failed", e);
+            executionContext.getLogger().severe(
+                    "Activity collectQuestions failed: " + e.getMessage());
             throw new IllegalStateException("Failed to collect written questions", e);
         }
     }
@@ -293,11 +331,18 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
+            executionContext.getLogger().info(
+                    "Starting bills collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectBills(termNum, date);
-            LOGGER.fine("Activity collectBills completed: " + count + " items");
+            executionContext.getLogger().info(
+                    "Completed bills collection, count=" + count + ", term=" + termNum + ", date="
+                            + date);
+            log.debug("Activity collectBills completed: {} items", count);
             return count;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Activity collectBills failed", e);
+            log.error("Activity collectBills failed", e);
+            executionContext.getLogger().severe(
+                    "Activity collectBills failed: " + e.getMessage());
             throw new IllegalStateException("Failed to collect bills", e);
         }
     }
@@ -322,7 +367,7 @@ public final class SejmCollectFunctions {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         "No current Sejm term found among " + terms.size() + " terms"));
-        LOGGER.fine("Current Sejm term: " + cachedTermNum);
+        log.debug("Current Sejm term: {}", cachedTermNum);
         return cachedTermNum;
     }
 

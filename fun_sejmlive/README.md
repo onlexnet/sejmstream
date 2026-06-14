@@ -37,7 +37,9 @@ The timer expression is `0 30 23 * * *`, which resolves to 23:30 in the configur
    - For Azurite, use `UseDevelopmentStorage=true`.
    - For Azure Storage, use the same connection string value used by `AzureWebJobsStorage`.
 4. Set `FUNCTIONS_WORKER_RUNTIME` to `java`.
-5. Keep `local.settings.json` out of source control.
+5. Optional but recommended for telemetry: set `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+6. Legacy compatibility (optional): set `APPINSIGHTS_INSTRUMENTATIONKEY`.
+7. Keep `local.settings.json` out of source control.
 
 If you use `UseDevelopmentStorage=true`, make sure Azurite is running before starting Functions.
 
@@ -169,6 +171,10 @@ For a deployed Function App, the same paths are available under your app host:
   - `AzureWebJobsStorage__tableServiceUri`
   - `AzureWebJobsStorage__credential=managedidentity`
   - `AzureFunctionsJobHost__extensions__durableTask__hubName` (configured via Terraform variable `function_durable_hub_name`, default `SejmApiDemoHub`)
+- Azure deployment enables Application Insights by default via Terraform variable `enable_application_insights`.
+- When enabled, Function App settings include:
+   - `APPLICATIONINSIGHTS_CONNECTION_STRING`
+   - `APPINSIGHTS_INSTRUMENTATIONKEY`
 - Do not configure the Function App in Azure with direct `AzureWebJobsStorage=<connection string>`.
 
 ## Observed Packaging Output Path
