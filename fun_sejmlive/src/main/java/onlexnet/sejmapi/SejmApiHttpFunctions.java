@@ -26,7 +26,7 @@ public final class SejmApiHttpFunctions {
         this.sejmApiClient = sejmApiClient;
     }
 
-    @FunctionName("SejmApiDemo_SimpleData")
+    @FunctionName("Fun_SimpleData")
     public HttpResponseMessage simpleData(
             @HttpTrigger(name = "request", methods = {
                     HttpMethod.GET }, authLevel = AuthorizationLevel.ANONYMOUS,

@@ -9,14 +9,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.context.annotation.Bean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import onlexnet.app.ports.out.SejmApiClient.BillItem;
 import onlexnet.app.ports.out.SejmApiClient.CommitteeSittingItem;
@@ -25,20 +21,20 @@ import onlexnet.app.ports.out.SejmApiClient.PrintItem;
 import onlexnet.app.ports.out.SejmApiClient.VotingItem;
 import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
 
-@SpringBootTest(classes = SejmDigestServiceTest.TestConfig.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class SejmDigestServiceTest {
 
     private static final LocalDate TEST_DATE = LocalDate.of(2026, 6, 13);
 
-    @Autowired
     private SejmDigestService service;
-
-    @Autowired
     private FakeSejmDailyDigestRepository repository;
-
-    @Autowired
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    void setUp() {
+        this.repository = new FakeSejmDailyDigestRepository();
+        this.objectMapper = new ObjectMapper().findAndRegisterModules();
+        this.service = new SejmDigestService(this.repository, this.objectMapper);
+    }
 
     @Test
     void givenRowsForAllDataTypes_whenBuildingDigest_thenReturnsPolishPostWithSections() throws Exception {
@@ -103,9 +99,9 @@ class SejmDigestServiceTest {
 
     @Test
     void givenNoRows_whenBuildingDigest_thenReturnsEmptyOptional() {
-                this.repository.setRows(List.of());
+        this.repository.setRows(List.of());
 
-                var digest = this.service.buildDigest(TEST_DATE);
+        var digest = this.service.buildDigest(TEST_DATE);
 
         assertThat(digest).isEmpty();
     }
@@ -115,7 +111,7 @@ class SejmDigestServiceTest {
             throws Exception {
         var rows = new ArrayList<Map<String, Object>>();
         for (var index = 1; index <= 7; index++) {
-                        rows.add(row("VOTING", this.objectMapper.writeValueAsString(new VotingItem(
+            rows.add(row("VOTING", this.objectMapper.writeValueAsString(new VotingItem(
                     LocalDateTime.of(2026, 6, 13, 10, index),
                     1,
                     index,
@@ -157,7 +153,7 @@ class SejmDigestServiceTest {
                         420,
                         40)))));
 
-                var digest = this.service.buildDigest(TEST_DATE);
+        var digest = this.service.buildDigest(TEST_DATE);
 
         assertThat(digest).isPresent();
         assertThat(digest.orElseThrow())
@@ -165,23 +161,23 @@ class SejmDigestServiceTest {
                 .contains("Poprawny temat");
     }
 
-        @Test
-        void givenMissingDataType_whenBuildingDigest_thenSkipsRowAndReturnsEmpty() throws Exception {
-                this.repository.setRows(List.of(Map.of("item_json", this.objectMapper.writeValueAsString(new VotingItem(
-                                LocalDateTime.of(2026, 6, 13, 10, 0),
-                                1,
-                                25,
-                                "Temat",
-                                220,
-                                180,
-                                20,
-                                420,
-                                40)))));
+    @Test
+    void givenMissingDataType_whenBuildingDigest_thenSkipsRowAndReturnsEmpty() throws Exception {
+        this.repository.setRows(List.of(Map.of("item_json", this.objectMapper.writeValueAsString(new VotingItem(
+                LocalDateTime.of(2026, 6, 13, 10, 0),
+                1,
+                25,
+                "Temat",
+                220,
+                180,
+                20,
+                420,
+                40)))));
 
-                var digest = this.service.buildDigest(TEST_DATE);
+        var digest = this.service.buildDigest(TEST_DATE);
 
-                assertThat(digest).isEmpty();
-        }
+        assertThat(digest).isEmpty();
+    }
 
     private static Map<String, Object> row(final String dataType, final String json) {
         var row = new LinkedHashMap<String, Object>();
@@ -189,26 +185,6 @@ class SejmDigestServiceTest {
         row.put("item_json", json);
         return row;
     }
-
-        @TestConfiguration
-        static class TestConfig {
-
-                @Bean
-                ObjectMapper objectMapper() {
-                        return new ObjectMapper().registerModule(new JavaTimeModule());
-                }
-
-                @Bean
-                FakeSejmDailyDigestRepository repository() {
-                        return new FakeSejmDailyDigestRepository();
-                }
-
-                @Bean
-                SejmDigestService sejmDigestService(final FakeSejmDailyDigestRepository repository,
-                                final ObjectMapper objectMapper) {
-                        return new SejmDigestService(repository, objectMapper);
-                }
-        }
 
     private static final class FakeSejmDailyDigestRepository extends SejmDailyDigestRepository {
 

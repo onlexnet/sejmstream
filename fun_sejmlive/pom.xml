@@ -260,6 +260,14 @@
 							<value>java</value>
 						</property>
 						<property>
+							<name>TZ</name>
+							<value>Europe/Warsaw</value>
+						</property>
+						<property>
+							<name>WEBSITE_TIME_ZONE</name>
+							<value>Europe/Warsaw</value>
+						</property>
+						<property>
 							<name>AzureWebJobsStorage</name>
 							<value>UseDevelopmentStorage=true</value>
 						</property>

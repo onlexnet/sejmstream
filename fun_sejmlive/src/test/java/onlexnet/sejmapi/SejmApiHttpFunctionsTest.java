@@ -50,7 +50,7 @@ class SejmApiHttpFunctionsTest {
         var trigger = method.getParameters()[0].getAnnotation(HttpTrigger.class);
 
         assertThat(functionName).isNotNull();
-        assertThat(functionName.value()).isEqualTo("SejmApiDemo_SimpleData");
+        assertThat(functionName.value()).isEqualTo("Fun_SimpleData");
         assertThat(trigger).isNotNull();
         assertThat(trigger.methods()).containsExactly(HttpMethod.GET);
         assertThat(trigger.authLevel()).isEqualTo(AuthorizationLevel.ANONYMOUS);

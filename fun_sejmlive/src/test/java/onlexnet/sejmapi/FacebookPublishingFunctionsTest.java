@@ -42,11 +42,11 @@ class FacebookPublishingFunctionsTest {
         var trigger = method.getParameters()[0].getAnnotation(HttpTrigger.class);
 
         assertThat(functionName).isNotNull();
-        assertThat(functionName.value()).isEqualTo("SejmApiDemo_FacebookPublishStart");
+        assertThat(functionName.value()).isEqualTo("Fun_FacebookPublishStart");
         assertThat(trigger).isNotNull();
         assertThat(trigger.methods()).containsExactly(HttpMethod.POST);
         assertThat(trigger.authLevel()).isEqualTo(AuthorizationLevel.FUNCTION);
-        assertThat(trigger.route()).isEqualTo("SejmApiDemo_FacebookPublishStart");
+        assertThat(trigger.route()).isEqualTo("Fun_FacebookPublishStart");
     }
 
     @Test
@@ -61,7 +61,7 @@ class FacebookPublishingFunctionsTest {
         var trigger = method.getParameters()[0].getAnnotation(TimerTrigger.class);
 
         assertThat(functionName).isNotNull();
-        assertThat(functionName.value()).isEqualTo("SejmApiDemo_FacebookPublish");
+        assertThat(functionName.value()).isEqualTo("Fun_FacebookPublish");
         assertThat(trigger).isNotNull();
         assertThat(trigger.schedule()).isEqualTo("0 30 23 * * *");
     }
@@ -313,7 +313,7 @@ class FacebookPublishingFunctionsTest {
 
         @Override
         public String getFunctionName() {
-            return "SejmApiDemo_FacebookPublish";
+            return "Fun_FacebookPublish";
         }
     }
 
@@ -328,7 +328,7 @@ class FacebookPublishingFunctionsTest {
 
         @Override
         public URI getUri() {
-            return URI.create("https://localhost/api/SejmApiDemo_FacebookPublishStart");
+            return URI.create("https://localhost/api/Fun_FacebookPublishStart");
         }
 
         @Override
