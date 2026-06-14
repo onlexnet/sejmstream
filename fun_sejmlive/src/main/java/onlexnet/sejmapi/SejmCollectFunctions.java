@@ -83,7 +83,7 @@ public final class SejmCollectFunctions {
 
         try {
             var instanceId = durableContext.getClient()
-                    .scheduleNewOrchestrationInstance(ORCHESTRATOR_FUNCTION_NAME, null);
+                .scheduleNewOrchestrationInstance(ORCHESTRATOR_FUNCTION_NAME, (Object) null);
             executionContext.getLogger().info(
                     "Successfully scheduled collect orchestration, instanceId=" + instanceId);
             LOGGER.fine("Collect orchestrator triggered by timer: " + instanceId);
@@ -112,7 +112,7 @@ public final class SejmCollectFunctions {
 
         try {
             var instanceId = durableContext.getClient()
-                    .scheduleNewOrchestrationInstance(ORCHESTRATOR_FUNCTION_NAME, null);
+                    .scheduleNewOrchestrationInstance(ORCHESTRATOR_FUNCTION_NAME, (Object) null);
             LOGGER.fine("Manual collect orchestrator triggered: " + instanceId);
             return durableContext.createCheckStatusResponse(request, instanceId);
         } catch (Exception e) {
