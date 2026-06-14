@@ -26,12 +26,6 @@ variable "function_durable_hub_name" {
   }
 }
 
-variable "enable_application_insights" {
-  description = "Enable Azure Application Insights for the Function App runtime telemetry."
-  type        = bool
-  default     = false
-}
-
 variable "spring_datasource_url" {
   description = "Optional JDBC URL for external PostgreSQL (for example Neon)."
   type        = string

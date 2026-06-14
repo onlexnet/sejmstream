@@ -38,10 +38,6 @@ output "function_app_principal_id" {
   value = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
-output "application_insights_enabled" {
-  value = var.enable_application_insights
-}
-
 output "application_insights_connection_string" {
   value     = try(azurerm_application_insights.main[0].connection_string, null)
   sensitive = true

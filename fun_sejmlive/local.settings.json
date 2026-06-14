@@ -4,6 +4,8 @@
     "FUNCTIONS_WORKER_RUNTIME": "java",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "Storage": "UseDevelopmentStorage=true",
+    "APPLICATIONINSIGHTS_CONNECTION_STRING": "",
+    "APPINSIGHTS_INSTRUMENTATIONKEY": "",
     "JAVA_HOME": "/usr/local/sdkman/candidates/java/current",
     "facebook_token": "",
     "TZ": "Europe/Warsaw",

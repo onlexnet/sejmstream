@@ -165,6 +165,7 @@ resource "azurerm_function_app_flex_consumption" "main" {
       # Remove together with storage_access_key above once MSI is fully supported.
       AzureWebJobsStorage                   = azurerm_storage_account.function_app.primary_connection_string
       APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.main[0].connection_string
+      APPINSIGHTS_INSTRUMENTATIONKEY        = azurerm_application_insights.main[0].instrumentation_key
       FB_TOKEN                              = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.facebook_token[0].versionless_id})"
       DB_URL                                = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_url[0].versionless_id})"
       DB_USERNAME                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_username[0].versionless_id})"

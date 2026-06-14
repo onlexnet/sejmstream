@@ -17,6 +17,9 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -44,7 +47,34 @@ import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 
+@SpringBootTest(classes = Program.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 class SejmCollectFunctionsTest {
+
+    @Autowired
+    private ApplicationContext applicationContext;
+
+    @Autowired
+    private SejmCollectFunctions sejmCollectFunctions;
+
+    @Autowired
+    private SejmCollectService sejmCollectService;
+
+    @Autowired
+    private SejmApiClient sejmApiClient;
+
+    @Test
+    void givenSpringBootContext_whenResolvingCollectFunctions_thenRequiredDependenciesAreInjected() {
+    assertThat(this.applicationContext).isNotNull();
+    assertThat(this.sejmCollectFunctions).isNotNull();
+    assertThat(this.sejmCollectService).isNotNull();
+    assertThat(this.sejmApiClient).isNotNull();
+    assertThat(this.applicationContext.getBean(SejmCollectFunctions.class))
+        .isSameAs(this.sejmCollectFunctions);
+    assertThat(this.applicationContext.getBean(SejmCollectService.class))
+        .isSameAs(this.sejmCollectService);
+    assertThat(this.applicationContext.getBean(SejmApiClient.class))
+        .isSameAs(this.sejmApiClient);
+    }
 
     @Test
     void givenTimerFunction_whenCheckingTriggerContract_thenRunsDailyAt1630()
@@ -70,7 +100,8 @@ class SejmCollectFunctionsTest {
         var method = SejmCollectFunctions.class.getDeclaredMethod(
                 "httpStart",
                 HttpRequestMessage.class,
-                DurableClientContext.class);
+            DurableClientContext.class,
+            ExecutionContext.class);
 
         var functionName = method.getAnnotation(FunctionName.class);
         var trigger = method.getParameters()[0].getAnnotation(HttpTrigger.class);
@@ -149,7 +180,7 @@ class SejmCollectFunctionsTest {
         var durableContext = new TestDurableClientContext(false);
         var request = new FakeHttpRequestMessage<String>(Optional.empty());
 
-        var response = functions.httpStart(request, durableContext);
+        var response = functions.httpStart(request, durableContext, new FakeExecutionContext());
 
         assertThat(durableContext.capturedFunctionName)
                 .isEqualTo(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME);
@@ -167,7 +198,7 @@ class SejmCollectFunctionsTest {
         var durableContext = new TestDurableClientContext(true);
         var request = new FakeHttpRequestMessage<String>(Optional.empty());
 
-        var response = functions.httpStart(request, durableContext);
+        var response = functions.httpStart(request, durableContext, new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().toString()).contains("Failed to start collection");
