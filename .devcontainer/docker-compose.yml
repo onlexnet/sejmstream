@@ -27,6 +27,10 @@ services:
       - devcontainer-terraform:/home/worker/.terraform.d
       # Persist result of az login
       - devcontainer-azure:/home/worker/.azure/
+      # Persist GitHub CLI auth (used by Copilot CLI login flow in many setups)
+      - devcontainer-gh:/home/worker/.config/gh
+      # Persist Copilot CLI config/login state across rebuilds
+      - devcontainer-copilot:/home/worker/.config/github-copilot
 
     # Overrides default command so things don't shut down after the process ends.
     command: /bin/sh -c "while sleep 1000; do :; done"
@@ -35,3 +39,5 @@ volumes:
   devcontainer-ssh:
   devcontainer-terraform:
   devcontainer-azure:
+  devcontainer-gh:
+  devcontainer-copilot:
