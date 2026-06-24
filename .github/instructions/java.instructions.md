@@ -20,6 +20,7 @@ applyTo: '**/*.java'
 - **Streams and Lambdas**: Use the Streams API and lambda expressions for collection processing. Employ method references (e.g., `stream.map(Foo::toBar)`).
 - **Null Handling**: Avoid returning or accepting `null`. Use `Optional<T>` for possibly-absent values and `Objects` utility methods like `equals()` and `requireNonNull()`.
 - **JavaDoc for Public Contracts**: Add short JavaDoc comments to public classes, interfaces, and methods when they define a contract. Describe the responsibility, intent, inputs, outputs, and guarantees of the API, not obvious implementation details. Do not add JavaDoc to methods overriding a base class or interface contract unless they need to document important implementation-specific behavior or constraints.
+- **Formatting** keep text lines not longer than 140 characters
 
 ### Naming Conventions
 
