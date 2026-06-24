@@ -21,11 +21,6 @@ public class SpringBoot4Configuration {
 		return new ObjectMapper().findAndRegisterModules();
 	}
 
-	@Bean
-	public SimpleMessageService simpleMessageService() {
-		return new SimpleMessageService("sejmstream");
-	}
-
 	/**
 	 * Creates the real {@link FacebookPublisher} when {@code FB_TOKEN} is configured.
 	 * <p>

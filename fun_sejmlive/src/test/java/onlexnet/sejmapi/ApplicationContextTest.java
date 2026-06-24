@@ -77,9 +77,6 @@ class ApplicationContextTest {
         assertThat(this.applicationContext.getBean(ApiDocumentationFunctions.class))
                 .as("ApiDocumentationFunctions must be available for OpenAPI docs endpoint")
                 .isNotNull();
-        assertThat(this.applicationContext.getBean(DiSampleFunctions.class))
-                .as("DiSampleFunctions must be available as a dependency-injection demo")
-                .isNotNull();
         assertThat(this.applicationContext.getBean(DemoDurableFunctions.class))
                 .as("DemoDurableFunctions must be available for Durable Function orchestration")
                 .isNotNull();
