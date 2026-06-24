@@ -1,7 +1,5 @@
 package onlexnet.sejmapi;
 
-import org.springframework.stereotype.Component;
-
 import lombok.extern.slf4j.Slf4j;
 
 import com.restfb.DefaultFacebookClient;
@@ -10,18 +8,18 @@ import com.restfb.Version;
 import com.restfb.exception.FacebookOAuthException;
 import com.restfb.types.Page;
 
-@Component
 @Slf4j
 final class DefaultFacebookPublisher implements FacebookPublisher {
 
-    private final DefaultFacebookClient client;
-
-    DefaultFacebookPublisher() {
-        this(new FacebookTokenProvider().resolveToken());
-    }
+    private final String token;
+    /** Lazily initialised on the first {@link #publish} call; guarded by {@link #ensureClient()}. */
+    private DefaultFacebookClient client = null;
 
     DefaultFacebookPublisher(final String token) {
-        this.client = createClient(token);
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException("Facebook token is not configured");
+        }
+        this.token = token;
     }
 
     @Override
@@ -30,17 +28,20 @@ final class DefaultFacebookPublisher implements FacebookPublisher {
             return;
         }
 
+        ensureClient();
         this.client.publish("me/feed",
                 com.restfb.types.FacebookType.class,
                 Parameter.with("message", message));
         log.info("Published Facebook message: {}", message);
     }
 
-    private DefaultFacebookClient createClient(final String token) {
-        if (token == null || token.isBlank()) {
-            throw new IllegalStateException("Facebook token is not configured");
+    private synchronized void ensureClient() {
+        if (this.client == null) {
+            this.client = createClient(this.token);
         }
+    }
 
+    private DefaultFacebookClient createClient(final String token) {
         var fbClient = new DefaultFacebookClient(token, Version.LATEST);
         try {
             var pages = fbClient.fetchConnection("me/accounts", Page.class);

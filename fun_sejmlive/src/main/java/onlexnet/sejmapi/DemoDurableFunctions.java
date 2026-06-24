@@ -3,6 +3,8 @@ package onlexnet.sejmapi;
 import java.util.Optional;
 import java.util.stream.IntStream;
 
+import org.springframework.stereotype.Component;
+
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
@@ -19,6 +21,7 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 /**
  * Demo Durable Functions workflow for the fun_sejmapi module.
  */
+@Component
 public final class DemoDurableFunctions {
 
     /** Durable HTTP starter function name. */
