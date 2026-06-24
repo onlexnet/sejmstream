@@ -90,7 +90,7 @@ class ApplicationContextTest {
             return;
         }
 
-        postgresContainerName = "application-context-it-" + UUID.randomUUID();
+        postgresContainerName = "application-context-integration-test-" + UUID.randomUUID();
         runCommand("docker", "run", "-d", "--rm",
                 "--name", postgresContainerName,
                 "-e", "POSTGRES_DB=" + DB_NAME,
@@ -125,7 +125,7 @@ class ApplicationContextTest {
     private static void waitForDatabaseReady() {
         long deadline = System.nanoTime() + STARTUP_TIMEOUT.toNanos();
         while (System.nanoTime() < deadline) {
-            try (var ignored = DriverManager.getConnection(jdbcUrl, DB_USERNAME, DB_PASSWORD)) {
+            try (var connection = DriverManager.getConnection(jdbcUrl, DB_USERNAME, DB_PASSWORD)) {
                 return;
             } catch (Exception ignored) {
                 sleepMillis(1000);

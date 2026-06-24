@@ -12,7 +12,8 @@ import com.restfb.types.Page;
 final class DefaultFacebookPublisher implements FacebookPublisher {
 
     private final String token;
-    private volatile DefaultFacebookClient client;
+    /** Lazily initialised on the first {@link #publish} call; guarded by {@link #ensureClient()}. */
+    private DefaultFacebookClient client = null;
 
     DefaultFacebookPublisher(final String token) {
         if (token == null || token.isBlank()) {
