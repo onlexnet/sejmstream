@@ -22,6 +22,7 @@ import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableClientInput;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 
@@ -33,6 +34,7 @@ import onlexnet.app.ports.out.SejmApiClient;
  */
 @Component
 @Slf4j
+@RequiredArgsConstructor
 public final class SejmCollectFunctions {
 
     /** Timer trigger function name. */
@@ -56,12 +58,16 @@ public final class SejmCollectFunctions {
 
     private final SejmCollectService collectService;
     private final SejmApiClient sejmApiClient;
-    private int cachedTermNum = -1;
+    private CachedTerm cachedTermNum = CachedTerm.NONE;
 
-    public SejmCollectFunctions(final SejmCollectService collectService,
-            final SejmApiClient sejmApiClient) {
-        this.collectService = Objects.requireNonNull(collectService, "collectService must not be null");
-        this.sejmApiClient = Objects.requireNonNull(sejmApiClient, "sejmApiClient must not be null");
+    /** Holds the cached current Sejm term number, or {@link None} if not yet resolved. */
+    private sealed interface CachedTerm permits CachedTerm.None, CachedTerm.Resolved {
+        /** Sentinel representing an unresolved term. */
+        enum None implements CachedTerm { NONE }
+        /** A successfully resolved term number. */
+        record Resolved(int num) implements CachedTerm {}
+
+        CachedTerm NONE = None.NONE;
     }
 
     /**
@@ -354,21 +360,22 @@ public final class SejmCollectFunctions {
      * @throws IllegalStateException if no current term is found
      */
     private int getCurrentTermNum() {
-        if (cachedTermNum > 0) {
-            return cachedTermNum;
+        if (cachedTermNum instanceof CachedTerm.Resolved resolved) {
+            return resolved.num();
         }
         var terms = sejmApiClient.fetchTerms();
         if (terms == null || terms.isEmpty()) {
             throw new IllegalStateException("No Sejm terms found");
         }
-        cachedTermNum = terms.stream()
+        var termNum = terms.stream()
                 .filter(t -> t != null && t.current())
                 .mapToInt(onlexnet.app.ports.out.SejmApiClient.SejmTerm::num)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         "No current Sejm term found among " + terms.size() + " terms"));
-        log.debug("Current Sejm term: {}", cachedTermNum);
-        return cachedTermNum;
+        cachedTermNum = new CachedTerm.Resolved(termNum);
+        log.debug("Current Sejm term: {}", termNum);
+        return termNum;
     }
 
     /**
