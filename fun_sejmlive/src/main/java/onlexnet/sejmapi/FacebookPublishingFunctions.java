@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.microsoft.azure.functions.ExecutionContext;
@@ -32,6 +33,7 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
  * attached as a suppressed exception.
  */
 @Component
+@ConditionalOnProperty("FB_TOKEN")
 public final class FacebookPublishingFunctions {
 
     static final String TIMER_FUNCTION_NAME = "Fun_FacebookPublish";

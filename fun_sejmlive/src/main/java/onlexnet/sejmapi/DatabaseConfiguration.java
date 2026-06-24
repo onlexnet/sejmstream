@@ -36,11 +36,12 @@ public class DatabaseConfiguration {
     }
 
     @Bean
-    public SpringLiquibase springLiquibase(final DataSource dataSource) {
+    public SpringLiquibase springLiquibase(final DataSource dataSource,
+            @Value("${spring.datasource.url:}") final String url) {
         final var liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog("classpath:db/changelog/db.changelog-master.yaml");
-        liquibase.setShouldRun(true);
+        liquibase.setShouldRun(!url.isBlank());
         return liquibase;
     }
 }
