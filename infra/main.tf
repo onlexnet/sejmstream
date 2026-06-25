@@ -170,6 +170,8 @@ resource "azurerm_function_app_flex_consumption" "main" {
       DB_URL                                = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_url[0].versionless_id})"
       DB_USERNAME                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_username[0].versionless_id})"
       DB_PASSWORD                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_password[0].versionless_id})"
+      TELEGRAM_BOT_TOKEN                    = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_bot_token[0].versionless_id})"
+      TELEGRAM_ALLOWED_CHAT_ID              = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_allowed_chat_id[0].versionless_id})"
     }
   )
 
@@ -307,6 +309,20 @@ resource "azurerm_key_vault_secret" "facebook_token" {
   count        = 1
   name         = "fb-token"
   value        = var.facebook_token
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+resource "azurerm_key_vault_secret" "telegram_bot_token" {
+  count        = 1
+  name         = "telegram-bot-token"
+  value        = var.telegram_bot_token
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+resource "azurerm_key_vault_secret" "telegram_allowed_chat_id" {
+  count        = 1
+  name         = "telegram-allowed-chat-id"
+  value        = var.telegram_allowed_chat_id
   key_vault_id = azurerm_key_vault.main.id
 }
 
