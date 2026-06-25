@@ -1,5 +1,6 @@
 package onlexnet.sejmapi;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +17,9 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
+import com.microsoft.durabletask.RetryPolicy;
 import com.microsoft.durabletask.TaskOrchestrationContext;
+import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableClientInput;
@@ -55,6 +58,11 @@ public final class SejmCollectFunctions {
     static final String ACTIVITY_QUESTIONS = "Intern_CollectQuestions";
     /** Activity function name for collecting bills. */
     static final String ACTIVITY_BILLS = "Intern_CollectBills";
+    private static final TaskOptions ORCHESTRATOR_ACTIVITY_OPTIONS = new TaskOptions(
+            new RetryPolicy(3, Duration.ofSeconds(5))
+                    .setBackoffCoefficient(2.0)
+                    .setMaxRetryInterval(Duration.ofMinutes(1))
+                    .setRetryTimeout(Duration.ofMinutes(5)));
 
     private final SejmCollectService collectService;
     private final SejmApiClient sejmApiClient;
@@ -147,24 +155,28 @@ public final class SejmCollectFunctions {
         try {
             var counts = new HashMap<String, Integer>();
 
-            counts.put("VOTING", orchestrationContext
-                    .callActivity(ACTIVITY_VOTINGS, null, Integer.class).await());
-            counts.put("COMMITTEE_SITTING", orchestrationContext
-                    .callActivity(ACTIVITY_COMMITTEES, null, Integer.class).await());
-            counts.put("PRINT", orchestrationContext
-                    .callActivity(ACTIVITY_PRINTS, null, Integer.class).await());
-            counts.put("INTERPELLATION", orchestrationContext
-                    .callActivity(ACTIVITY_INTERPELLATIONS, null, Integer.class).await());
-            counts.put("WRITTEN_QUESTION", orchestrationContext
-                    .callActivity(ACTIVITY_QUESTIONS, null, Integer.class).await());
-            counts.put("BILL", orchestrationContext
-                    .callActivity(ACTIVITY_BILLS, null, Integer.class).await());
+            counts.put("VOTING", callCountActivity(orchestrationContext, ACTIVITY_VOTINGS));
+            counts.put("COMMITTEE_SITTING", callCountActivity(orchestrationContext, ACTIVITY_COMMITTEES));
+            counts.put("PRINT", callCountActivity(orchestrationContext, ACTIVITY_PRINTS));
+            counts.put("INTERPELLATION", callCountActivity(orchestrationContext, ACTIVITY_INTERPELLATIONS));
+            counts.put("WRITTEN_QUESTION", callCountActivity(orchestrationContext, ACTIVITY_QUESTIONS));
+            counts.put("BILL", callCountActivity(orchestrationContext, ACTIVITY_BILLS));
 
             return new CollectResult(Map.copyOf(counts));
         } catch (Exception e) {
             log.error("Orchestrator failed", e);
             throw new IllegalStateException("Collection orchestration failed", e);
         }
+    }
+
+    private Integer callCountActivity(
+            final TaskOrchestrationContext orchestrationContext,
+            final String activityName) {
+        return Objects.requireNonNull(
+                orchestrationContext
+                        .callActivity(activityName, null, ORCHESTRATOR_ACTIVITY_OPTIONS, Integer.class)
+                        .await(),
+                "Activity " + activityName + " returned null count");
     }
 
     /**

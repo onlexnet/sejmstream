@@ -6,6 +6,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 
 import java.net.URI;
 import java.time.Duration;
@@ -39,9 +42,13 @@ import com.microsoft.durabletask.OrchestrationStatusQuery;
 import com.microsoft.durabletask.OrchestrationStatusQueryResult;
 import com.microsoft.durabletask.PurgeInstanceCriteria;
 import com.microsoft.durabletask.PurgeResult;
+import com.microsoft.durabletask.Task;
+import com.microsoft.durabletask.TaskOrchestrationContext;
+import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
+import org.mockito.ArgumentCaptor;
 
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
@@ -272,6 +279,73 @@ class SejmCollectFunctionsTest {
                 .hasCauseInstanceOf(RuntimeException.class)
                 .cause()
                 .hasMessage("service failure");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void givenOrchestrator_whenActivitiesSucceed_thenReturnsCountsAndUsesRetryPolicy() {
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+        var votingsTask = mockTask(1);
+        var committeesTask = mockTask(2);
+        var printsTask = mockTask(3);
+        var interpellationsTask = mockTask(4);
+        var questionsTask = mockTask(5);
+        var billsTask = mockTask(6);
+        when(orchestrationContext.callActivity(eq(SejmCollectFunctions.ACTIVITY_VOTINGS), isNull(),
+                any(TaskOptions.class), eq(Integer.class))).thenReturn(votingsTask);
+        when(orchestrationContext.callActivity(eq(SejmCollectFunctions.ACTIVITY_COMMITTEES), isNull(),
+                any(TaskOptions.class), eq(Integer.class))).thenReturn(committeesTask);
+        when(orchestrationContext.callActivity(eq(SejmCollectFunctions.ACTIVITY_PRINTS), isNull(),
+                any(TaskOptions.class), eq(Integer.class))).thenReturn(printsTask);
+        when(orchestrationContext.callActivity(eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS), isNull(),
+                any(TaskOptions.class), eq(Integer.class))).thenReturn(interpellationsTask);
+        when(orchestrationContext.callActivity(eq(SejmCollectFunctions.ACTIVITY_QUESTIONS), isNull(),
+                any(TaskOptions.class), eq(Integer.class))).thenReturn(questionsTask);
+        when(orchestrationContext.callActivity(eq(SejmCollectFunctions.ACTIVITY_BILLS), isNull(),
+                any(TaskOptions.class), eq(Integer.class))).thenReturn(billsTask);
+
+        var result = new SejmCollectFunctions(new RecordingCollectService(), mock(SejmApiClient.class))
+                .runOrchestrator(orchestrationContext);
+
+        assertThat(result.countsByType()).isEqualTo(Map.of(
+                "VOTING", 1,
+                "COMMITTEE_SITTING", 2,
+                "PRINT", 3,
+                "INTERPELLATION", 4,
+                "WRITTEN_QUESTION", 5,
+                "BILL", 6));
+        var optionsCaptor = ArgumentCaptor.forClass(TaskOptions.class);
+        verify(orchestrationContext).callActivity(eq(SejmCollectFunctions.ACTIVITY_VOTINGS), isNull(),
+                optionsCaptor.capture(), eq(Integer.class));
+        var retryPolicy = optionsCaptor.getValue().getRetryPolicy();
+        assertThat(retryPolicy).isNotNull();
+        assertThat(retryPolicy.getMaxNumberOfAttempts()).isEqualTo(3);
+        assertThat(retryPolicy.getFirstRetryInterval()).isEqualTo(Duration.ofSeconds(5));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void givenOrchestrator_whenActivityReturnsNullCount_thenWrapsAsIllegalStateException() {
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+        var nullCountTask = mockTask(null);
+        when(orchestrationContext.callActivity(eq(SejmCollectFunctions.ACTIVITY_VOTINGS), isNull(),
+                any(TaskOptions.class), eq(Integer.class))).thenReturn(nullCountTask);
+
+        var functions = new SejmCollectFunctions(new RecordingCollectService(), mock(SejmApiClient.class));
+
+        assertThatThrownBy(() -> functions.runOrchestrator(orchestrationContext))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Collection orchestration failed")
+                .hasCauseInstanceOf(NullPointerException.class)
+                .cause()
+                .hasMessageContaining("returned null count");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Task<Integer> mockTask(final Integer value) {
+        var task = mock(Task.class);
+        when(task.await()).thenReturn(value);
+        return task;
     }
 
     private static final class RecordingCollectService extends SejmCollectService {
