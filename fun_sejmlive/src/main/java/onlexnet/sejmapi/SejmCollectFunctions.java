@@ -144,27 +144,22 @@ public final class SejmCollectFunctions {
             @DurableOrchestrationTrigger(name = "orchestrationContext")
             final TaskOrchestrationContext orchestrationContext) {
 
-        try {
-            var counts = new HashMap<String, Integer>();
+        var counts = new HashMap<String, Integer>();
 
-            counts.put("VOTING", orchestrationContext
-                    .callActivity(ACTIVITY_VOTINGS, null, Integer.class).await());
-            counts.put("COMMITTEE_SITTING", orchestrationContext
-                    .callActivity(ACTIVITY_COMMITTEES, null, Integer.class).await());
-            counts.put("PRINT", orchestrationContext
-                    .callActivity(ACTIVITY_PRINTS, null, Integer.class).await());
-            counts.put("INTERPELLATION", orchestrationContext
-                    .callActivity(ACTIVITY_INTERPELLATIONS, null, Integer.class).await());
-            counts.put("WRITTEN_QUESTION", orchestrationContext
-                    .callActivity(ACTIVITY_QUESTIONS, null, Integer.class).await());
-            counts.put("BILL", orchestrationContext
-                    .callActivity(ACTIVITY_BILLS, null, Integer.class).await());
+        counts.put("VOTING", orchestrationContext
+                .callActivity(ACTIVITY_VOTINGS, null, Integer.class).await());
+        counts.put("COMMITTEE_SITTING", orchestrationContext
+                .callActivity(ACTIVITY_COMMITTEES, null, Integer.class).await());
+        counts.put("PRINT", orchestrationContext
+                .callActivity(ACTIVITY_PRINTS, null, Integer.class).await());
+        counts.put("INTERPELLATION", orchestrationContext
+                .callActivity(ACTIVITY_INTERPELLATIONS, null, Integer.class).await());
+        counts.put("WRITTEN_QUESTION", orchestrationContext
+                .callActivity(ACTIVITY_QUESTIONS, null, Integer.class).await());
+        counts.put("BILL", orchestrationContext
+                .callActivity(ACTIVITY_BILLS, null, Integer.class).await());
 
-            return new CollectResult(Map.copyOf(counts));
-        } catch (Exception e) {
-            log.error("Orchestrator failed", e);
-            throw new IllegalStateException("Collection orchestration failed", e);
-        }
+        return new CollectResult(Map.copyOf(counts));
     }
 
     /**
