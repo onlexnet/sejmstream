@@ -135,6 +135,43 @@ terraform output -raw function_storage_account_name
 
 Do not print or share sensitive outputs in logs or documentation.
 
+## Setting Telegram webhook
+
+Use `set-telegram-webhook.sh` when Telegram must (re)learn the public URL of your deployed Function App.
+
+Run it from `infra/`:
+
+```bash
+./set-telegram-webhook.sh
+```
+
+Optional route override (default is `api/telegram/webhook`):
+
+```bash
+./set-telegram-webhook.sh api/telegram/webhook
+```
+
+### When to use this script
+
+- After first deployment of the Function App with Telegram support.
+- After Function App recreation or hostname change.
+- After changing to a different Telegram bot token/bot.
+- After manually removing/resetting webhook on Telegram side.
+
+### When you usually do not need it
+
+- Regular app code deployments where Function hostname and bot token did not change.
+
+### Requirements
+
+- Terraform state access for `infra/` (script reads `function_app_default_hostname` output).
+- Telegram bot token available in one of these ways:
+   - `TELEGRAM_BOT_TOKEN` environment variable, or
+   - `TF_VAR_telegram_bot_token` environment variable, or
+   - Azure CLI login + permission to read Key Vault secret `telegram-bot-token`.
+
+The script calls Telegram `setWebhook` and then `getWebhookInfo` so you can verify registration immediately.
+
 ## Passing Key Vault endpoint to Spring Boot
 
 Use Terraform output `key_vault_uri` as the single source of truth for the app runtime endpoint.
