@@ -80,32 +80,9 @@ Default local endpoint:
 
 - `http://localhost:7071`
 
-Swagger/OpenAPI endpoints:
+Telegram webhook endpoint:
 
-- `http://localhost:7071/api/swagger`
-- `http://localhost:7071/api/openapi.yaml`
-
-Callable operations exposed in Swagger:
-
-- `POST /api/Fun_CollectStart` (starts SejmData collection orchestration)
-- `POST /api/Fun_FacebookPublishStart` (publishes daily digest to Facebook)
-- Security for both operations: function key in `x-functions-key` header
-
-## OpenAPI code generation (minimal)
-
-The module is wired with `openapi-generator-maven-plugin` to generate Java models from:
-
-- `src/main/resources/openapi/openapi.yaml`
-
-Run generation only:
-
-- `mvn generate-sources`
-
-Generated classes are placed under:
-
-- `target/generated-sources/openapi/src/main/java/onlexnet/sejmapi/openapi/model`
-
-The generation is automatically executed before compile/package because it is bound to the `generate-sources` Maven phase.
+- `POST /api/telegram/webhook`
 
 ## HTTP start/status flow (Durable)
 
@@ -147,13 +124,6 @@ To enable the deployment job, make sure the `prod` GitHub environment contains t
 - `AZURE_FUNCTIONAPP_NAME`
 
 The `AZURE_FUNCTIONAPP_NAME` value should match the Terraform-managed Function App name already provisioned by the infra stack.
-
-## After deployment
-
-For a deployed Function App, the same paths are available under your app host:
-
-- `https://<function-app-name>.azurewebsites.net/api/swagger`
-- `https://<function-app-name>.azurewebsites.net/api/openapi.yaml`
 
 ## Notes
 

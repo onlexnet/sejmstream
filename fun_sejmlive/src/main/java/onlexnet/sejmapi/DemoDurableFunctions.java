@@ -48,10 +48,8 @@ public final class DemoDurableFunctions {
             @DurableClientInput(name = "durableContext")
                     final DurableClientContext durableContext) {
 
-        var openApiRequest = request.getBody().orElse(null);
-        var normalizedRequest = onlexnet.sejmapi.DemoWorkflowRequest
-                .normalize(onlexnet.sejmapi.DemoWorkflowRequest
-                        .fromOpenApi(openApiRequest));
+        var workflowRequest = request.getBody().orElse(null);
+        var normalizedRequest = DemoWorkflowRequest.normalize(workflowRequest);
         var instanceId = durableContext.getClient()
                 .scheduleNewOrchestrationInstance(
                         ORCHESTRATOR_FUNCTION_NAME,

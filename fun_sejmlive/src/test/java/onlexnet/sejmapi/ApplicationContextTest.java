@@ -74,9 +74,6 @@ class ApplicationContextTest {
         assertThat(this.applicationContext.getBean(SejmApiHttpFunctions.class))
                 .as("SejmApiHttpFunctions must be available for HTTP API access")
                 .isNotNull();
-        assertThat(this.applicationContext.getBean(ApiDocumentationFunctions.class))
-                .as("ApiDocumentationFunctions must be available for OpenAPI docs endpoint")
-                .isNotNull();
         assertThat(this.applicationContext.getBean(DemoDurableFunctions.class))
                 .as("DemoDurableFunctions must be available for Durable Function orchestration")
                 .isNotNull();

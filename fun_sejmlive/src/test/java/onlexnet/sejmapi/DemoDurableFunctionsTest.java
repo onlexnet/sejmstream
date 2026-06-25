@@ -19,7 +19,6 @@ import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.azure.functions.HttpStatusType;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
-import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.durabletask.DurableTaskClient;
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
@@ -33,60 +32,6 @@ import com.microsoft.durabletask.TaskOrchestrationContext;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 
 class DemoDurableFunctionsTest {
-
-    @Test
-    void givenOpenApiFunction_whenCheckingTriggerContract_thenGetAnonymousAndRouteAreConfigured()
-        throws NoSuchMethodException {
-    var method = ApiDocumentationFunctions.class.getDeclaredMethod(
-        "openApi",
-        HttpRequestMessage.class);
-
-    var functionName = method.getAnnotation(FunctionName.class);
-    var trigger = method.getParameters()[0].getAnnotation(HttpTrigger.class);
-
-    assertThat(functionName).isNotNull();
-    assertThat(functionName.value())
-        .isEqualTo(ApiDocumentationFunctions.OPENAPI_FUNCTION_NAME);
-    assertThat(trigger).isNotNull();
-    assertThat(trigger.methods()).containsExactly(HttpMethod.GET);
-    assertThat(trigger.authLevel())
-        .isEqualTo(AuthorizationLevel.ANONYMOUS);
-    assertThat(trigger.route()).isEqualTo("openapi.yaml");
-    }
-
-    @Test
-    void givenSwaggerUiFunction_whenInvoked_thenReturnsHtmlWithOpenApiReference() {
-    var request = new FakeHttpRequestMessage<String>(Optional.empty());
-
-    var response = new ApiDocumentationFunctions().swaggerUi(request);
-
-    assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getHeader("Content-Type"))
-        .isEqualTo("text/html; charset=utf-8");
-    assertThat(response.getBody().toString())
-        .contains("swagger-ui")
-        .contains("/api/openapi.yaml");
-    }
-
-    @Test
-    void givenOpenApiFunction_whenInvoked_thenReturnsYamlWithStarterPath() {
-    var request = new FakeHttpRequestMessage<String>(Optional.empty());
-
-    var response = new ApiDocumentationFunctions().openApi(request);
-
-    assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
-    assertThat(response.getHeader("Content-Type"))
-        .isEqualTo("application/yaml; charset=utf-8");
-    assertThat(response.getBody().toString())
-        .contains("openapi: 3.0.3")
-        .contains("/api/Fun_HttpStart")
-        .contains("/api/Fun_CollectStart")
-        .contains("/api/Fun_FacebookPublishStart")
-        .contains("/api/sejm-api/simple")
-        .contains("Sejm API simple data")
-        .contains("functionKey")
-        .contains("x-functions-key");
-    }
 
     @Test
     void givenHttpStarter_whenCheckingTriggerMethods_thenOnlyPostIsAllowed()
