@@ -1,0 +1,5843 @@
+openapi: 3.0.3
+info:
+  title: API for Polish Sejm
+  version: "1.0"
+servers:
+- url: https://api.sejm.gov.pl/
+- url: http://api.sejm.gov.pl/
+tags:
+- description: "MPs (pl: posłowie)."
+  name: MP
+- description: Bills or draft resolutions
+  name: bills
+- description: "Clubs in the Sejm (pl: kluby i koła)."
+  name: clubs
+- description: "Committees in the Sejm (pl: komisje sejmowe)."
+  name: committees
+- description: Bilateral Groups.
+  name: groups
+- description: "Interpellations (pl: interpelacje)."
+  name: interpellations
+- description: "Prints issued by the Sejm (pl: druki sejmowe)."
+  name: prints
+- description: "Proceedings of the Sejm (pl: Posiedzenia Sejmu)."
+  name: proceedings
+- description: "Information about a legislation process (pl: proces legislacyjny)."
+  name: processes
+- description: Transcripts
+  name: transcripts
+- description: "Videos (pl: transmisje wideo)."
+  name: videos
+- description: Votings.
+  name: votings
+- description: "Written questions (pl: zapytania)."
+  name: written questions
+paths:
+  /sejm/term:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Term"
+                type: array
+          description: a list of terms
+      summary: Returns a list of terms
+      x-accepts:
+      - application/json
+  /sejm/term{term}:
+    get:
+      parameters:
+      - description: a term number
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Term"
+          description: information about a term
+      summary: Returns information about a term
+      x-accepts:
+      - application/json
+  /sejm/term{term}/MP:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/MP"
+                type: array
+          description: a list of MPs
+      summary: Returns a list of MPs
+      tags:
+      - MP
+      x-accepts:
+      - application/json
+  /sejm/term{term}/MP/{id}:
+    get:
+      parameters:
+      - description: an MP ID
+        example: 123
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MP"
+          description: an information about an MP
+      summary: Returns an information about an MP
+      tags:
+      - MP
+      x-accepts:
+      - application/json
+  /sejm/term{term}/MP/{id}/photo:
+    get:
+      parameters:
+      - description: an MP ID
+        example: 123
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: an MP photo
+      summary: Returns an MP photo
+      tags:
+      - MP
+      x-accepts:
+      - application/json
+  /sejm/term{term}/MP/{id}/photo-mini:
+    get:
+      parameters:
+      - description: an MP ID
+        example: 123
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: an MP photo in small size
+      summary: Returns an MP photo in small size
+      tags:
+      - MP
+      x-accepts:
+      - application/json
+  /sejm/term{term}/MP/{id}/votings/stats:
+    get:
+      parameters:
+      - description: an MP ID
+        example: 1
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/VotingStat"
+                type: array
+          description: an information about votings for an MP
+      summary: Returns statistics about votings for an MP
+      tags:
+      - MP
+      x-accepts:
+      - application/json
+  /sejm/term{term}/MP/{id}/votings/{sitting}/{date}:
+    get:
+      parameters:
+      - description: a date
+        example: 2023-12-13
+        explode: false
+        in: path
+        name: date
+        required: true
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: simple
+      - description: an MP ID
+        example: 1
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a sitting number
+        example: 1
+        explode: false
+        in: path
+        name: sitting
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/VoteMP"
+                type: array
+          description: an information about votings for an MP
+      summary: Returns an information about votings for an MP
+      tags:
+      - MP
+      x-accepts:
+      - application/json
+  /sejm/term{term}/bilateralGroups:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Group"
+                type: array
+          description: a list of groups
+      summary: Returns a list of bilateral groups
+      tags:
+      - groups
+      x-accepts:
+      - application/json
+  /sejm/term{term}/bilateralGroups/{id}:
+    get:
+      parameters:
+      - description: an ID of the group
+        example: 1
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupDetails"
+          description: a group details
+      summary: Returns a groups details
+      tags:
+      - groups
+      x-accepts:
+      - application/json
+  /sejm/term{term}/bills:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: filter only bills with consultation results
+        explode: true
+        in: query
+        name: consultationResults
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: filter bills received after date
+        explode: true
+        in: query
+        name: dateOfReceiptFrom
+        required: false
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: form
+      - description: filter bills received before date
+        explode: true
+        in: query
+        name: dateOfReceiptTo
+        required: false
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: form
+      - description: filter bills aimed at implementing European Union law
+        explode: true
+        in: query
+        name: euRelated
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: controls the maximum number of items that may be returned for
+          a single request
+        example: 50
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: controls the starting point within the collection of resource
+          results
+        example: 150
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: filter by print number
+        explode: true
+        in: query
+        name: print
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filter only bills with public consultation
+        explode: true
+        in: query
+        name: publicConsultation
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+        style: form
+      - deprecated: true
+        description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort_by
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filter by status
+        explode: true
+        in: query
+        name: status
+        required: false
+        schema:
+          $ref: "#/components/schemas/BillStatus"
+        style: form
+      - description: filter bills or resolutions
+        explode: true
+        in: query
+        name: submissionType
+        required: false
+        schema:
+          $ref: "#/components/schemas/BillType"
+        style: form
+      - description: filter by part of a title
+        example: podatku
+        explode: true
+        in: query
+        name: title
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Bill"
+                type: array
+          description: a list of bills
+      summary: Returns a list of bills
+      tags:
+      - bills
+      x-accepts:
+      - application/json
+  /sejm/term{term}/clubs:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Club"
+                type: array
+          description: a list of clubs
+      summary: Returns a list of clubs
+      tags:
+      - clubs
+      x-accepts:
+      - application/json
+  /sejm/term{term}/clubs/{id}:
+    get:
+      parameters:
+      - description: a club ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Club"
+          description: information about a club
+      summary: Returns information about a club
+      tags:
+      - clubs
+      x-accepts:
+      - application/json
+  /sejm/term{term}/clubs/{id}/logo:
+    get:
+      parameters:
+      - description: a club id
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            image/jpeg:
+              schema:
+                type: object
+          description: a club image
+      summary: Returns a club image
+      tags:
+      - clubs
+      x-accepts:
+      - image/jpeg
+  /sejm/term{term}/clubs/{id}/members:
+    get:
+      parameters:
+      - description: a club ID
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Member"
+                type: array
+          description: list of members
+      summary: Returns members of this club (current and past)
+      tags:
+      - clubs
+      x-accepts:
+      - application/json
+  /sejm/term{term}/committees:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Committee"
+                type: array
+          description: a list of committees
+      summary: Returns a list of committees
+      tags:
+      - committees
+      x-accepts:
+      - application/json
+  /sejm/term{term}/committees/sittings/{date}:
+    get:
+      parameters:
+      - description: a date
+        example: 2025-05-20
+        explode: false
+        in: path
+        name: date
+        required: true
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: also include cancelled sittings
+        example: false
+        explode: true
+        in: query
+        name: cancelled
+        required: false
+        schema:
+          type: boolean
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/CommitteeSitting"
+                type: array
+          description: a list of sittings
+      summary: Returns a list of sittings for a given date
+      tags:
+      - committees
+      x-accepts:
+      - application/json
+  /sejm/term{term}/committees/{code}:
+    get:
+      parameters:
+      - description: a committee code
+        example: ASW
+        explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Committee"
+          description: a committee details
+      summary: Returns a committee details
+      tags:
+      - committees
+      x-accepts:
+      - application/json
+  /sejm/term{term}/committees/{code}/members:
+    get:
+      parameters:
+      - description: a committee code
+        example: ASW
+        explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Member"
+                type: array
+          description: a list of members
+      summary: Returns a list of members (current and past)
+      tags:
+      - committees
+      x-accepts:
+      - application/json
+  /sejm/term{term}/committees/{code}/sittings:
+    get:
+      parameters:
+      - description: a committee code
+        example: ASW
+        explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: also include cancelled sittings
+        example: false
+        explode: true
+        in: query
+        name: cancelled
+        required: false
+        schema:
+          type: boolean
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/CommitteeSitting"
+                type: array
+          description: a list of sittings
+      summary: Returns a list of sittings
+      tags:
+      - committees
+      x-accepts:
+      - application/json
+  /sejm/term{term}/committees/{code}/sittings/{num}:
+    get:
+      parameters:
+      - description: a committee code
+        example: ASW
+        explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a sitting number
+        example: 1
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommitteeSitting"
+          description: a sitting
+      summary: Returns details about a sitting
+      tags:
+      - committees
+      x-accepts:
+      - application/json
+  /sejm/term{term}/committees/{code}/sittings/{num}/html:
+    get:
+      parameters:
+      - description: a committee code
+        example: ASW
+        explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a sitting number
+        example: 1
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            text/html; charset=UTF-8:
+              schema:
+                type: string
+          description: a sitting transcript
+      summary: Returns transcript of the meeting in the HTML format
+      tags:
+      - committees
+      x-accepts:
+      - text/html; charset=UTF-8
+  /sejm/term{term}/committees/{code}/sittings/{num}/pdf:
+    get:
+      parameters:
+      - description: a committee code
+        example: ASW
+        explode: false
+        in: path
+        name: code
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a sitting number
+        example: 1
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: a sitting transcript
+      summary: Returns transcript of the meeting in the PDF format
+      tags:
+      - committees
+      x-accepts:
+      - application/json
+  /sejm/term{term}/interpellations:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: display only cases where an answer delayed
+        explode: true
+        in: query
+        name: delayed
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: filters interpellations from a MP with a specified ID
+        example: 10
+        explode: true
+        in: query
+        name: from
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: controls the maximum number of items that may be returned for
+          a single request
+        example: 50
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: filters interpellations modified since specified date
+        example: 2022-09-07T14:58:28
+        explode: true
+        in: query
+        name: modifiedSince
+        required: false
+        schema:
+          $ref: "#/components/schemas/LocalDateTime"
+        style: form
+      - description: controls the starting point within the collection of resource
+          results
+        example: 150
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: filters interpellations starting from a specified date
+        example: 2022-01-15
+        explode: true
+        in: query
+        name: since
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+        style: form
+      - deprecated: true
+        description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort_by
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters interpellations starting before a specified date
+        example: 2022-01-25
+        explode: true
+        in: query
+        name: till
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters interpellations containing a specified string in a title
+        example: kodeksu pracy
+        explode: true
+        in: query
+        name: title
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters interpellations sent to a specified recipient
+        example: minister finansów
+        explode: true
+        in: query
+        name: to
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Interpellation"
+                type: array
+          description: a list of interpellations
+      summary: Returns a list of interpellations
+      tags:
+      - interpellations
+      x-accepts:
+      - application/json
+  /sejm/term{term}/interpellations/attachment/{key}/{fileName}:
+    get:
+      parameters:
+      - description: a name of the attachment
+        example: i01258-o1.pdf
+        explode: false
+        in: path
+        name: fileName
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: an attachment identifier
+        example: ATTD2VJHU
+        explode: false
+        in: path
+        name: key
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: an attachment
+      summary: Returns an attachment file
+      tags:
+      - interpellations
+      x-accepts:
+      - application/json
+  /sejm/term{term}/interpellations/{num}:
+    get:
+      parameters:
+      - description: an interpellation number
+        example: 190
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Interpellation"
+          description: details of an interpellation
+      summary: Returns details of an interpellation
+      tags:
+      - interpellations
+      x-accepts:
+      - application/json
+  /sejm/term{term}/interpellations/{num}/body:
+    get:
+      parameters:
+      - description: an interpellation number
+        example: 190
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            text/html; charset=UTF-8:
+              schema:
+                type: string
+          description: an interpellation body in HTML format
+      summary: Returns an interpellation body in HTML format
+      tags:
+      - interpellations
+      x-accepts:
+      - text/html; charset=UTF-8
+  /sejm/term{term}/interpellations/{num}/reply/{key}/body:
+    get:
+      parameters:
+      - description: a reply key (identifier)
+        example: BKMJQ2
+        explode: false
+        in: path
+        name: key
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: an interpellation number
+        example: 190
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            text/html; charset=UTF-8:
+              schema:
+                type: string
+          description: a reply body in HTML format
+      summary: Returns a reply body in HTML format
+      tags:
+      - interpellations
+      x-accepts:
+      - text/html; charset=UTF-8
+  /sejm/term{term}/prints:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+        style: form
+      - deprecated: true
+        description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort_by
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Print"
+                type: array
+          description: a list of prints
+      summary: Returns a list of prints
+      tags:
+      - prints
+      x-accepts:
+      - application/json
+  /sejm/term{term}/prints/{num}:
+    get:
+      parameters:
+      - description: a print number
+        example: 19
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Print"
+          description: information about a print
+      summary: Returns information about a print
+      tags:
+      - prints
+      x-accepts:
+      - application/json
+  /sejm/term{term}/prints/{num}/{attach_name}:
+    get:
+      parameters:
+      - description: an attachment name
+        example: 19.pdf
+        explode: false
+        in: path
+        name: attach_name
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a print number
+        example: 19
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: a print attachment
+      summary: Returns a print attachment
+      tags:
+      - prints
+      x-accepts:
+      - application/json
+  /sejm/term{term}/proceedings:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Proceeding"
+                type: array
+          description: a list of proceedings
+      summary: Returns a list of proceedings
+      tags:
+      - proceedings
+      x-accepts:
+      - application/json
+  /sejm/term{term}/proceedings/current:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proceeding"
+          description: current proceeding
+      summary: Returns information about a current proceeding
+      tags:
+      - proceedings
+      x-accepts:
+      - application/json
+  /sejm/term{term}/proceedings/{id}:
+    get:
+      parameters:
+      - description: a proceeding id
+        example: 50
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Proceeding"
+          description: information about a proceeding
+      summary: Returns information about a proceeding
+      tags:
+      - proceedings
+      x-accepts:
+      - application/json
+  /sejm/term{term}/proceedings/{id}/{date}/transcripts:
+    get:
+      parameters:
+      - description: a sitting date
+        example: 2023-11-29
+        explode: false
+        in: path
+        name: date
+        required: true
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: simple
+      - description: a sitting id
+        example: 1
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatementList"
+          description: a list of statements
+      summary: Returns a list of statements
+      tags:
+      - transcripts
+      x-accepts:
+      - application/json
+  /sejm/term{term}/proceedings/{id}/{date}/transcripts/pdf:
+    get:
+      parameters:
+      - description: a sitting date
+        example: 2023-11-29
+        explode: false
+        in: path
+        name: date
+        required: true
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: simple
+      - description: a sitting id
+        example: 1
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: a transcript of a sitting
+      summary: Returns a transcript of a day of a sitting in the PDF format
+      tags:
+      - transcripts
+      x-accepts:
+      - application/json
+  /sejm/term{term}/proceedings/{id}/{date}/transcripts/{statementNum}:
+    get:
+      parameters:
+      - description: a sitting date
+        example: 2023-11-29
+        explode: false
+        in: path
+        name: date
+        required: true
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: simple
+      - description: a sitting id
+        example: 1
+        explode: false
+        in: path
+        name: id
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a statement number
+        example: 15
+        explode: false
+        in: path
+        name: statementNum
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: a statement body
+      summary: Returns a statement body in the HTML format
+      tags:
+      - transcripts
+      x-accepts:
+      - application/json
+  /sejm/term{term}/processes:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a type of a document
+        example: projekt ustawy
+        explode: true
+        in: query
+        name: documentType
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: controls the maximum number of items that may be returned for
+          a single request
+        example: 50
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: filters processes  modified since specified date
+        example: 2022-09-07T14:58:28
+        explode: true
+        in: query
+        name: modifiedSince
+        required: false
+        schema:
+          $ref: "#/components/schemas/LocalDateTime"
+        style: form
+      - description: controls the starting point within the collection of resource
+          results
+        example: 150
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: only passed acts
+        example: true
+        explode: true
+        in: query
+        name: passed
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+        style: form
+      - deprecated: true
+        description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort_by
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters processes containing a specified string in a title
+        example: kodeksu pracy
+        explode: true
+        in: query
+        name: title
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ProcessHeader"
+                type: array
+          description: a list of legislative processes
+      summary: Returns a list of legislative processes
+      tags:
+      - processes
+      x-accepts:
+      - application/json
+  /sejm/term{term}/processes/passed:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a type of a document
+        example: projekt ustawy
+        explode: true
+        in: query
+        name: documentType
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: controls the maximum number of items that may be returned for
+          a single request
+        example: 50
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: filters processes  modified since specified date
+        example: 2022-09-07T14:58:28
+        explode: true
+        in: query
+        name: modifiedSince
+        required: false
+        schema:
+          $ref: "#/components/schemas/LocalDateTime"
+        style: form
+      - description: controls the starting point within the collection of resource
+          results
+        example: 150
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: only passed acts
+        example: true
+        explode: true
+        in: query
+        name: passed
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+        style: form
+      - deprecated: true
+        description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort_by
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters processes containing a specified string in a title
+        example: kodeksu pracy
+        explode: true
+        in: query
+        name: title
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ProcessHeader"
+                type: array
+          description: a list of legislative processes
+      summary: Returns a list of passed legislative processes
+      tags:
+      - processes
+      x-accepts:
+      - application/json
+  /sejm/term{term}/processes/{num}:
+    get:
+      parameters:
+      - description: a print number
+        example: 1070
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProcessDetails"
+          description: information about a process for a given print number
+      summary: Returns information about a process for a given print number
+      tags:
+      - processes
+      x-accepts:
+      - application/json
+  /sejm/term{term}/processes/{num}/attachment/{fileName}:
+    get:
+      parameters:
+      - description: an attachment name
+        example: spr_241
+        explode: false
+        in: path
+        name: fileName
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a print number
+        example: 241
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: an attachment
+      summary: Returns an attachment for a process
+      tags:
+      - processes
+      x-accepts:
+      - application/json
+  /sejm/term{term}/videos:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: filters videos for a specified committee
+        example: SUE
+        explode: true
+        in: query
+        name: comm
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: controls the maximum number of items that may be returned for
+          a single request
+        example: 50
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: controls the starting point within the collection of resource
+          results
+        example: 150
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: filters videos starting from a specified date
+        example: 2022-01-15
+        explode: true
+        in: query
+        name: since
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters videos starting before a specified date
+        example: 2022-01-15
+        explode: true
+        in: query
+        name: till
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters videos containing a specified string in a title
+        example: kodeksu pracy
+        explode: true
+        in: query
+        name: title
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters videos with a specified type
+        example: komisja
+        explode: true
+        in: query
+        name: type
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Video"
+                type: array
+          description: a list of video transmissions
+      summary: Returns a list of video transmissions
+      tags:
+      - videos
+      x-accepts:
+      - application/json
+  /sejm/term{term}/videos/today:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Video"
+                type: array
+          description: a list of video transmissions for today
+      summary: Returns a list of video transmissions for today
+      tags:
+      - videos
+      x-accepts:
+      - application/json
+  /sejm/term{term}/videos/{date}:
+    get:
+      parameters:
+      - description: a date
+        example: 2023-12-13
+        explode: false
+        in: path
+        name: date
+        required: true
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Video"
+                type: array
+          description: a list of video transmissions for specified date
+      summary: Returns a list of video transmissions for a specified date
+      tags:
+      - videos
+      x-accepts:
+      - application/json
+  /sejm/term{term}/videos/{unid}:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: an event identifier
+        example: 2A8A86E819C2C270C1258ACB0047A157
+        explode: false
+        in: path
+        name: unid
+        required: true
+        schema:
+          pattern: "[a-zA-Z0-9]{32}"
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+          description: a video transmissions metadata
+      summary: Returns a video transmission details
+      tags:
+      - videos
+      x-accepts:
+      - application/json
+  /sejm/term{term}/votings:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ProceedingDay"
+                type: array
+          description: numbers of votings for each day
+      summary: Returns number of votings grouped by day
+      tags:
+      - votings
+      x-accepts:
+      - application/json
+  /sejm/term{term}/votings/search:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a date to search from
+        example: 2023-11-01
+        explode: true
+        in: query
+        name: dateFrom
+        required: false
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: form
+      - description: a date to search to
+        example: 2024-01-01
+        explode: true
+        in: query
+        name: dateTo
+        required: false
+        schema:
+          $ref: "#/components/schemas/LocalDate"
+        style: form
+      - description: controls the maximum number of items that may be returned for
+          a single request
+        example: 50
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: controls the starting point within the collection of resource
+          results
+        example: 150
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: a proceeding number
+        example: 1
+        explode: true
+        in: query
+        name: proceeding
+        required: false
+        schema:
+          format: int32
+          type: integer
+        style: form
+      - description: a title to search for
+        example: energii elektrycznej
+        explode: true
+        in: query
+        name: title
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Voting"
+                type: array
+          description: votings that meet search criteria
+      summary: Search for a voting
+      tags:
+      - votings
+      x-accepts:
+      - application/json
+  /sejm/term{term}/votings/{sitting}:
+    get:
+      parameters:
+      - description: a sitting number
+        example: 80
+        explode: false
+        in: path
+        name: sitting
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Voting"
+                type: array
+          description: a list of votings
+      summary: Returns a list of votings for a given sitting
+      tags:
+      - votings
+      x-accepts:
+      - application/json
+  /sejm/term{term}/votings/{sitting}/{num}:
+    get:
+      parameters:
+      - description: a voting number
+        example: 25
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a sitting number
+        example: 80
+        explode: false
+        in: path
+        name: sitting
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VotingDetails"
+          description: information about a voting
+      summary: "Returns details about a voting, with voting results"
+      tags:
+      - votings
+      x-accepts:
+      - application/json
+  /sejm/term{term}/votings/{sitting}/{num}/pdf:
+    get:
+      parameters:
+      - description: a voting number
+        example: 25
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a sitting number
+        example: 80
+        explode: false
+        in: path
+        name: sitting
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: a pdf with voting results
+      summary: Returns a PDF file with voting results
+      tags:
+      - votings
+      x-accepts:
+      - application/json
+  /sejm/term{term}/writtenQuestions:
+    get:
+      parameters:
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      - description: display only cases where an answer delayed
+        explode: true
+        in: query
+        name: delayed
+        required: false
+        schema:
+          type: boolean
+        style: form
+      - description: filters interpellations from a MP with a specified ID
+        example: 10
+        explode: true
+        in: query
+        name: from
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: controls the maximum number of items that may be returned for
+          a single request
+        example: 50
+        explode: true
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 50
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: filters interpellations modified since specified date
+        example: 2022-09-07T14:58:28
+        explode: true
+        in: query
+        name: modifiedSince
+        required: false
+        schema:
+          $ref: "#/components/schemas/LocalDateTime"
+        style: form
+      - description: controls the starting point within the collection of resource
+          results
+        example: 150
+        explode: true
+        in: query
+        name: offset
+        required: false
+        schema:
+          default: 0
+          exclusiveMinimum: true
+          format: int32
+          minimum: 0
+          type: integer
+        style: form
+      - description: filters interpellations starting from a specified date
+        example: 2022-01-15
+        explode: true
+        in: query
+        name: since
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort
+        required: false
+        schema:
+          type: string
+        style: form
+      - deprecated: true
+        description: "sorts objects by specified field, to sort in descending order\
+          \ add a minus sign before field name"
+        example: -lastModified
+        explode: true
+        in: query
+        name: sort_by
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters interpellations starting before a specified date
+        example: 2022-01-25
+        explode: true
+        in: query
+        name: till
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters interpellations containing a specified string in a title
+        example: kodeksu pracy
+        explode: true
+        in: query
+        name: title
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: filters interpellations sent to a specified recipient
+        example: minister finansów
+        explode: true
+        in: query
+        name: to
+        required: false
+        schema:
+          type: string
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/WrittenQuestion"
+                type: array
+          description: a list of written questions
+      summary: Returns a list of written questions
+      tags:
+      - written questions
+      x-accepts:
+      - application/json
+  /sejm/term{term}/writtenQuestions/attachment/{key}/{fileName}:
+    get:
+      parameters:
+      - description: a name of the attachment
+        example: i01258-o1.pdf
+        explode: false
+        in: path
+        name: fileName
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: an attachment identifier
+        example: ATTD2VJHU
+        explode: false
+        in: path
+        name: key
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 10
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          description: an attachment
+      summary: Returns an attachment file
+      tags:
+      - written questions
+      x-accepts:
+      - application/json
+  /sejm/term{term}/writtenQuestions/{num}:
+    get:
+      parameters:
+      - description: a question number
+        example: 190
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WrittenQuestion"
+          description: details of a written question
+      summary: Returns details of a written questions
+      tags:
+      - written questions
+      x-accepts:
+      - application/json
+  /sejm/term{term}/writtenQuestions/{num}/body:
+    get:
+      parameters:
+      - description: a question number
+        example: 190
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            text/html; charset=UTF-8:
+              schema:
+                type: string
+          description: a written question body in HTML format
+      summary: Returns a written question body in HTML format
+      tags:
+      - written questions
+      x-accepts:
+      - text/html; charset=UTF-8
+  /sejm/term{term}/writtenQuestions/{num}/reply/{key}/body:
+    get:
+      parameters:
+      - description: a reply key (identifier)
+        example: BKMJQ2
+        explode: false
+        in: path
+        name: key
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a written question number
+        example: 190
+        explode: false
+        in: path
+        name: num
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: a Sejm term
+        example: 9
+        explode: false
+        in: path
+        name: term
+        required: true
+        schema:
+          format: int32
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            text/html; charset=UTF-8:
+              schema:
+                type: string
+          description: a reply body in HTML format
+      summary: Returns a reply body in HTML format
+      tags:
+      - written questions
+      x-accepts:
+      - text/html; charset=UTF-8
+components:
+  schemas:
+    ApplicantType:
+      description: Type of applicant
+      enum:
+      - DEPUTIES
+      - COMMITTEE
+      - GOVERNMENT
+      - PRESIDIUM
+      - PRESIDENT
+      - SENATE
+      - CITIZENS
+      type: string
+    Attachment:
+      description: An attachment.
+      example:
+        lastModified: 2000-01-23T04:56:07.000+00:00
+        name: i14710-o3.pdf
+        URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+      properties:
+        lastModified:
+          description: A date of last modification of a document
+          format: date-time
+          type: string
+        name:
+          description: A name of the file
+          example: i14710-o3.pdf
+          type: string
+        URL:
+          description: An url to download a file
+          example: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          type: string
+      type: object
+    Bill:
+      description: A bill or a draft resolution submitted to the Sejm
+      example:
+        term: 10
+        number: RPW/4708/2026
+        sendersNumber: RM-0610-4-26
+        print: "2206"
+        title: Rządowy projekt ustawy o zmianie ustawy - Prawo lotnicze oraz niektórych
+          innych ustaw
+        submissionType: BILL
+        dateOfReceipt: 2026-02-09
+        description: Dotyczy dostosowania krajowego porządku prawnego do unijnych
+          przepisów dotyczących zrównoważonego transportu lotniczego ...
+        status: ACTIVE
+        euRelated: true
+        withdrawnDate: 2025-03-01
+        publicConsultation: true
+        publicConsultationStartDate: 2026-02-20
+        publicConsultationEndDate: 2026-03-05
+        consultationResults: false
+        applicantType: GOVERNMENT
+      properties:
+        term:
+          description: Sejm term (parliamentary term)
+          example: 10
+          format: int32
+          type: integer
+        number:
+          description: Internal Sejm document number
+          example: RPW/4708/2026
+          type: string
+        sendersNumber:
+          description: External sender number assigned by KPRM or other authority
+          example: RM-0610-4-26
+          type: string
+        print:
+          description: Sejm print number
+          example: "2206"
+          type: string
+        title:
+          description: Title of the bill or draft resolution
+          example: Rządowy projekt ustawy o zmianie ustawy - Prawo lotnicze oraz niektórych
+            innych ustaw
+          type: string
+        submissionType:
+          description: Submission type of the document
+          enum:
+          - BILL
+          - DRAFT_RESOLUTION
+          - BILL_AMENDMENT
+          - RESOLUTION_AMENDMENT
+          example: BILL
+          type: string
+        dateOfReceipt:
+          description: Date when the document was received by the Sejm
+          example: 2026-02-09
+          format: date
+          type: string
+        description:
+          description: Short description or justification of the document
+          example: Dotyczy dostosowania krajowego porządku prawnego do unijnych przepisów
+            dotyczących zrównoważonego transportu lotniczego ...
+          type: string
+        status:
+          description: Current procedural status of the document
+          enum:
+          - ACTIVE
+          - WITHDRAWN
+          - NOT_PROCEEDED
+          - OBSOLETE
+          - ADOPTED
+          example: ACTIVE
+          type: string
+        euRelated:
+          description: Whether this project aims to implement European Union law
+          example: true
+          type: boolean
+        withdrawnDate:
+          description: "Date when the document was withdrawn, if applicable"
+          example: 2025-03-01
+          format: date
+          nullable: true
+          type: string
+        publicConsultation:
+          description: Indicates whether the document was sent to public consultation
+          example: true
+          type: boolean
+        publicConsultationStartDate:
+          description: Date when public consultation started
+          example: 2026-02-20
+          format: date
+          nullable: true
+          type: string
+        publicConsultationEndDate:
+          description: Date when public consultation ended
+          example: 2026-03-05
+          format: date
+          nullable: true
+          type: string
+        consultationResults:
+          description: Indicates whether consultation results are available
+          example: false
+          type: boolean
+        applicantType:
+          description: Entity that submitted the bill
+          enum:
+          - DEPUTIES
+          - COMMITTEE
+          - GOVERNMENT
+          - PRESIDIUM
+          - PRESIDENT
+          - SENATE
+          - CITIZENS
+          example: GOVERNMENT
+          type: string
+      type: object
+    BillDetails:
+      description: A bill or a draft resolution submitted to the Sejm
+      properties:
+        term:
+          description: Sejm term (parliamentary term)
+          example: 10
+          format: int32
+          type: integer
+        number:
+          description: Internal Sejm document number
+          example: RPW/4708/2026
+          type: string
+        sendersNumber:
+          description: External sender number assigned by KPRM or other authority
+          example: RM-0610-4-26
+          type: string
+        print:
+          description: Sejm print number
+          example: "2206"
+          type: string
+        title:
+          description: Title of the bill or draft resolution
+          example: Rządowy projekt ustawy o zmianie ustawy - Prawo lotnicze oraz niektórych
+            innych ustaw
+          type: string
+        submissionType:
+          description: Submission type of the document
+          enum:
+          - BILL
+          - DRAFT_RESOLUTION
+          - BILL_AMENDMENT
+          - RESOLUTION_AMENDMENT
+          example: BILL
+          type: string
+        dateOfReceipt:
+          description: Date when the document was received by the Sejm
+          example: 2026-02-09
+          format: date
+          type: string
+        description:
+          description: Short description or justification of the document
+          example: Dotyczy dostosowania krajowego porządku prawnego do unijnych przepisów
+            dotyczących zrównoważonego transportu lotniczego ...
+          type: string
+        status:
+          description: Current procedural status of the document
+          enum:
+          - ACTIVE
+          - WITHDRAWN
+          - NOT_PROCEEDED
+          - OBSOLETE
+          - ADOPTED
+          example: ACTIVE
+          type: string
+        euRelated:
+          description: Whether this project aims to implement European Union law
+          example: true
+          type: boolean
+        withdrawnDate:
+          description: "Date when the document was withdrawn, if applicable"
+          example: 2025-03-01
+          format: date
+          nullable: true
+          type: string
+        publicConsultation:
+          description: Indicates whether the document was sent to public consultation
+          example: true
+          type: boolean
+        publicConsultationStartDate:
+          description: Date when public consultation started
+          example: 2026-02-20
+          format: date
+          nullable: true
+          type: string
+        publicConsultationEndDate:
+          description: Date when public consultation ended
+          example: 2026-03-05
+          format: date
+          nullable: true
+          type: string
+        consultationResults:
+          description: Indicates whether consultation results are available
+          example: false
+          type: boolean
+        applicantType:
+          description: Entity that submitted the bill
+          enum:
+          - DEPUTIES
+          - COMMITTEE
+          - GOVERNMENT
+          - PRESIDIUM
+          - PRESIDENT
+          - SENATE
+          - CITIZENS
+          example: GOVERNMENT
+          type: string
+      type: object
+    BillStatus:
+      description: Current procedural status of the document
+      enum:
+      - ACTIVE
+      - WITHDRAWN
+      - NOT_PROCEEDED
+      - OBSOLETE
+      - ADOPTED
+      example: ACTIVE
+      type: string
+    BillType:
+      description: Submission type of the document
+      enum:
+      - BILL
+      - DRAFT_RESOLUTION
+      - BILL_AMENDMENT
+      - RESOLUTION_AMENDMENT
+      example: BILL
+      type: string
+    CaseRecipientDetails:
+      description: Details of a correspondence with a recipient
+      example:
+        name: prezes Rady Ministrów
+        sent: 2024-01-30
+        answerDelayedDays: 300
+      properties:
+        name:
+          description: name of a recipient
+          example: prezes Rady Ministrów
+          type: string
+        sent:
+          description: date when a case was sent
+          example: 2024-01-30
+          format: date
+          type: string
+        answerDelayedDays:
+          description: number of days an answer is delayed for a given case. When
+            an answer was given then the delay is set to 0.
+          example: 300
+          format: int32
+          type: integer
+      type: object
+    Club:
+      description: A parliamentary club.
+      example:
+        id: KO
+        name: "Klub Parlamentarny Koalicja Obywatelska - Platforma Obywatelska, Nowoczesna,\
+          \ Inicjatywa Polska, Zieloni"
+        phone: (22) 694-25-92
+        fax: (22) 694-25-92
+        email: kp-ko@kluby.sejm.pl
+        membersCount: 126
+        members:
+        - id: 0
+          lastFirstName: lastFirstName
+          firstName: firstName
+          lastName: lastName
+          function: przewodniczący
+          mandateExpired: 2022-03-10
+          joinDate: 2022-03-10
+          leaveDate: 2022-03-10
+          club: KO
+          functions:
+          - name: przewodniczący
+            functionType: chairman
+            appointmentDate: 2022-03-10
+            dismissalDate: 2022-03-10
+          - name: przewodniczący
+            functionType: chairman
+            appointmentDate: 2022-03-10
+            dismissalDate: 2022-03-10
+        - id: 0
+          lastFirstName: lastFirstName
+          firstName: firstName
+          lastName: lastName
+          function: przewodniczący
+          mandateExpired: 2022-03-10
+          joinDate: 2022-03-10
+          leaveDate: 2022-03-10
+          club: KO
+          functions:
+          - name: przewodniczący
+            functionType: chairman
+            appointmentDate: 2022-03-10
+            dismissalDate: 2022-03-10
+          - name: przewodniczący
+            functionType: chairman
+            appointmentDate: 2022-03-10
+            dismissalDate: 2022-03-10
+      properties:
+        id:
+          description: Club identifier.
+          example: KO
+          type: string
+        name:
+          description: Name of the club
+          example: "Klub Parlamentarny Koalicja Obywatelska - Platforma Obywatelska,\
+            \ Nowoczesna, Inicjatywa Polska, Zieloni"
+          type: string
+        phone:
+          description: Phone number to the club
+          example: (22) 694-25-92
+          type: string
+        fax:
+          description: Fax number to the club
+          example: (22) 694-25-92
+          type: string
+        email:
+          description: Email address to the club
+          example: kp-ko@kluby.sejm.pl
+          type: string
+        membersCount:
+          description: Number of club members
+          example: 126
+          format: int32
+          type: integer
+        members:
+          description: List of members
+          items:
+            $ref: "#/components/schemas/Member"
+          type: array
+      required:
+      - id
+      type: object
+    ComitteeType:
+      enum:
+      - STANDING
+      - EXTRAORDINARY
+      - INVESTIGATIVE
+      type: string
+    Committee:
+      description: A comittee.
+      example:
+        code: ENM
+        name: "Komisja Edukacji, Nauki i Młodzieży"
+        nameGenitive: "Komisji Edukacji, Nauki i Młodzieży"
+        type: INVESTIGATIVE
+        phone: "(22) 694-12-99, 694-20-85"
+        appointmentDate: 2019-11-13
+        compositionDate: 2019-11-13
+        dismissalDate: 2019-12-10
+        scope: "Do zakresu działania Komisji należą sprawy kształcenia i wychowania\
+          \ przedszkolnego, podstawowego, ogólnokształcącego, zawodowego, pomaturalnego\
+          \ i wyższego, ..."
+        members:
+        - id: 0
+          lastFirstName: lastFirstName
+          firstName: firstName
+          lastName: lastName
+          function: przewodniczący
+          mandateExpired: 2022-03-10
+          joinDate: 2022-03-10
+          leaveDate: 2022-03-10
+          club: KO
+          functions:
+          - name: przewodniczący
+            functionType: chairman
+            appointmentDate: 2022-03-10
+            dismissalDate: 2022-03-10
+          - name: przewodniczący
+            functionType: chairman
+            appointmentDate: 2022-03-10
+            dismissalDate: 2022-03-10
+        - id: 0
+          lastFirstName: lastFirstName
+          firstName: firstName
+          lastName: lastName
+          function: przewodniczący
+          mandateExpired: 2022-03-10
+          joinDate: 2022-03-10
+          leaveDate: 2022-03-10
+          club: KO
+          functions:
+          - name: przewodniczący
+            functionType: chairman
+            appointmentDate: 2022-03-10
+            dismissalDate: 2022-03-10
+          - name: przewodniczący
+            functionType: chairman
+            appointmentDate: 2022-03-10
+            dismissalDate: 2022-03-10
+        subCommittees:
+        - subCommittees
+        - subCommittees
+      properties:
+        code:
+          description: Code of committee
+          example: ENM
+          type: string
+        name:
+          description: Name of the committee
+          example: "Komisja Edukacji, Nauki i Młodzieży"
+          type: string
+        nameGenitive:
+          description: Name of the committee in genitive
+          example: "Komisji Edukacji, Nauki i Młodzieży"
+          type: string
+        type:
+          allOf:
+          - $ref: "#/components/schemas/ComitteeType"
+          description: Type of the committee
+          example: INVESTIGATIVE
+          type: string
+        phone:
+          description: Phone of the committee
+          example: "(22) 694-12-99, 694-20-85"
+          type: string
+        appointmentDate:
+          description: Date of appointment
+          example: 2019-11-13
+          format: date
+          type: string
+        compositionDate:
+          description: Date of composition
+          example: 2019-11-13
+          format: date
+          type: string
+        dismissalDate:
+          description: Date of dismissal of the committee
+          example: 2019-12-10
+          format: date
+          type: string
+        scope:
+          description: Description of the committee
+          example: "Do zakresu działania Komisji należą sprawy kształcenia i wychowania\
+            \ przedszkolnego, podstawowego, ogólnokształcącego, zawodowego, pomaturalnego\
+            \ i wyższego, ..."
+          type: string
+        members:
+          description: a list of committee members (current or at the date of closing
+            the committee)
+          items:
+            $ref: "#/components/schemas/Member"
+          type: array
+        subCommittees:
+          items:
+            type: string
+          type: array
+      type: object
+    CommitteeSitting:
+      description: A committee sitting.
+      example:
+        code: ASW
+        num: 1
+        date: 2023-11-21
+        startDateTime: 2000-01-23T04:56:07.000+00:00
+        endDateTime: 2000-01-23T04:56:07.000+00:00
+        closed: true
+        remote: true
+        video:
+        - unid: 758DAA6CDF68DFC0C12588F6003C6EF3
+          videoLink: https://sejm.c.blueonline.tv/stream/ENC01/95D9F487F901760EC1258BA20052CC01/playlist.m3u8?start=1754380800000
+          otherVideoLinks: https://sejm.c.blueonline.tv/stream/ENC30/95D9F487F901760EC1258BA20052CC01/playlist.m3u8?start=1754380800000
+          videoMessagesLink: videoMessagesLink
+          type: komisja
+          transcribe: true
+          startDateTime: 2000-01-23T04:56:07.000+00:00
+          endDateTime: 2000-01-23T04:56:07.000+00:00
+          signLangLink: signLangLink
+          title: Parlamentarny Zespół ds. Personelu Niemedycznego Ochrony Zdrowia
+          audio: audio
+          room: "sala im. Konstytucji 3-go Maja (nr 118, bud. C)"
+          description: Medyczne zawody niemedyczne - przyszłość przenoszenia niektórych
+            dodatkowych zadań w ramach opieki nad pacjentem na personel niemedyczny
+            oraz tworzenie związanych z tym możliwości rozwoju zawodowego dla personelu.\r\n\r\n
+          committee: SUE
+          subcommittee: KSP02S
+          playerLink: playerLink
+          playerLinkIFrame: playerLinkIFrame
+        - unid: 758DAA6CDF68DFC0C12588F6003C6EF3
+          videoLink: https://sejm.c.blueonline.tv/stream/ENC01/95D9F487F901760EC1258BA20052CC01/playlist.m3u8?start=1754380800000
+          otherVideoLinks: https://sejm.c.blueonline.tv/stream/ENC30/95D9F487F901760EC1258BA20052CC01/playlist.m3u8?start=1754380800000
+          videoMessagesLink: videoMessagesLink
+          type: komisja
+          transcribe: true
+          startDateTime: 2000-01-23T04:56:07.000+00:00
+          endDateTime: 2000-01-23T04:56:07.000+00:00
+          signLangLink: signLangLink
+          title: Parlamentarny Zespół ds. Personelu Niemedycznego Ochrony Zdrowia
+          audio: audio
+          room: "sala im. Konstytucji 3-go Maja (nr 118, bud. C)"
+          description: Medyczne zawody niemedyczne - przyszłość przenoszenia niektórych
+            dodatkowych zadań w ramach opieki nad pacjentem na personel niemedyczny
+            oraz tworzenie związanych z tym możliwości rozwoju zawodowego dla personelu.\r\n\r\n
+          committee: SUE
+          subcommittee: KSP02S
+          playerLink: playerLink
+          playerLinkIFrame: playerLinkIFrame
+        audio: audio
+        city: city
+        room: "sala im. Konstytucji 3-go Maja (nr 118, bud. C)"
+        notes: Posiedzenie Komisji zostało zwołane w trybie art. 152 ust. 2 regulaminu
+          Sejmu RP na wniosek grupy posłów przekazany do Komisji w dniu 12 czerwca
+          2025 r.
+        comments: Nastąpiła zmiana porządku posiedzenia
+        jointWith:
+        - num: 1
+          code: ASW
+        - num: 1
+          code: ASW
+        agenda: agenda
+        status: status
+      properties:
+        code:
+          description: A committee code
+          example: ASW
+          type: string
+        num:
+          description: A sitting number
+          example: 1
+          format: int32
+          type: integer
+        date:
+          description: A sitting date
+          example: 2023-11-21
+          format: date
+          type: string
+        startDateTime:
+          description: A sitting start date
+          format: date-time
+          type: string
+        endDateTime:
+          description: A sitting end date
+          format: date-time
+          type: string
+        closed:
+          description: A flag indicating that a meeting is closed
+          type: boolean
+        remote:
+          description: A flag indicating that a meeting is a remote meeting
+          type: boolean
+        video:
+          description: A list of video transmissions
+          items:
+            $ref: "#/components/schemas/Video"
+          type: array
+        audio:
+          description: A link to an audio file
+          type: string
+        city:
+          description: A city where meeting took place
+          type: string
+        room:
+          description: A room where the sitting takes place
+          example: "sala im. Konstytucji 3-go Maja (nr 118, bud. C)"
+          type: string
+        notes:
+          description: Additional notes
+          example: Posiedzenie Komisji zostało zwołane w trybie art. 152 ust. 2 regulaminu
+            Sejmu RP na wniosek grupy posłów przekazany do Komisji w dniu 12 czerwca
+            2025 r.
+          type: string
+        comments:
+          description: Additional comments
+          example: Nastąpiła zmiana porządku posiedzenia
+          type: string
+        jointWith:
+          description: A list of committees at joint meeting
+          items:
+            $ref: "#/components/schemas/CommitteeSittingNum"
+          type: array
+        agenda:
+          description: An agenda of a meeting
+          type: string
+        status:
+          allOf:
+          - $ref: "#/components/schemas/SittingStatus"
+          description: Status of the meeting
+          type: string
+      type: object
+    CommitteeSittingNum:
+      description: A sitting code and number
+      example:
+        num: 1
+        code: ASW
+      properties:
+        num:
+          description: A sitting number
+          example: 1
+          format: int32
+          type: integer
+        code:
+          description: A committee code
+          example: ASW
+          type: string
+      type: object
+    Function:
+      example:
+        name: przewodniczący
+        functionType: chairman
+        appointmentDate: 2022-03-10
+        dismissalDate: 2022-03-10
+      properties:
+        name:
+          description: A function name in the committee or in the club.
+          example: przewodniczący
+          type: string
+        functionType:
+          allOf:
+          - $ref: "#/components/schemas/MemberType"
+          description: A function name in English
+          example: chairman
+          type: string
+        appointmentDate:
+          description: A date of appointment
+          example: 2022-03-10
+          format: date
+          type: string
+        dismissalDate:
+          description: A date of dismissal
+          example: 2022-03-10
+          format: date
+          type: string
+      type: object
+    Group:
+      description: A group
+      example:
+        id: 1
+        name: Polsko-Albańska Grupa Parlamentarna
+        engName: Polish-Albanian Parliamentary Group
+        appointmentDate: 2022-03-10
+      properties:
+        id:
+          description: ID used to get group details
+          example: 1
+          format: int32
+          type: integer
+        name:
+          description: Name of the group
+          example: Polsko-Albańska Grupa Parlamentarna
+          type: string
+        engName:
+          description: Name of the group in english
+          example: Polish-Albanian Parliamentary Group
+          type: string
+        appointmentDate:
+          description: appointment date
+          example: 2022-03-10
+          format: date
+          type: string
+      type: object
+    GroupDetails:
+      description: A group details
+      example:
+        id: 1
+        name: Polsko-Albańska Grupa Parlamentarna
+        engName: Polish-Albanian Parliamentary Group
+        appointmentDate: 2022-03-10
+        remarks: remarks
+        members:
+        - id: "6"
+          name: Andzel Waldemar
+          club: PiS
+          senator: false
+          type: chairman
+          membershipStart: 2023-10-10
+          membershipEnd: 2023-10-10
+          mandateEnd: 2023-10-10
+        - id: "6"
+          name: Andzel Waldemar
+          club: PiS
+          senator: false
+          type: chairman
+          membershipStart: 2023-10-10
+          membershipEnd: 2023-10-10
+          mandateEnd: 2023-10-10
+      properties:
+        id:
+          description: ID used to get group details
+          example: 1
+          format: int32
+          type: integer
+        name:
+          description: Name of the group
+          example: Polsko-Albańska Grupa Parlamentarna
+          type: string
+        engName:
+          description: Name of the group in english
+          example: Polish-Albanian Parliamentary Group
+          type: string
+        appointmentDate:
+          description: appointment date
+          example: 2022-03-10
+          format: date
+          type: string
+        remarks:
+          description: remarks
+          type: string
+        members:
+          description: members
+          items:
+            $ref: "#/components/schemas/GroupMember"
+          type: array
+      type: object
+    GroupMember:
+      description: Information about a member of a group
+      example:
+        id: "6"
+        name: Andzel Waldemar
+        club: PiS
+        senator: false
+        type: chairman
+        membershipStart: 2023-10-10
+        membershipEnd: 2023-10-10
+        mandateEnd: 2023-10-10
+      properties:
+        id:
+          description: A number of the identity card of the MP
+          example: "6"
+          type: string
+        name:
+          description: Last and first name of the MP
+          example: Andzel Waldemar
+          type: string
+        club:
+          description: Name of a club
+          example: PiS
+          type: string
+        senator:
+          description: "A flag indicating that a member is not an MP, but a senate\
+            \ member"
+          example: false
+          type: boolean
+        type:
+          allOf:
+          - $ref: "#/components/schemas/MemberType"
+          description: A type of membership
+          example: chairman
+          type: string
+        membershipStart:
+          description: A date when membership in this group started
+          example: 2023-10-10
+          format: date
+          type: string
+        membershipEnd:
+          description: A date when membership in this group ended
+          example: 2023-10-10
+          format: date
+          type: string
+        mandateEnd:
+          description: A date when mandate of MP expired
+          example: 2023-10-10
+          format: date
+          type: string
+      type: object
+    Interpellation:
+      description: "An interpellation (pl: interpelacja)."
+      example:
+        term: 9
+        num: 14710
+        title: Interpelacja w sprawie trudnej sytuacji osób niepełnosprawnych z uwagi
+          na kwarantannę nakładaną na ich opiekunów
+        receiptDate: 2020-11-16
+        lastModified: 2000-01-23T04:56:07.000+00:00
+        links:
+        - ""
+        - ""
+        from: 101
+        to:
+        - minister rodziny i polityki społecznej
+        - minister zdrowia
+        recipientDetails:
+        - name: prezes Rady Ministrów
+          sent: 2024-01-30
+          answerDelayedDays: 300
+        - name: prezes Rady Ministrów
+          sent: 2024-01-30
+          answerDelayedDays: 300
+        sentDate: 2021-01-20
+        replies:
+        - key: BJWJSS
+          receiptDate: 2021-01-29
+          lastModified: 2000-01-23T04:56:07.000+00:00
+          from: Sekretarz stanu Waldemar Kraska
+          links:
+          - ""
+          - ""
+          onlyAttachment: false
+          attachments:
+          - lastModified: 2000-01-23T04:56:07.000+00:00
+            name: i14710-o3.pdf
+            URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          - lastModified: 2000-01-23T04:56:07.000+00:00
+            name: i14710-o3.pdf
+            URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          prolongation: true
+        - key: BJWJSS
+          receiptDate: 2021-01-29
+          lastModified: 2000-01-23T04:56:07.000+00:00
+          from: Sekretarz stanu Waldemar Kraska
+          links:
+          - ""
+          - ""
+          onlyAttachment: false
+          attachments:
+          - lastModified: 2000-01-23T04:56:07.000+00:00
+            name: i14710-o3.pdf
+            URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          - lastModified: 2000-01-23T04:56:07.000+00:00
+            name: i14710-o3.pdf
+            URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          prolongation: true
+        answerDelayedDays: 300
+        repeatedInterpellation:
+        - null
+        - null
+      properties:
+        term:
+          description: A Sejm term when the document was submitted
+          example: 9
+          format: int32
+          type: integer
+        num:
+          description: A document number
+          example: 14710
+          format: int32
+          type: integer
+        title:
+          description: A title of the case
+          example: Interpelacja w sprawie trudnej sytuacji osób niepełnosprawnych
+            z uwagi na kwarantannę nakładaną na ich opiekunów
+          type: string
+        receiptDate:
+          description: A date when the case was received
+          example: 2020-11-16
+          format: date
+          type: string
+        lastModified:
+          description: A date of last modification of a document
+          format: date-time
+          type: string
+        links:
+          description: Links to HTML pages with a description or a content (body)
+          items: {}
+          type: array
+        from:
+          description: A list of IDs of MPs who submitted the question
+          example: 101
+          items:
+            type: string
+          type: array
+        to:
+          description: A list of ministries to whom the question was sent
+          example:
+          - minister rodziny i polityki społecznej
+          - minister zdrowia
+          items:
+            type: string
+          type: array
+        recipientDetails:
+          description: A more detailed list of ministries to whom the question was
+            sent
+          items:
+            $ref: "#/components/schemas/CaseRecipientDetails"
+          type: array
+        sentDate:
+          description: A date when the interpellation was sent to recipients
+          example: 2021-01-20
+          format: date
+          type: string
+        replies:
+          description: A list of replies
+          items:
+            $ref: "#/components/schemas/Reply"
+          type: array
+        answerDelayedDays:
+          description: number of days an answer is delayed for a given case. When
+            there are multiple recipients then a maximum value is taken.
+          example: 300
+          format: int32
+          type: integer
+        repeatedInterpellation:
+          description: a list of interpellations that were submitted after reciving
+            unsatisfactory answer (request for additional explanations)
+          items:
+            $ref: "#/components/schemas/Interpellation"
+          type: array
+      type: object
+    LocalDate:
+      example: 2022-03-10
+      format: date
+      type: string
+    LocalDateTime:
+      format: date-time
+      type: string
+    MP:
+      description: Details about a Member of Parliament.
+      example:
+        id: 103
+        firstLastName: Marta Golbik
+        lastFirstName: Golbik Marta
+        firstName: Marta
+        secondName: Joanna
+        lastName: Golbik
+        genitiveName: Marty Golbik
+        accusativeName: Martę Golbik
+        email: Marta.Golbik@sejm.pl
+        active: true
+        inactiveCause: Zrzeczenie
+        waiverDesc: waiverDesc
+        districtNum: 29
+        districtName: Katowice
+        voivodeship: śląskie
+        club: KO
+        birthDate: 1985-04-14
+        birthLocation: Gliwice
+        profession: przedsiębiorca prywatny
+        educationLevel: wyższe
+        numberOfVotes: 19430
+      properties:
+        id:
+          description: A number of the identity card of the MP.
+          example: 103
+          format: int32
+          type: integer
+        firstLastName:
+          description: The first and last name of the MP.
+          example: Marta Golbik
+          type: string
+        lastFirstName:
+          description: The last and first name of the MP.
+          example: Golbik Marta
+          type: string
+        firstName:
+          description: The first name of the MP.
+          example: Marta
+          type: string
+        secondName:
+          description: The second name of the MP.
+          example: Joanna
+          type: string
+        lastName:
+          description: The last name of the MP.
+          example: Golbik
+          type: string
+        genitiveName:
+          description: The first and last name in genitive case.
+          example: Marty Golbik
+          type: string
+        accusativeName:
+          description: The first and last name in accusative case.
+          example: Martę Golbik
+          type: string
+        email:
+          description: The email of the MP.
+          example: Marta.Golbik@sejm.pl
+          type: string
+        active:
+          description: Is the MP active?
+          example: true
+          type: boolean
+        inactiveCause:
+          description: The cause of inactivity
+          example: Zrzeczenie
+          type: string
+        waiverDesc:
+          description: '?'
+          type: string
+        districtNum:
+          description: A district id where MP was elected
+          example: 29
+          format: int32
+          type: integer
+        districtName:
+          description: A district name where MP was elected
+          example: Katowice
+          type: string
+        voivodeship:
+          description: A voivodeship where MP was elected
+          example: śląskie
+          type: string
+        club:
+          description: A club to where MP is belonging
+          example: KO
+          type: string
+        birthDate:
+          description: a date of birth
+          example: 1985-04-14
+          format: date
+          type: string
+        birthLocation:
+          description: a place of birth
+          example: Gliwice
+          type: string
+        profession:
+          description: a profession
+          example: przedsiębiorca prywatny
+          type: string
+        educationLevel:
+          description: an education level
+          example: wyższe
+          type: string
+        numberOfVotes:
+          description: a number of votes
+          example: 19430
+          format: int32
+          type: integer
+      type: object
+    Member:
+      description: "A member of a committee, parliamentary team or a club."
+      example:
+        id: 0
+        lastFirstName: lastFirstName
+        firstName: firstName
+        lastName: lastName
+        function: przewodniczący
+        mandateExpired: 2022-03-10
+        joinDate: 2022-03-10
+        leaveDate: 2022-03-10
+        club: KO
+        functions:
+        - name: przewodniczący
+          functionType: chairman
+          appointmentDate: 2022-03-10
+          dismissalDate: 2022-03-10
+        - name: przewodniczący
+          functionType: chairman
+          appointmentDate: 2022-03-10
+          dismissalDate: 2022-03-10
+      properties:
+        id:
+          description: A number of the identity card of the MP.
+          format: int32
+          type: integer
+        lastFirstName:
+          deprecated: true
+          description: The last and first name of the MP.
+          type: string
+        firstName:
+          description: The first name of the MP.
+          type: string
+        lastName:
+          description: The last name of the MP.
+          type: string
+        function:
+          description: A function in the committee or the club.
+          example: przewodniczący
+          type: string
+        mandateExpired:
+          description: A date of expiry of the parliamentary mandate.
+          example: 2022-03-10
+          format: date
+          type: string
+        joinDate:
+          description: A date of joining a club or committee.
+          example: 2022-03-10
+          format: date
+          type: string
+        leaveDate:
+          description: A date of leaving a club or committee.
+          example: 2022-03-10
+          format: date
+          type: string
+        club:
+          description: A club to where MP is belonging
+          example: KO
+          type: string
+        functions:
+          items:
+            $ref: "#/components/schemas/Function"
+          type: array
+      type: object
+    MemberType:
+      enum:
+      - chairman
+      - acting_chairman
+      - deputy_chairman
+      - co_chairman
+      - vice_chairman
+      - secretary
+      - member
+      - financial_auditor
+      - presidium_member
+      - spokesman
+      - spokesperson
+      - disciplinary_spokesman
+      - treasurer
+      type: string
+    Print:
+      description: A print
+      example:
+        term: 9
+        number: 1006-A
+        numberAssociated: 609
+        title: Opinia Komisji Sprawiedliwości i Praw Człowieka dotycząca wniosków
+          w sprawie wyboru na stanowiska sędziów Trybunału Konstytucyjnego.
+        documentDate: 2019-11-20
+        deliveryDate: 2019-11-20
+        processPrint:
+        - "16"
+        - "17"
+        changeDate: 2000-01-23T04:56:07.000+00:00
+        attachments:
+        - attachments
+        - attachments
+        additionalPrints:
+        - null
+        - null
+      properties:
+        term:
+          description: a Sejm term
+          example: 9
+          format: int32
+          type: integer
+        number:
+          description: a number of a print in the specified Sejm term
+          example: 1006-A
+          type: string
+        numberAssociated:
+          description: numbers of prints that this print is associated with
+          example: 609
+          items:
+            type: string
+          type: array
+        title:
+          description: a title of a print
+          example: Opinia Komisji Sprawiedliwości i Praw Człowieka dotycząca wniosków
+            w sprawie wyboru na stanowiska sędziów Trybunału Konstytucyjnego.
+          type: string
+        documentDate:
+          description: a date of a print
+          example: 2019-11-20
+          format: date
+          type: string
+        deliveryDate:
+          description: a date of delivery of a print
+          example: 2019-11-20
+          format: date
+          type: string
+        processPrint:
+          description: a list of prints that started a legislative process that this
+            print is connected to
+          example:
+          - "16"
+          - "17"
+          items:
+            type: string
+          type: array
+        changeDate:
+          description: a date of of last change to the print
+          format: date-time
+          type: string
+        attachments:
+          description: a list of attachments added to the print
+          items:
+            type: string
+          type: array
+        additionalPrints:
+          description: a list of additional prints added to the print
+          items:
+            $ref: "#/components/schemas/Print"
+          type: array
+      type: object
+    PrintInfo:
+      description: info about prints
+      properties:
+        count:
+          description: number of prints
+          example: 735
+          format: int32
+          type: integer
+        lastChanged:
+          description: date of last changed document
+          format: date-time
+          type: string
+        link:
+          description: a link to prints endpoint
+          type: string
+      type: object
+    Proceeding:
+      description: A proceeding.
+      example:
+        title: "1. Posiedzenie Sejmu RP w dniach 12, 13, 19 i 21 listopada 2019 r."
+        dates:
+        - 2022-03-10
+        - 2022-03-10
+        current: true
+        agenda: agenda
+        schedule: schedule
+        votings: votings
+        currentAffairs: currentAffairs
+        number: 1
+      properties:
+        title:
+          description: a title of the proceeding
+          example: "1. Posiedzenie Sejmu RP w dniach 12, 13, 19 i 21 listopada 2019\
+            \ r."
+          type: string
+        dates:
+          description: a dates of the proceeding
+          items:
+            example: 2022-03-10
+            format: date
+            type: string
+          type: array
+        current:
+          description: is this a current proceeding
+          type: boolean
+        agenda:
+          description: agenda of a proceeding
+          type: string
+        schedule:
+          description: schedule of a proceeding (only for current proceeding)
+          type: string
+        votings:
+          description: schedule of votings for a proceeding (only for current proceeding)
+          type: string
+        currentAffairs:
+          description: current information and questions on current affairs (only
+            for current proceeding)
+          type: string
+        number:
+          description: a proceeding number
+          example: 1
+          format: int32
+          type: integer
+      type: object
+    ProceedingDay:
+      description: info about a proceeding day
+      example:
+        proceeding: 0
+        date: 2022-03-10
+        votingsNum: 6
+      properties:
+        proceeding:
+          description: proceeding number
+          format: int32
+          type: integer
+        date:
+          description: proceeding date
+          example: 2022-03-10
+          format: date
+          type: string
+        votingsNum:
+          description: number of votings on this day
+          format: int32
+          type: integer
+      type: object
+    ProcessDetails:
+      description: A details of legislative process
+      example:
+        term: 9
+        number: "19"
+        title: Rządowy projekt ustawy o zmianie ustawy o transporcie kolejowym
+        description: projekt ustawy dotyczy utworzenia nowego uniwersytetu medycznego
+        uE: "NO"
+        documentDate: 2019-11-19
+        changeDate: 2000-01-23T04:56:07.000+00:00
+        webGeneratedDate: 2000-01-23T04:56:07.000+00:00
+        processStartDate: 2019-11-19
+        documentType: projekt ustawy
+        documentTypeEnum: BILL
+        comments: "Obywatelski projekt ustawy został wniesiony w VIII kadencji Sejmu\
+          \ (druk nr 226). Na podstawie art. 4. ust. 3 ustawy o wykonywaniu inicjatywy\
+          \ ustawodawczej przez obywateli - projekt ustawy, w stosunku do którego\
+          \ postępowanie ustawodawcze nie zostało zakończone w trakcie kadencji Sejmu,\
+          \ w której został wniesiony, jest rozpatrywany przez Sejm następnej kadencji."
+        printsConsideredJointly:
+        - printsConsideredJointly
+        - printsConsideredJointly
+        titleFinal: o zmianie ustawy o świadczeniach opieki zdrowotnej finansowanych
+          ze środków publicznych
+        closureDate: 2023-11-29
+        address: WDU20250000179
+        displayAddress: Dz.U. 2025 poz. 179
+        eLI: DU/2025/179
+        passed: true
+        links:
+        - ""
+        - ""
+        shortenProcedure: true
+        urgencyStatus: NORMAL
+        urgencyWithdrawDate: 2022-03-10
+        otherDocuments:
+        - number: 13-A
+          registeredDate: 2019-11-28
+          documentDate: 2019-11-28
+          title: Opinia Komisji Sprawiedliwości i Praw Człowieka dotycząca wniosków
+            w sprawie wyboru na stanowiska sędziów Trybunału Konstytucyjnego.
+        - number: 13-A
+          registeredDate: 2019-11-28
+          documentDate: 2019-11-28
+          title: Opinia Komisji Sprawiedliwości i Praw Człowieka dotycząca wniosków
+            w sprawie wyboru na stanowiska sędziów Trybunału Konstytucyjnego.
+        rclNum: RM-0610-84-21
+        rclLink: rclLink
+        legislativeCommittee: false
+        principleOfSubsidiarity: false
+        stages:
+        - stageName: I czytanie na posiedzeniu Sejmu
+          date: 2019-11-28
+          children:
+          - null
+          - null
+          stageType: stageType
+        - stageName: I czytanie na posiedzeniu Sejmu
+          date: 2019-11-28
+          children:
+          - null
+          - null
+          stageType: stageType
+      properties:
+        term:
+          description: a Sejm term
+          example: 9
+          format: int32
+          type: integer
+        number:
+          description: a number of a print in the specified Sejm term
+          example: "19"
+          type: string
+        title:
+          description: a title of a process
+          example: Rządowy projekt ustawy o zmianie ustawy o transporcie kolejowym
+          type: string
+        description:
+          description: a description of a process
+          example: projekt ustawy dotyczy utworzenia nowego uniwersytetu medycznego
+          type: string
+        uE:
+          allOf:
+          - $ref: "#/components/schemas/UEStatus"
+          description: is this process realization of the UE law
+          example: "NO"
+          type: string
+        documentDate:
+          description: a date of a print
+          example: 2019-11-19
+          format: date
+          type: string
+        changeDate:
+          description: a date of last change to the process
+          format: date-time
+          type: string
+        webGeneratedDate:
+          description: A date when a web page with a process was updated
+          format: date-time
+          type: string
+        processStartDate:
+          description: a date of the start of the process
+          example: 2019-11-19
+          format: date
+          type: string
+        documentType:
+          description: a type of a document
+          example: projekt ustawy
+          type: string
+        documentTypeEnum:
+          allOf:
+          - $ref: "#/components/schemas/ProcessType"
+          description: A document type
+          example: BILL
+          type: string
+        comments:
+          description: comments
+          example: "Obywatelski projekt ustawy został wniesiony w VIII kadencji Sejmu\
+            \ (druk nr 226). Na podstawie art. 4. ust. 3 ustawy o wykonywaniu inicjatywy\
+            \ ustawodawczej przez obywateli - projekt ustawy, w stosunku do którego\
+            \ postępowanie ustawodawcze nie zostało zakończone w trakcie kadencji\
+            \ Sejmu, w której został wniesiony, jest rozpatrywany przez Sejm nastę\
+            pnej kadencji."
+          type: string
+        printsConsideredJointly:
+          description: prints considered jointly
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+        titleFinal:
+          description: A final title of the act
+          example: o zmianie ustawy o świadczeniach opieki zdrowotnej finansowanych
+            ze środków publicznych
+          type: string
+        closureDate:
+          description: A date of case closure
+          example: 2023-11-29
+          format: date
+          type: string
+        address:
+          description: "an address of publication in the ISAP service. An address\
+            \ is in format {publisher}{year}{volume}{position}"
+          example: WDU20250000179
+          type: string
+        displayAddress:
+          description: an address to display
+          example: Dz.U. 2025 poz. 179
+          type: string
+        eLI:
+          description: an European Legislation Identifier
+          example: DU/2025/179
+          type: string
+        passed:
+          description: is this act was passed
+          example: true
+          type: boolean
+        links:
+          description: Links
+          items: {}
+          type: array
+        shortenProcedure:
+          description: "Article 51 of the Sejm Regulations - in particularly justified\
+            \ cases, the Sejm may shorten the procedure for drafting bills"
+          type: boolean
+        urgencyStatus:
+          allOf:
+          - $ref: "#/components/schemas/UrgencyStatus"
+          description: urgency status
+          example: NORMAL
+          type: string
+        urgencyWithdrawDate:
+          description: date when urgency clause was withdrawn
+          example: 2022-03-10
+          format: date
+          type: string
+        otherDocuments:
+          description: "other prints, corrections"
+          items:
+            $ref: "#/components/schemas/ProcessDocument"
+          type: array
+        rclNum:
+          description: number from government part of the process (from RCL website)
+          example: RM-0610-84-21
+          type: string
+        rclLink:
+          description: link to government part of the process (RCL website)
+          type: string
+        legislativeCommittee:
+          description: indicates that for work on this project a members of Legislative
+            Committee has been assigned
+          example: false
+          type: boolean
+        principleOfSubsidiarity:
+          description: indicates that the project is inconsistent with the principle
+            of subsidiarity
+          example: false
+          type: boolean
+        stages:
+          description: stages of the process
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+      type: object
+    ProcessDocument:
+      description: A document in the legislative process.
+      example:
+        number: 13-A
+        registeredDate: 2019-11-28
+        documentDate: 2019-11-28
+        title: Opinia Komisji Sprawiedliwości i Praw Człowieka dotycząca wniosków
+          w sprawie wyboru na stanowiska sędziów Trybunału Konstytucyjnego.
+      properties:
+        number:
+          description: a print number
+          example: 13-A
+          type: string
+        registeredDate:
+          description: a date when a document was registered
+          example: 2019-11-28
+          format: date
+          type: string
+        documentDate:
+          description: a date of a document
+          example: 2019-11-28
+          format: date
+          type: string
+        title:
+          description: a title of a print
+          example: Opinia Komisji Sprawiedliwości i Praw Człowieka dotycząca wniosków
+            w sprawie wyboru na stanowiska sędziów Trybunału Konstytucyjnego.
+          type: string
+      type: object
+    ProcessHeader:
+      description: A legislative process
+      example:
+        uE: "NO"
+        eLI: DU/2025/179
+        term: 9
+        number: "40"
+        title: Obywatelski projekt ustawy o ochronie własności w Rzeczypospolitej
+          Polskiej przed roszczeniami dotyczącymi mienia bezdziedzicznego
+        titleFinal: o zmianie ustawy o świadczeniach opieki zdrowotnej finansowanych
+          ze środków publicznych
+        description: projekt dotyczy zawieszenia na okres 6 miesięcy 2020 r. funkcjonowania
+          ustawy. Przepisy ustawy będą stosowane do przychodów ze sprzedaży detalicznej
+          osiągniętych od 1 lipca 2020 r
+        ue: "NO"
+        documentDate: 2019-11-28
+        processStartDate: 2019-11-28
+        changeDate: 2000-01-23T04:56:07.000+00:00
+        documentType: projekt ustawy
+        documentTypeEnum: BILL
+        comments: "Obywatelski projekt ustawy został wniesiony w VIII kadencji Sejmu\
+          \ (druk nr 226). Na podstawie art. 4. ust. 3 ustawy o wykonywaniu inicjatywy\
+          \ ustawodawczej przez obywateli - projekt ustawy, w stosunku do którego\
+          \ postępowanie ustawodawcze nie zostało zakończone w trakcie kadencji Sejmu,\
+          \ w której został wniesiony, jest rozpatrywany przez Sejm następnej kadencji."
+        webGeneratedDate: 2000-01-23T04:56:07.000+00:00
+        closureDate: 2023-11-29
+        address: WDU20250000179
+        displayAddress: Dz.U. 2025 poz. 179
+        ELI: DU/2025/179
+        passed: true
+        links:
+        - ""
+        - ""
+        shortenProcedure: true
+        urgencyStatus: NORMAL
+        urgencyWithdrawDate: 2022-03-10
+        printsConsideredJointly:
+        - printsConsideredJointly
+        - printsConsideredJointly
+      properties:
+        uE:
+          allOf:
+          - $ref: "#/components/schemas/UEStatus"
+          description: is this process realization of the UE law
+          example: "NO"
+          type: string
+        eLI:
+          description: an European Legislation Identifier
+          example: DU/2025/179
+          type: string
+        term:
+          description: A Sejm term
+          example: 9
+          format: int32
+          type: integer
+        number:
+          description: A number of the process
+          example: "40"
+          type: string
+        title:
+          description: A title of the process
+          example: Obywatelski projekt ustawy o ochronie własności w Rzeczypospolitej
+            Polskiej przed roszczeniami dotyczącymi mienia bezdziedzicznego
+          type: string
+        titleFinal:
+          description: A final title of the act
+          example: o zmianie ustawy o świadczeniach opieki zdrowotnej finansowanych
+            ze środków publicznych
+          type: string
+        description:
+          description: A description of the process
+          example: projekt dotyczy zawieszenia na okres 6 miesięcy 2020 r. funkcjonowania
+            ustawy. Przepisy ustawy będą stosowane do przychodów ze sprzedaży detalicznej
+            osiągniętych od 1 lipca 2020 r
+          type: string
+        ue:
+          allOf:
+          - $ref: "#/components/schemas/UEStatus"
+          description: A UE type of process
+          example: "NO"
+          type: string
+        documentDate:
+          description: A date of document
+          example: 2019-11-28
+          format: date
+          type: string
+        processStartDate:
+          description: Process start date
+          example: 2019-11-28
+          format: date
+          type: string
+        changeDate:
+          description: A date when a process was last changed
+          format: date-time
+          type: string
+        documentType:
+          description: A document type
+          example: projekt ustawy
+          type: string
+        documentTypeEnum:
+          allOf:
+          - $ref: "#/components/schemas/ProcessType"
+          description: A document type
+          example: BILL
+          type: string
+        comments:
+          description: Comments
+          example: "Obywatelski projekt ustawy został wniesiony w VIII kadencji Sejmu\
+            \ (druk nr 226). Na podstawie art. 4. ust. 3 ustawy o wykonywaniu inicjatywy\
+            \ ustawodawczej przez obywateli - projekt ustawy, w stosunku do którego\
+            \ postępowanie ustawodawcze nie zostało zakończone w trakcie kadencji\
+            \ Sejmu, w której został wniesiony, jest rozpatrywany przez Sejm nastę\
+            pnej kadencji."
+          type: string
+        webGeneratedDate:
+          description: A date when a web page with a process was updated
+          format: date-time
+          type: string
+        closureDate:
+          description: A date of case closure
+          example: 2023-11-29
+          format: date
+          type: string
+        address:
+          description: "an address of publication in the ISAP service. An address\
+            \ is in format {publisher}{year}{volume}{position}"
+          example: WDU20250000179
+          type: string
+        displayAddress:
+          description: an address to display
+          example: Dz.U. 2025 poz. 179
+          type: string
+        ELI:
+          description: an European Legislation Identifier
+          example: DU/2025/179
+          type: string
+        passed:
+          description: is this act was passed
+          example: true
+          type: boolean
+        links:
+          description: Links
+          items: {}
+          type: array
+        shortenProcedure:
+          description: "Article 51 of the Sejm Regulations - in particularly justified\
+            \ cases, the Sejm may shorten the procedure for drafting bills"
+          type: boolean
+        urgencyStatus:
+          allOf:
+          - $ref: "#/components/schemas/UrgencyStatus"
+          description: urgency status
+          example: NORMAL
+          type: string
+        urgencyWithdrawDate:
+          description: date when urgency clause was withdrawn
+          example: 2022-03-10
+          format: date
+          type: string
+        printsConsideredJointly:
+          description: prints considered jointly
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+      type: object
+    ProcessStage:
+      description: a stage in the legislative process
+      example:
+        stageName: I czytanie na posiedzeniu Sejmu
+        date: 2019-11-28
+        children:
+        - null
+        - null
+        stageType: stageType
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        stageType:
+          description: a type of a stage
+          type: string
+      type: object
+    ProcessStageCommitteeReport:
+      description: committee report
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        subCommittee:
+          description: is this subcommittee report
+          type: boolean
+        reportFile:
+          description: an URL to a report
+          type: string
+        printNumber:
+          description: a print number
+          type: string
+        rapporteurName:
+          description: a name of the MP
+          type: string
+        rapporteurID:
+          description: an ID of the MP
+          type: string
+        minorityMotions:
+          description: number of minority motions
+          format: int32
+          type: integer
+        proposal:
+          description: commission proposal
+          type: string
+        comment:
+          description: commission proposal comment
+          type: string
+        otherDocuments:
+          description: "other documents, e.g. errata"
+          items:
+            $ref: "#/components/schemas/ProcessDocument"
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageCommitteeWork:
+      description: a stage in the legislative process
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageConstitutionInconsistencyRemovalConsideration:
+      description: Consideration in the Sejm of the report of the committee on the
+        removal of inconsistence with the Constitution
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        sittingNum:
+          description: Sejm sitting number
+          example: 10
+          format: int32
+          type: integer
+        decision:
+          description: the Sejm decision
+          example: podjęto uchwałę
+          type: string
+        comment:
+          description: a comment
+          example: Na 78. pos. Sejm podjął uchwałę w sprawie usunięcia niezgodności
+            w ustawie
+          type: string
+        links:
+          description: Link to resolution
+          items: {}
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageConstitutionalTribunalRuling:
+      description: The Constitutional Tribunal ruling
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        publisher:
+          description: a code of a publisher
+          example: WDU
+          type: string
+        publicationYear:
+          description: a year of publication
+          example: "2020"
+          type: string
+        publicationNumber:
+          description: a volume of a publication. Specifies a volume in year. After
+            year 2012 there are no volumes and this field should have value '0'.
+          example: "0"
+          type: string
+        publicationPosition:
+          description: a position in a year
+          example: "647"
+          type: string
+        verdict:
+          description: a Constitutional Tribunal verdict
+          example: Ustawa jest w całości niezgodna z art. 7 w związku z art. 112 oraz
+            z art. 119 ust. 1 Konstytucji RP
+          type: string
+        links:
+          description: Links to HTML pages
+          items: {}
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageEnd:
+      description: an end stage in the legislative process
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        comment:
+          description: a comment
+          example: Trybunał Konstytucyjny orzekł przed podpisaniem ustawy przez Prezydenta
+            jej niezgodność z Konstytucją
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStageGovermentPosition:
+      description: a goverment position
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        title:
+          description: a title of a print
+          example: Stanowisko Rządu do druku nr 1476
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStageOpinion:
+      description: opinion
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        organ:
+          description: organ
+          example: Organizacja samorządowa
+          type: string
+        opinionReceived:
+          description: date when the opinion was received
+          example: 2019-11-12
+          format: date
+          type: string
+        toCommission:
+          description: date when the opinion was sent to commission
+          format: date
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStagePresidentMotionConsideration:
+      description: Consideration of the President's motion on the Sejm sitting
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        sittingNum:
+          description: Sejm sitting number
+          example: 10
+          format: int32
+          type: integer
+        decision:
+          description: the Sejm decision
+          example: nie dokończone rozpatrywanie stanowiska Senatu
+          type: string
+        comment:
+          description: a comment
+          example: MS przeniosła głosowanie na następne posiedzenie Sejmu
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStagePresidentSignature:
+      description: the President signed an act
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        omittedInconsistent:
+          description: the President signed the act omitting the provisions deemed
+            inconsistent with the Constitution
+          type: boolean
+        stageType:
+          type: string
+      type: object
+    ProcessStagePresidentToTribunal:
+      description: the President referred the act to the Constitutional Tribunal
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStagePublicHearing:
+      description: public hearing
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageReading:
+      description: reading
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        continuedOn:
+          description: reading continued on
+          items:
+            example: 2022-03-10
+            format: date
+            type: string
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageReadingReferral:
+      description: a stage in the legislative process
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageReferral:
+      description: referral
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        type:
+          allOf:
+          - $ref: "#/components/schemas/ReferralType"
+          description: referral type
+          example: ""
+          type: string
+        committeeCode:
+          description: a committee code or null for Sejm reading
+          example: ENM
+          type: string
+        reportDate:
+          description: recommended date of report
+          example: 2019-11-12
+          format: date
+          type: string
+        remarks:
+          description: remarks
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStageSejmReading:
+      description: reading on Sejm sitting
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        sittingNum:
+          description: Sejm sitting number
+          example: 77
+          format: int32
+          type: integer
+        comment:
+          description: comment
+          example: przez aklamację
+          type: string
+        decision:
+          description: decision
+          example: podjęto uchwałę
+          type: string
+        textAfter3:
+          description: a link to a text after third reading (in a PDF format)
+          example: https://api.sejm.gov.pl/sejm/term10/processes/241/attachment/241_u3.pdf
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStageSenatePosition:
+      description: the Senate position
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        position:
+          description: the Senate position
+          example: wniósł poprawki
+          type: string
+        printNumber:
+          description: a print number
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStageSenatePositionConsideration:
+      description: Consideration of the Senate's position on the Sejm sitting
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        sittingNum:
+          description: Sejm sitting number
+          example: 10
+          format: int32
+          type: integer
+        decision:
+          description: the Sejm decision
+          example: nie dokończone rozpatrywanie stanowiska Senatu
+          type: string
+        comment:
+          description: a comment
+          example: MS przeniosła głosowanie na następne posiedzenie Sejmu
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStageStart:
+      description: process start
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        printNumber:
+          description: print number
+          example: "248"
+          type: string
+        otherDocuments:
+          description: "other prints, corrections"
+          items:
+            $ref: "#/components/schemas/ProcessDocument"
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageToPresident:
+      description: act forwarded to the President for signature
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        stageType:
+          type: string
+      type: object
+    ProcessStageVeto:
+      description: the President motion (veto or remove inconsistency with the constitution)
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        printNumber:
+          description: print number of President's motion
+          example: "248"
+          type: string
+        comment:
+          description: comment
+          example: ""
+          type: string
+        govermentPositionDate:
+          description: date of the goverment position
+          example: 2022-03-10
+          format: date
+          type: string
+        stageType:
+          type: string
+      type: object
+    ProcessStageVoting:
+      description: voting on a Sejm sitting
+      properties:
+        stageName:
+          description: a name of a stage
+          example: I czytanie na posiedzeniu Sejmu
+          type: string
+        date:
+          description: a stage date
+          example: 2019-11-28
+          format: date
+          type: string
+        children:
+          description: child stages
+          items:
+            $ref: "#/components/schemas/ProcessStage"
+          type: array
+        voting:
+          allOf:
+          - $ref: "#/components/schemas/Voting"
+          description: voting
+          type: object
+        stageType:
+          type: string
+      type: object
+    ProcessType:
+      enum:
+      - DRAFT_RESOLUTION
+      - BILL
+      - OTHER
+      - CONSTITUTIONAL_TRIBUNAL_RULING
+      type: string
+    ReferralType:
+      enum:
+      - NORMAL
+      - ADDITIONAL
+      - OPINION
+      - ADDITIONAL_OPINION
+      - WITHDRAWAL
+      type: string
+    Reply:
+      description: reply to an interpellation or question
+      example:
+        key: BJWJSS
+        receiptDate: 2021-01-29
+        lastModified: 2000-01-23T04:56:07.000+00:00
+        from: Sekretarz stanu Waldemar Kraska
+        links:
+        - ""
+        - ""
+        onlyAttachment: false
+        attachments:
+        - lastModified: 2000-01-23T04:56:07.000+00:00
+          name: i14710-o3.pdf
+          URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+        - lastModified: 2000-01-23T04:56:07.000+00:00
+          name: i14710-o3.pdf
+          URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+        prolongation: true
+      properties:
+        key:
+          description: a reply identifier
+          example: BJWJSS
+          type: string
+        receiptDate:
+          description: A date when the reply was received
+          example: 2021-01-29
+          format: date
+          type: string
+        lastModified:
+          description: A date of last modification of a document
+          format: date-time
+          type: string
+        from:
+          description: A name of an author
+          example: Sekretarz stanu Waldemar Kraska
+          type: string
+        links:
+          description: Links to HTML page with a description or a content (body)
+          items: {}
+          type: array
+        onlyAttachment:
+          description: Flag indicating that this reply contains only an attachment
+            (without HTML body)
+          example: false
+          type: boolean
+        attachments:
+          description: Attachments
+          items:
+            $ref: "#/components/schemas/Attachment"
+          type: array
+        prolongation:
+          description: Is this reply a prolongation. Text of prolongation is not published.
+          type: boolean
+      type: object
+    SittingStatus:
+      enum:
+      - PLANNED
+      - CANCELLED
+      - FINISHED
+      type: string
+    Statement:
+      description: statement on a sitting
+      example:
+        num: 15
+        function: Minister Rozwoju i Technologii
+        name: Jan Kowalski
+        memberID: 35
+        rapporteur: true
+        secretary: true
+        startDateTime: 2000-01-23T04:56:07.000+00:00
+        endDateTime: 2000-01-23T04:56:07.000+00:00
+        unspoken: true
+      properties:
+        num:
+          description: "statement number, 0 is always for course of the sitting"
+          example: 15
+          format: int32
+          type: integer
+        function:
+          description: function of the speaker
+          example: Minister Rozwoju i Technologii
+          type: string
+        name:
+          description: name of the speaker
+          example: Jan Kowalski
+          type: string
+        memberID:
+          description: "MP id number, if speaker is an MP, 0 otherwise"
+          example: 35
+          format: int32
+          type: integer
+        rapporteur:
+          description: this statement was made by the rapporteur
+          type: boolean
+        secretary:
+          description: this statement was made by the secretary
+          type: boolean
+        startDateTime:
+          description: start time of the statement
+          format: date-time
+          type: string
+        endDateTime:
+          description: end time of the statement
+          format: date-time
+          type: string
+        unspoken:
+          description: is this is unspoken statement
+          type: boolean
+      type: object
+    StatementList:
+      example:
+        proceedingNum: 0
+        date: 2022-03-10
+        statements:
+        - num: 15
+          function: Minister Rozwoju i Technologii
+          name: Jan Kowalski
+          memberID: 35
+          rapporteur: true
+          secretary: true
+          startDateTime: 2000-01-23T04:56:07.000+00:00
+          endDateTime: 2000-01-23T04:56:07.000+00:00
+          unspoken: true
+        - num: 15
+          function: Minister Rozwoju i Technologii
+          name: Jan Kowalski
+          memberID: 35
+          rapporteur: true
+          secretary: true
+          startDateTime: 2000-01-23T04:56:07.000+00:00
+          endDateTime: 2000-01-23T04:56:07.000+00:00
+          unspoken: true
+      properties:
+        proceedingNum:
+          format: int32
+          type: integer
+        date:
+          example: 2022-03-10
+          format: date
+          type: string
+        statements:
+          items:
+            $ref: "#/components/schemas/Statement"
+          type: array
+      type: object
+    Term:
+      description: information about a term of the Sejm
+      example:
+        num: 9
+        from: 2019-11-12
+        to: 2019-11-12
+        current: true
+        prints: "{}"
+      properties:
+        num:
+          description: Number of term of the Sejm
+          example: 9
+          format: int32
+          type: integer
+        from:
+          description: Date start of term
+          example: 2019-11-12
+          format: date
+          type: string
+        to:
+          description: Date end of term
+          example: 2019-11-12
+          format: date
+          type: string
+        current:
+          description: Current of term
+          example: true
+          type: boolean
+        prints:
+          allOf:
+          - $ref: "#/components/schemas/PrintInfo"
+          description: info about prints
+          type: object
+      type: object
+    UEStatus:
+      enum:
+      - "NO"
+      - ADAPTATION
+      - ENFORCEMENT
+      type: string
+    UrgencyStatus:
+      enum:
+      - NORMAL
+      - URGENT
+      - URGENT_WITHDRAWN
+      type: string
+    Video:
+      description: a video
+      example:
+        unid: 758DAA6CDF68DFC0C12588F6003C6EF3
+        videoLink: https://sejm.c.blueonline.tv/stream/ENC01/95D9F487F901760EC1258BA20052CC01/playlist.m3u8?start=1754380800000
+        otherVideoLinks: https://sejm.c.blueonline.tv/stream/ENC30/95D9F487F901760EC1258BA20052CC01/playlist.m3u8?start=1754380800000
+        videoMessagesLink: videoMessagesLink
+        type: komisja
+        transcribe: true
+        startDateTime: 2000-01-23T04:56:07.000+00:00
+        endDateTime: 2000-01-23T04:56:07.000+00:00
+        signLangLink: signLangLink
+        title: Parlamentarny Zespół ds. Personelu Niemedycznego Ochrony Zdrowia
+        audio: audio
+        room: "sala im. Konstytucji 3-go Maja (nr 118, bud. C)"
+        description: Medyczne zawody niemedyczne - przyszłość przenoszenia niektórych
+          dodatkowych zadań w ramach opieki nad pacjentem na personel niemedyczny
+          oraz tworzenie związanych z tym możliwości rozwoju zawodowego dla personelu.\r\n\r\n
+        committee: SUE
+        subcommittee: KSP02S
+        playerLink: playerLink
+        playerLinkIFrame: playerLinkIFrame
+      properties:
+        unid:
+          description: An unique indentifier of a transmission
+          example: 758DAA6CDF68DFC0C12588F6003C6EF3
+          type: string
+        videoLink:
+          description: An URL or URLs to a video transmission
+          example: https://sejm.c.blueonline.tv/stream/ENC01/95D9F487F901760EC1258BA20052CC01/playlist.m3u8?start=1754380800000
+          type: string
+        otherVideoLinks:
+          description: A list of URLs to a other cameras in a video transmission
+          example: https://sejm.c.blueonline.tv/stream/ENC30/95D9F487F901760EC1258BA20052CC01/playlist.m3u8?start=1754380800000
+          items:
+            type: string
+          type: array
+        videoMessagesLink:
+          description: A link to a messages for a transmission
+          type: string
+        type:
+          description: A type of transmission
+          example: komisja
+          type: string
+        transcribe:
+          description: Is there a transcription available
+          example: true
+          type: boolean
+        startDateTime:
+          description: A start date and time of transmission
+          format: date-time
+          type: string
+        endDateTime:
+          description: An end date and time of transmission
+          format: date-time
+          type: string
+        signLangLink:
+          description: An URL of a sign language transmission
+          type: string
+        title:
+          description: A title of a transmission
+          example: Parlamentarny Zespół ds. Personelu Niemedycznego Ochrony Zdrowia
+          type: string
+        audio:
+          description: A link to a an audio file
+          type: string
+        room:
+          description: A room where the transmission takes place
+          example: "sala im. Konstytucji 3-go Maja (nr 118, bud. C)"
+          type: string
+        description:
+          description: A description of a transmission
+          example: Medyczne zawody niemedyczne - przyszłość przenoszenia niektórych
+            dodatkowych zadań w ramach opieki nad pacjentem na personel niemedyczny
+            oraz tworzenie związanych z tym możliwości rozwoju zawodowego dla personelu.\r\n\r\n
+          type: string
+        committee:
+          description: A committee code if the transmission is a committee meeting
+          example: SUE
+          type: string
+        subcommittee:
+          description: A subcommittee code if the transmission is a subcommittee meeting
+          example: KSP02S
+          type: string
+        playerLink:
+          description: A link to a video player on the Sejm website
+          type: string
+        playerLinkIFrame:
+          description: "A link to a video player on the Sejm website, that can be\
+            \ embedded as iframe"
+          type: string
+      type: object
+    Vote:
+      description: a vote
+      example:
+        MP: 43
+        firstName: Jan
+        lastName: Kowalski
+        secondName: Krzysztof
+        club: PiS
+        vote: Za
+        listVotes:
+          key: "YES"
+        mP: 1
+      properties:
+        MP:
+          description: an MP number
+          example: 43
+          format: int32
+          type: integer
+        firstName:
+          description: an MP first name
+          example: Jan
+          type: string
+        lastName:
+          description: an MP last name
+          example: Kowalski
+          type: string
+        secondName:
+          description: an MP second name
+          example: Krzysztof
+          type: string
+        club:
+          description: an MP club
+          example: PiS
+          type: string
+        vote:
+          allOf:
+          - $ref: "#/components/schemas/VoteValue"
+          description: a vote
+          example: Za
+          type: string
+        listVotes:
+          additionalProperties:
+            $ref: "#/components/schemas/VoteValue"
+          description: a vote on a list
+          type: object
+        mP:
+          format: int32
+          type: integer
+      type: object
+    VoteMP:
+      description: a vote used in MP votings
+      example:
+        votingNumber: 43
+        date: 2000-01-23T04:56:07.000+00:00
+        kind: kind
+        title: "Pkt. 27 Sprawozdanie Komisji o rządowym projekcie ustawy o zmianie\
+          \ ustawy - Prawo energetyczne oraz ustawy o odnawialnych źródłach energii\
+          \ (druki nr 2634, 2644 i 2644-A)"
+        description: a description of a voting
+        topic: głosowanie nad całością projektu
+        vote: Za
+        listVotes:
+          key: listVotes
+      properties:
+        votingNumber:
+          description: a voting number
+          example: 43
+          format: int32
+          type: integer
+        date:
+          description: a voting date and time
+          format: date-time
+          type: string
+        kind:
+          allOf:
+          - $ref: "#/components/schemas/VotingKind"
+          description: a kind of voting
+          type: string
+        title:
+          description: a voting title
+          example: "Pkt. 27 Sprawozdanie Komisji o rządowym projekcie ustawy o zmianie\
+            \ ustawy - Prawo energetyczne oraz ustawy o odnawialnych źródłach energii\
+            \ (druki nr 2634, 2644 i 2644-A)"
+          type: string
+        description:
+          description: description
+          example: a description of a voting
+          type: string
+        topic:
+          description: a voting topic
+          example: głosowanie nad całością projektu
+          type: string
+        vote:
+          allOf:
+          - $ref: "#/components/schemas/VoteValue"
+          description: a vote
+          example: Za
+          type: string
+        listVotes:
+          additionalProperties:
+            type: string
+          description: '''yes'' votes on a list'
+          type: object
+      type: object
+    VoteValue:
+      enum:
+      - "YES"
+      - "NO"
+      - ABSTAIN
+      - NO_VOTE
+      - ABSENT
+      - VOTE_VALID
+      - VOTE_INVALID
+      - PRESENT
+      type: string
+    Voting:
+      description: a voting
+      example:
+        "yes": 209
+        "no": 17
+        abstain: 4
+        present: 460
+        notParticipating: 1
+        totalVoted: 459
+        term: 9
+        sitting: 62
+        sittingDay: 1
+        votingNumber: 43
+        date: 2000-01-23T04:56:07.000+00:00
+        title: "Pkt. 27 Sprawozdanie Komisji o rządowym projekcie ustawy o zmianie\
+          \ ustawy - Prawo energetyczne oraz ustawy o odnawialnych źródłach energii\
+          \ (druki nr 2634, 2644 i 2644-A)"
+        description: a description of a voting
+        topic: głosowanie nad całością projektu
+        kind: kind
+        majorityType: majorityType
+        majorityVotes: 0
+        votingOptions:
+        - optionIndex: 1
+          option: "STAROŃ LIDIA, INFORMACJA NR 1"
+          description: w sprawie realizacji rządowego "Programu budowy 100 obwodnic
+            na lata 2020-2030"
+          votes: 213
+        - optionIndex: 1
+          option: "STAROŃ LIDIA, INFORMACJA NR 1"
+          description: w sprawie realizacji rządowego "Programu budowy 100 obwodnic
+            na lata 2020-2030"
+          votes: 213
+        links:
+        - ""
+        - ""
+        againstAll: 6
+      properties:
+        "yes":
+          description: number of 'yes' votes
+          example: 209
+          format: int32
+          type: integer
+        "no":
+          description: number of 'no' votes
+          example: 17
+          format: int32
+          type: integer
+        abstain:
+          description: number of 'abstain' votes
+          example: 4
+          format: int32
+          type: integer
+        present:
+          description: number of 'present' votes in quorum voting
+          example: 460
+          format: int32
+          type: integer
+        notParticipating:
+          description: number of people who did not vote
+          example: 1
+          format: int32
+          type: integer
+        totalVoted:
+          description: number of people who voted
+          example: 459
+          format: int32
+          type: integer
+        term:
+          description: a Sejm term
+          example: 9
+          format: int32
+          type: integer
+        sitting:
+          description: a Sejm sitting number
+          example: 62
+          format: int32
+          type: integer
+        sittingDay:
+          description: a day of Sejm sitting
+          example: 1
+          format: int32
+          type: integer
+        votingNumber:
+          description: a voting number
+          example: 43
+          format: int32
+          type: integer
+        date:
+          description: a voting date and time
+          format: date-time
+          type: string
+        title:
+          description: a voting title
+          example: "Pkt. 27 Sprawozdanie Komisji o rządowym projekcie ustawy o zmianie\
+            \ ustawy - Prawo energetyczne oraz ustawy o odnawialnych źródłach energii\
+            \ (druki nr 2634, 2644 i 2644-A)"
+          type: string
+        description:
+          description: description
+          example: a description of a voting
+          type: string
+        topic:
+          description: a voting topic
+          example: głosowanie nad całością projektu
+          type: string
+        kind:
+          allOf:
+          - $ref: "#/components/schemas/VotingKind"
+          description: a kind of voting
+          type: string
+        majorityType:
+          allOf:
+          - $ref: "#/components/schemas/VotingMajority"
+          description: a voting majority
+          type: string
+        majorityVotes:
+          description: number of votes that constitute a majority
+          format: int32
+          type: integer
+        votingOptions:
+          description: a list of options when voting on a list
+          items:
+            $ref: "#/components/schemas/VotingOption"
+          type: array
+        links:
+          description: Links
+          items: {}
+          type: array
+        againstAll:
+          description: number of votes against all options when voting on list
+          format: int32
+          type: integer
+      type: object
+    VotingDetails:
+      description: a voting with results
+      example:
+        "yes": 209
+        "no": 17
+        abstain: 4
+        notParticipating: 1
+        term: 9
+        sitting: 62
+        sittingDay: 1
+        votingNumber: 43
+        date: 2000-01-23T04:56:07.000+00:00
+        title: "Pkt. 27 Sprawozdanie Komisji o rządowym projekcie ustawy o zmianie\
+          \ ustawy - Prawo energetyczne oraz ustawy o odnawialnych źródłach energii\
+          \ (druki nr 2634, 2644 i 2644-A)"
+        description: a description of a voting
+        topic: głosowanie nad całością projektu
+        kind: kind
+        majorityType: majorityType
+        majorityVotes: 0
+        votingOptions:
+        - optionIndex: 1
+          option: "STAROŃ LIDIA, INFORMACJA NR 1"
+          description: w sprawie realizacji rządowego "Programu budowy 100 obwodnic
+            na lata 2020-2030"
+          votes: 213
+        - optionIndex: 1
+          option: "STAROŃ LIDIA, INFORMACJA NR 1"
+          description: w sprawie realizacji rządowego "Programu budowy 100 obwodnic
+            na lata 2020-2030"
+          votes: 213
+        totalVoted: 459
+        againstAll: 6
+        links:
+        - ""
+        - ""
+        present: 460
+        votes:
+        - MP: 43
+          firstName: Jan
+          lastName: Kowalski
+          secondName: Krzysztof
+          club: PiS
+          vote: Za
+          listVotes:
+            key: "YES"
+          mP: 1
+        - MP: 43
+          firstName: Jan
+          lastName: Kowalski
+          secondName: Krzysztof
+          club: PiS
+          vote: Za
+          listVotes:
+            key: "YES"
+          mP: 1
+      properties:
+        "yes":
+          description: number of 'yes' votes
+          example: 209
+          format: int32
+          type: integer
+        "no":
+          description: number of 'no' votes
+          example: 17
+          format: int32
+          type: integer
+        abstain:
+          description: number of 'abstain' votes
+          example: 4
+          format: int32
+          type: integer
+        notParticipating:
+          description: number of people who did not vote
+          example: 1
+          format: int32
+          type: integer
+        term:
+          description: a Sejm term
+          example: 9
+          format: int32
+          type: integer
+        sitting:
+          description: a Sejm sitting number
+          example: 62
+          format: int32
+          type: integer
+        sittingDay:
+          description: a day of Sejm sitting
+          example: 1
+          format: int32
+          type: integer
+        votingNumber:
+          description: a voting number
+          example: 43
+          format: int32
+          type: integer
+        date:
+          description: a voting date and time
+          format: date-time
+          type: string
+        title:
+          description: a voting title
+          example: "Pkt. 27 Sprawozdanie Komisji o rządowym projekcie ustawy o zmianie\
+            \ ustawy - Prawo energetyczne oraz ustawy o odnawialnych źródłach energii\
+            \ (druki nr 2634, 2644 i 2644-A)"
+          type: string
+        description:
+          description: description
+          example: a description of a voting
+          type: string
+        topic:
+          description: a voting topic
+          example: głosowanie nad całością projektu
+          type: string
+        kind:
+          allOf:
+          - $ref: "#/components/schemas/VotingKind"
+          description: a kind of voting
+          type: string
+        majorityType:
+          allOf:
+          - $ref: "#/components/schemas/VotingMajority"
+          description: a voting majority
+          type: string
+        majorityVotes:
+          description: number of votes that constitute a majority
+          format: int32
+          type: integer
+        votingOptions:
+          description: a list of options when voting on a list
+          items:
+            $ref: "#/components/schemas/VotingOption"
+          type: array
+        totalVoted:
+          description: number of people who voted
+          example: 459
+          format: int32
+          type: integer
+        againstAll:
+          description: number of votes against all options when voting on list
+          format: int32
+          type: integer
+        links:
+          description: Links
+          items: {}
+          type: array
+        present:
+          description: number of 'present' votes in quorum voting
+          example: 460
+          format: int32
+          type: integer
+        votes:
+          description: a list of votes
+          items:
+            $ref: "#/components/schemas/Vote"
+          type: array
+      type: object
+    VotingKind:
+      enum:
+      - ELECTRONIC
+      - TRADITIONAL
+      - ON_LIST
+      type: string
+    VotingMajority:
+      enum:
+      - SIMPLE_MAJORITY
+      - STATUTORY_MAJORITY
+      - ABSOLUTE_MAJORITY
+      - ABSOLUTE_STATUTORY_MAJORITY
+      - MAJORITY_TWO_THIRDS
+      - STATUTORY_MAJORITY_TWO_THIRDS
+      - MAJORITY_THREE_FIFTHS
+      - STATUTORY_MAJORITY_THREE_FIFTHS
+      type: string
+    VotingOption:
+      description: voting option when voting on a list
+      example:
+        optionIndex: 1
+        option: "STAROŃ LIDIA, INFORMACJA NR 1"
+        description: w sprawie realizacji rządowego "Programu budowy 100 obwodnic
+          na lata 2020-2030"
+        votes: 213
+      properties:
+        optionIndex:
+          description: an option index
+          example: 1
+          type: integer
+        option:
+          description: an option
+          example: "STAROŃ LIDIA, INFORMACJA NR 1"
+          type: string
+        description:
+          description: an optional description
+          example: w sprawie realizacji rządowego "Programu budowy 100 obwodnic na
+            lata 2020-2030"
+          type: string
+        votes:
+          description: number of votes for this option
+          example: 213
+          format: int32
+          type: integer
+      type: object
+    VotingStat:
+      description: MP voting statistics
+      example:
+        sitting: 0
+        date: 2022-03-10
+        numVotings: 6
+        numVoted: 1
+        numMissed: 5
+        absenceExcuse: true
+      properties:
+        sitting:
+          description: sitting number
+          format: int32
+          type: integer
+        date:
+          description: sitting date
+          example: 2022-03-10
+          format: date
+          type: string
+        numVotings:
+          description: number of votings on this day
+          format: int32
+          type: integer
+        numVoted:
+          description: number of MP votings on this day
+          format: int32
+          type: integer
+        numMissed:
+          description: number of votings missed on this day
+          format: int32
+          type: integer
+        absenceExcuse:
+          description: is there a excuse for absence
+          type: boolean
+      type: object
+    WrittenQuestion:
+      description: "A written question (pl: zapytanie)."
+      example:
+        term: 9
+        num: 14710
+        title: Interpelacja w sprawie trudnej sytuacji osób niepełnosprawnych z uwagi
+          na kwarantannę nakładaną na ich opiekunów
+        receiptDate: 2020-11-16
+        lastModified: 2000-01-23T04:56:07.000+00:00
+        links:
+        - ""
+        - ""
+        from: 101
+        to:
+        - minister rodziny i polityki społecznej
+        - minister zdrowia
+        recipientDetails:
+        - name: prezes Rady Ministrów
+          sent: 2024-01-30
+          answerDelayedDays: 300
+        - name: prezes Rady Ministrów
+          sent: 2024-01-30
+          answerDelayedDays: 300
+        sentDate: 2021-01-20
+        replies:
+        - key: BJWJSS
+          receiptDate: 2021-01-29
+          lastModified: 2000-01-23T04:56:07.000+00:00
+          from: Sekretarz stanu Waldemar Kraska
+          links:
+          - ""
+          - ""
+          onlyAttachment: false
+          attachments:
+          - lastModified: 2000-01-23T04:56:07.000+00:00
+            name: i14710-o3.pdf
+            URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          - lastModified: 2000-01-23T04:56:07.000+00:00
+            name: i14710-o3.pdf
+            URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          prolongation: true
+        - key: BJWJSS
+          receiptDate: 2021-01-29
+          lastModified: 2000-01-23T04:56:07.000+00:00
+          from: Sekretarz stanu Waldemar Kraska
+          links:
+          - ""
+          - ""
+          onlyAttachment: false
+          attachments:
+          - lastModified: 2000-01-23T04:56:07.000+00:00
+            name: i14710-o3.pdf
+            URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          - lastModified: 2000-01-23T04:56:07.000+00:00
+            name: i14710-o3.pdf
+            URL: https://orka2.sejm.gov.pl/INT9.nsf/klucz/ATTBXWKH2/$FILE/i14710-o3.pdf
+          prolongation: true
+        answerDelayedDays: 300
+      properties:
+        term:
+          description: A Sejm term when the document was submitted
+          example: 9
+          format: int32
+          type: integer
+        num:
+          description: A document number
+          example: 14710
+          format: int32
+          type: integer
+        title:
+          description: A title of the case
+          example: Interpelacja w sprawie trudnej sytuacji osób niepełnosprawnych
+            z uwagi na kwarantannę nakładaną na ich opiekunów
+          type: string
+        receiptDate:
+          description: A date when the case was received
+          example: 2020-11-16
+          format: date
+          type: string
+        lastModified:
+          description: A date of last modification of a document
+          format: date-time
+          type: string
+        links:
+          description: Links to HTML pages with a description or a content (body)
+          items: {}
+          type: array
+        from:
+          description: A list of IDs of MPs who submitted the question
+          example: 101
+          items:
+            type: string
+          type: array
+        to:
+          description: A list of ministries to whom the question was sent
+          example:
+          - minister rodziny i polityki społecznej
+          - minister zdrowia
+          items:
+            type: string
+          type: array
+        recipientDetails:
+          description: A more detailed list of ministries to whom the question was
+            sent
+          items:
+            $ref: "#/components/schemas/CaseRecipientDetails"
+          type: array
+        sentDate:
+          description: A date when the interpellation was sent to recipients
+          example: 2021-01-20
+          format: date
+          type: string
+        replies:
+          description: A list of replies
+          items:
+            $ref: "#/components/schemas/Reply"
+          type: array
+        answerDelayedDays:
+          description: number of days an answer is delayed for a given case. When
+            there are multiple recipients then a maximum value is taken.
+          example: 300
+          format: int32
+          type: integer
+      type: object
+

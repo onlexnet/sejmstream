@@ -1,0 +1,9 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "explorer.excludeGitIgnore": true,
+    "java.compile.nullAnalysis.mode": "disabled",
+    "chat.useCustomizationsInParentRepositories": true,
+    "github.copilot.chat.agentDebugLog.fileLogging.enabled": true,
+    "java.import.gradle.enabled": false,
+    "java.import.maven.enabled": true
+}
