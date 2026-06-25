@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Import;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import onlexnet.infra.adapters.out.AdaptersOutModuleConfigurer;
+import onlexnet.sejmapi.telegram.DefaultTelegramNotifier;
+import onlexnet.sejmapi.telegram.TelegramNotifier;
 
 @Configuration
 @Import(AdaptersOutModuleConfigurer.class)
@@ -33,5 +35,14 @@ public class SpringBoot4Configuration {
 	@ConditionalOnProperty("FB_TOKEN")
 	public FacebookPublisher facebookPublisher(@Value("${FB_TOKEN}") final String token) {
 		return new DefaultFacebookPublisher(token);
+	}
+
+	/**
+	 * Creates a Telegram notifier when {@code TELEGRAM_BOT_TOKEN} is configured.
+	 */
+	@Bean
+	@ConditionalOnProperty("TELEGRAM_BOT_TOKEN")
+	public TelegramNotifier telegramNotifier(@Value("${TELEGRAM_BOT_TOKEN}") final String token) {
+		return new DefaultTelegramNotifier(token);
 	}
 }

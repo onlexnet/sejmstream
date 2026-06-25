@@ -10,6 +10,8 @@ spring_datasource_url      = null  # e.g. jdbc:postgresql://<neon-host>/<db>?ssl
 spring_datasource_username = null
 spring_datasource_password = null
 facebook_token             = null
+telegram_bot_token         = "<telegram-bot-token>"  # required, obtain from @BotFather
+telegram_allowed_chat_id   = "<telegram-chat-id>"  # required, numeric id of allowed chat
 
 # GitHub App authentication (recommended; no PAT required)
 github_owner              = "onlexnet"

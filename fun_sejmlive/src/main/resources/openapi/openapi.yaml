@@ -106,6 +106,24 @@ paths:
             text/plain:
               schema:
                 type: string
+  /api/telegram/webhook:
+    post:
+      summary: Telegram webhook receiver
+      description: Receives Telegram bot updates and maps supported commands to internal operations.
+      operationId: telegramWebhook
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Update acknowledged.
+          content:
+            text/plain:
+              schema:
+                type: string
 components:
   securitySchemes:
     functionKey:

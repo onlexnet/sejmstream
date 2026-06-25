@@ -56,6 +56,27 @@ variable "facebook_token" {
   sensitive   = true
 }
 
+variable "telegram_bot_token" {
+  description = "Telegram bot token to preload into Key Vault (required)."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = trimspace(var.telegram_bot_token) != ""
+    error_message = "telegram_bot_token must be a non-empty string."
+  }
+}
+
+variable "telegram_allowed_chat_id" {
+  description = "Telegram chat ID allowed to invoke bot commands (required)."
+  type        = string
+
+  validation {
+    condition     = can(regex("^-?[0-9]+$", trimspace(var.telegram_allowed_chat_id)))
+    error_message = "telegram_allowed_chat_id must be a numeric Telegram chat id (optionally negative)."
+  }
+}
+
 variable "github_owner" {
   description = "GitHub organization or user owning the repository."
   type        = string
