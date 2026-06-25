@@ -13,7 +13,11 @@
     "ghcr.io/devcontainers/features/copilot-cli:1": {},
     "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/terraform:1": {},
-    "ghcr.io/devcontainers/features/java:1": { }
+    "ghcr.io/devcontainers/features/java:1": {
+      "installGroovy": false,
+      "installAnt": false,
+      "version": "21", "jdkDistro": "librca" 
+    }
   },
 
   "forwardPorts": [
