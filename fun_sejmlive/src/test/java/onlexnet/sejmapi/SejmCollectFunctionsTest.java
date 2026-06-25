@@ -342,7 +342,7 @@ class SejmCollectFunctionsTest {
     }
 
     @SuppressWarnings("unchecked")
-    private static Task<Integer> mockTask(final Integer value) {
+    private static Task<Integer> mockTask(Integer value) {
         var task = mock(Task.class);
         when(task.await()).thenReturn(value);
         return task;

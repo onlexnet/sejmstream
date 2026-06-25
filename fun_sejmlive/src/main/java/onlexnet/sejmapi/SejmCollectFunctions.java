@@ -170,8 +170,8 @@ public final class SejmCollectFunctions {
     }
 
     private Integer callCountActivity(
-            final TaskOrchestrationContext orchestrationContext,
-            final String activityName) {
+            TaskOrchestrationContext orchestrationContext,
+            String activityName) {
         return Objects.requireNonNull(
                 orchestrationContext
                         .callActivity(activityName, null, ORCHESTRATOR_ACTIVITY_OPTIONS, Integer.class)
