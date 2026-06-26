@@ -21,6 +21,8 @@
 		<assertj.version>3.27.4</assertj.version>
 		<lombok.version>1.18.38</lombok.version>
 		<maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
+		<errorprone.version>2.31.0</errorprone.version>
+		<plexus.compiler.javac.errorprone.version>2.15.0</plexus.compiler.javac.errorprone.version>
 		<maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
 		<spring-boot.version>4.0.6</spring-boot.version>
 		<jackson.annotations.version>2.21</jackson.annotations.version>
@@ -219,6 +221,8 @@
 							<configOptions>
 								<dateLibrary>java8</dateLibrary>
 								<useJakartaEe>true</useJakartaEe>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
 								<hideGenerationTimestamp>true</hideGenerationTimestamp>
 								<openApiNullable>false</openApiNullable>
 							</configOptions>
@@ -249,6 +253,13 @@
 				<version>${maven.compiler.plugin.version}</version>
 				<configuration>
 					<release>${maven.compiler.release}</release>
+					<compilerId>javac-with-errorprone</compilerId>
+					<forceJavacCompilerUse>true</forceJavacCompilerUse>
+					<showWarnings>true</showWarnings>
+					<compilerArgs>
+						<arg>-XDcompilePolicy=simple</arg>
+						<arg>--should-stop=ifError=FLOW</arg>
+					</compilerArgs>
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
@@ -257,6 +268,18 @@
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.plexus</groupId>
+						<artifactId>plexus-compiler-javac-errorprone</artifactId>
+						<version>${plexus.compiler.javac.errorprone.version}</version>
+					</dependency>
+					<dependency>
+						<groupId>com.google.errorprone</groupId>
+						<artifactId>error_prone_core</artifactId>
+						<version>${errorprone.version}</version>
+					</dependency>
+				</dependencies>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>

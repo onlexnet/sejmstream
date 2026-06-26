@@ -6,17 +6,19 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.io.IOException;
+import java.text.DateFormat;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
-import com.fasterxml.jackson.databind.module.SimpleModule;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -178,23 +180,29 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 return nullSafe(bills).stream().map(this::mapBill).toList();
         }
 
-        @SuppressWarnings("removal")
         private static ApiClient buildApiClient(final RestClient.Builder restClientBuilder, final String basePath) {
                 var dateFormat = ApiClient.createDefaultDateFormat();
-                ObjectMapper mapper = ApiClient.createDefaultMapper(dateFormat);
-                var customModule = new SimpleModule();
-                customModule.addDeserializer(OffsetDateTime.class, new LenientOffsetDateTimeDeserializer());
-                mapper.registerModule(customModule);
+                var mapper = createDefaultMapper(dateFormat);
 
                 var restClient = restClientBuilder
-                                .messageConverters(converters -> converters.add(0,
-                                                new MappingJackson2HttpMessageConverter(mapper)))
+                                .configureMessageConverters(builder -> builder.addCustomConverter(
+                                                new JacksonJsonHttpMessageConverter(mapper)))
                                 .build();
 
                 var apiClient = new ApiClient(restClient, mapper, dateFormat);
                 apiClient.setBasePath(basePath);
                 apiClient.setOffsetDateTimeFormatter(API_DATE_TIME_FORMATTER);
                 return apiClient;
+        }
+
+        private static JsonMapper createDefaultMapper(final DateFormat dateFormat) {
+                var customModule = new SimpleModule();
+                customModule.addDeserializer(OffsetDateTime.class, new LenientOffsetDateTimeDeserializer());
+                return JsonMapper.builder()
+                                .defaultDateFormat(dateFormat)
+                                .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                .addModule(customModule)
+                                .build();
         }
 
         private SejmTerm mapTerm(final Term term) {
@@ -309,11 +317,11 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 T execute();
         }
 
-        private static final class LenientOffsetDateTimeDeserializer extends JsonDeserializer<OffsetDateTime> {
+        private static final class LenientOffsetDateTimeDeserializer extends ValueDeserializer<OffsetDateTime> {
 
                 @Override
                 public OffsetDateTime deserialize(final JsonParser parser, final DeserializationContext context)
-                                throws IOException {
+                                                throws JacksonException {
                         var textValue = parser.getValueAsString();
                         if (textValue == null || textValue.isBlank()) {
                                 return null;
