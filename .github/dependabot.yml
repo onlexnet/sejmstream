@@ -1,7 +1,7 @@
 version: 2
 updates:
   - package-ecosystem: "maven"
-    directory: "/"
+    directory: "/fun_sejmlive"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
@@ -11,3 +11,4 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+ 

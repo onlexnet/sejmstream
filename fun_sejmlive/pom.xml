@@ -20,6 +20,7 @@
 		<azure.identity.version>1.16.1</azure.identity.version>
 		<assertj.version>3.27.4</assertj.version>
 		<lombok.version>1.18.38</lombok.version>
+		<jspecify.version>1.0.0</jspecify.version>
 		<maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
 		<errorprone.version>2.31.0</errorprone.version>
 		<plexus.compiler.javac.errorprone.version>2.15.0</plexus.compiler.javac.errorprone.version>
@@ -29,6 +30,9 @@
 		<jackson.version>2.21.2</jackson.version>
 		<openapi.generator.version>7.23.0</openapi.generator.version>
 		<testcontainers.version>1.21.3</testcontainers.version>
+	    <mapstruct.version>1.6.3</mapstruct.version>
+	    <mapstruct-spi-protobuf.version>1.1.0</mapstruct-spi-protobuf.version>
+	    <nullaway.version>0.12.10</nullaway.version>
 	</properties>
 
 	<dependencyManagement>
@@ -84,6 +88,12 @@
 			<groupId>jakarta.annotation</groupId>
 			<artifactId>jakarta.annotation-api</artifactId>
 			<version>2.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.jspecify</groupId>
+			<artifactId>jspecify</artifactId>
+			<version>${jspecify.version}</version>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.restfb</groupId>
@@ -237,49 +247,74 @@
 				<configuration>
 					<mainClass>onlexnet.sejmapi.Program</mainClass>
 				</configuration>
-				<executions>
-					<execution>
-						<id>process-aot</id>
-						<phase>process-classes</phase>
-						<goals>
-							<goal>process-aot</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
+				<version>3.11.0</version>
 				<configuration>
-					<release>${maven.compiler.release}</release>
-					<compilerId>javac-with-errorprone</compilerId>
-					<forceJavacCompilerUse>true</forceJavacCompilerUse>
-					<showWarnings>true</showWarnings>
-					<compilerArgs>
-						<arg>-XDcompilePolicy=simple</arg>
-						<arg>--should-stop=ifError=FLOW</arg>
-					</compilerArgs>
-					<annotationProcessorPaths>
-						<path>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-							<version>${lombok.version}</version>
-						</path>
-					</annotationProcessorPaths>
+				<release>21</release>
+				<fork>true</fork>
+				<meminitial>128m</meminitial>
+				<maxmem>512m</maxmem>
+				<compilerArgs>
+					<arg>-parameters</arg>
+					<arg>-XDcompilePolicy=simple</arg>
+					<arg>--should-stop=ifError=FLOW</arg>
+					<arg>-Xplugin:ErrorProne -XepDisableAllChecks -XepOpt:NullAway:OnlyNullMarked=true -Xep:NullAway:ERROR</arg>
+					<!-- <arg>-Xplugin:ErrorProne -XepDisableAllChecks -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:ERROR</arg> -->
+					<!-- <arg>-Xplugin:ErrorProne -XepDisableAllChecks -XepOpt:NullAway:OnlyNullMarked=true -Xep:NullAway:ERROR -XepOpt:NullAway:JSpecifyMode=true</arg> -->
+					<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED</arg>
+					<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED</arg>
+					<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED</arg>
+					<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED</arg>
+					<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED</arg>
+					<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED</arg>
+					<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED</arg>
+					<arg>-J--add-exports=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</arg>
+					<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED</arg>
+					<arg>-J--add-opens=jdk.compiler/com.sun.tools.javac.comp=ALL-UNNAMED</arg>
+					<!-- Disable Lombok bytecode post-compiler to work around ASM version incompatibility with JDK 25 -->
+					<arg>-J-Dlombok.disablePostCompiler=true</arg>
+				</compilerArgs>
+				<annotationProcessorPaths>
+					<path>
+					<groupId>org.mapstruct</groupId>
+					<artifactId>mapstruct</artifactId>
+					<version>${mapstruct.version}</version>
+					</path>
+					<dependency>
+						<groupId>de.firehead</groupId>
+						<artifactId>mapstruct-spi-protobuf</artifactId>
+						<version>${mapstruct-spi-protobuf.version}</version>
+					</dependency>
+					<path>
+					<groupId>org.projectlombok</groupId>
+					<artifactId>lombok</artifactId>
+					<version>${lombok.version}</version>
+					</path>
+					<path>
+					<groupId>org.projectlombok</groupId>
+					<artifactId>lombok-mapstruct-binding</artifactId>
+					<version>0.2.0</version>
+					</path>
+					<path>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-configuration-processor</artifactId>
+					<version>${spring-boot.version}</version>
+					</path>
+					<path>
+					<groupId>com.google.errorprone</groupId>
+					<artifactId>error_prone_core</artifactId>
+					<version>${errorprone.version}</version>
+					</path>
+					<path>
+					<groupId>com.uber.nullaway</groupId>
+					<artifactId>nullaway</artifactId>
+					<version>${nullaway.version}</version>
+					</path>
+				</annotationProcessorPaths>
 				</configuration>
-				<dependencies>
-					<dependency>
-						<groupId>org.codehaus.plexus</groupId>
-						<artifactId>plexus-compiler-javac-errorprone</artifactId>
-						<version>${plexus.compiler.javac.errorprone.version}</version>
-					</dependency>
-					<dependency>
-						<groupId>com.google.errorprone</groupId>
-						<artifactId>error_prone_core</artifactId>
-						<version>${errorprone.version}</version>
-					</dependency>
-				</dependencies>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
