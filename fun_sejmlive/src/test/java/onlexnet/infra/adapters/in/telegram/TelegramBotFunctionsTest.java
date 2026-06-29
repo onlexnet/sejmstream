@@ -1,10 +1,11 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.adapters.in.telegram;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import java.net.URI;
 import java.util.Map;
@@ -24,7 +25,8 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
-import onlexnet.sejmapi.telegram.TelegramBotService;
+import onlexnet.app.ports.in.AdminUseCase;
+import onlexnet.sejmapi.telegram.TelegramNotifier;
 
 class TelegramBotFunctionsTest {
 
@@ -49,8 +51,12 @@ class TelegramBotFunctionsTest {
 
     @Test
     void givenValidTelegramPayload_whenWebhookInvoked_thenDelegatesAndReturnsOk() {
-        var telegramBotService = mock(TelegramBotService.class);
-        var functions = new TelegramBotFunctions(telegramBotService, new ObjectMapper());
+        var adminUseCase = mock(AdminUseCase.class);
+        var telegramNotifier = mock(TelegramNotifier.class);
+        var functions = new TelegramBotFunctions(adminUseCase, telegramNotifier, new ObjectMapper());
+
+        when(adminUseCase.handleTelegramCommand(1001L, "/help"))
+                .thenReturn(AdminUseCase.TelegramCommandResult.reply("Dostępne komendy"));
 
         var payload = """
                 {
@@ -72,13 +78,48 @@ class TelegramBotFunctionsTest {
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("OK");
-        verify(telegramBotService).handleUpdate(any());
+        verify(adminUseCase).handleTelegramCommand(1001L, "/help");
+        verify(telegramNotifier).sendMessage(1001L, "Dostępne komendy");
+    }
+
+    @Test
+    void givenNoReplyCommandResult_whenWebhookInvoked_thenSkipsSendingMessage() {
+        var adminUseCase = mock(AdminUseCase.class);
+        var telegramNotifier = mock(TelegramNotifier.class);
+        var functions = new TelegramBotFunctions(adminUseCase, telegramNotifier, new ObjectMapper());
+
+        when(adminUseCase.handleTelegramCommand(1001L, "   "))
+                .thenReturn(AdminUseCase.TelegramCommandResult.noReply());
+
+        var payload = """
+                {
+                  "update_id": 1,
+                  "message": {
+                    "message_id": 22,
+                    "chat": {
+                      "id": 1001,
+                      "type": "private"
+                    },
+                    "text": "   "
+                  }
+                }
+                """;
+
+        var response = functions.telegramWebhook(
+                new FakeHttpRequestMessage<>(Optional.of(payload)),
+                new FakeExecutionContext());
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("OK");
+        verify(adminUseCase).handleTelegramCommand(1001L, "   ");
+        verify(telegramNotifier, never()).sendMessage(eq(1001L), eq("   "));
     }
 
     @Test
     void givenMalformedPayload_whenWebhookInvoked_thenReturnsOkAndSkipsDelegation() {
-        var telegramBotService = mock(TelegramBotService.class);
-        var functions = new TelegramBotFunctions(telegramBotService, new ObjectMapper());
+        var adminUseCase = mock(AdminUseCase.class);
+        var telegramNotifier = mock(TelegramNotifier.class);
+        var functions = new TelegramBotFunctions(adminUseCase, telegramNotifier, new ObjectMapper());
 
         var response = functions.telegramWebhook(
                 new FakeHttpRequestMessage<>(Optional.of("{broken-json")),
@@ -86,7 +127,8 @@ class TelegramBotFunctionsTest {
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("OK");
-        verify(telegramBotService, never()).handleUpdate(any());
+        verify(adminUseCase, never()).handleTelegramCommand(eq(1001L), eq("/help"));
+        verify(telegramNotifier, never()).sendMessage(eq(1001L), eq("Dostępne komendy"));
     }
 
     private static final class FakeExecutionContext implements ExecutionContext {

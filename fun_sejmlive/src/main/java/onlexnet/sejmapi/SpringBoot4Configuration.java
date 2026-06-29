@@ -9,12 +9,14 @@ import org.springframework.context.annotation.Import;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import onlexnet.app.AppModuleConfigurer;
+import onlexnet.infra.adapters.in.AdaptersInModuleConfigurer;
 import onlexnet.infra.adapters.out.AdaptersOutModuleConfigurer;
 import onlexnet.sejmapi.telegram.DefaultTelegramNotifier;
 import onlexnet.sejmapi.telegram.TelegramNotifier;
 
 @Configuration
-@Import(AdaptersOutModuleConfigurer.class)
+@Import({AdaptersOutModuleConfigurer.class, AdaptersInModuleConfigurer.class, AppModuleConfigurer.class})
 public class SpringBoot4Configuration {
 
 	@Bean
@@ -38,10 +40,9 @@ public class SpringBoot4Configuration {
 	}
 
 	/**
-	 * Creates a Telegram notifier when {@code TELEGRAM_BOT_TOKEN} is configured.
+	 * Creates the Telegram notifier using configured token.
 	 */
 	@Bean
-	@ConditionalOnProperty("TELEGRAM_BOT_TOKEN")
 	public TelegramNotifier telegramNotifier(@Value("${TELEGRAM_BOT_TOKEN}") final String token) {
 		return new DefaultTelegramNotifier(token);
 	}

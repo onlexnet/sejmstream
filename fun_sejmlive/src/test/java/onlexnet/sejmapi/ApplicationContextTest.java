@@ -11,7 +11,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -23,7 +22,7 @@ import org.springframework.test.context.DynamicPropertySource;
  * <p>All primary function beans (those created by Azure Functions through the injector) must
  * be resolvable from the context when all required infrastructure is provided.
  */
-@SpringBootTest(classes = Program.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@AppTest
 class ApplicationContextTest {
 
     private static final String DB_NAME = "sejmstream";

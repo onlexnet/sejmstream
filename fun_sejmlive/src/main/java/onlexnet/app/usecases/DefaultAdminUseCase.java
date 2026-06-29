@@ -1,18 +1,17 @@
-package onlexnet.sejmapi.telegram;
+package onlexnet.app.usecases;
 
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import onlexnet.app.ports.in.AdminUseCase;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.sejmapi.FacebookPublisher;
 import onlexnet.sejmapi.SejmCollectService;
@@ -20,15 +19,13 @@ import onlexnet.sejmapi.SejmDailyDigestRepository;
 import onlexnet.sejmapi.SejmDigestService;
 
 /**
- * Handles Telegram bot commands and delegates to existing Sejm services.
+ * Default application implementation for admin command processing.
  */
 @Component
-@ConditionalOnProperty("TELEGRAM_BOT_TOKEN")
-public class TelegramBotService {
+public class DefaultAdminUseCase implements AdminUseCase {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TelegramBotService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAdminUseCase.class);
 
-    private final TelegramNotifier telegramNotifier;
     private final SejmApiClient sejmApiClient;
     private final SejmCollectService sejmCollectService;
     private final SejmDigestService sejmDigestService;
@@ -36,44 +33,30 @@ public class TelegramBotService {
     private final Optional<FacebookPublisher> facebookPublisher;
     private final String allowedChatId;
 
-    public TelegramBotService(
-            final TelegramNotifier telegramNotifier,
-            final SejmApiClient sejmApiClient,
-            final SejmCollectService sejmCollectService,
-            final SejmDigestService sejmDigestService,
-            final SejmDailyDigestRepository sejmDailyDigestRepository,
-            final Optional<FacebookPublisher> facebookPublisher,
-            @Value("${TELEGRAM_ALLOWED_CHAT_ID:}") final String allowedChatId) {
-        this.telegramNotifier = Objects.requireNonNull(telegramNotifier, "telegramNotifier must not be null");
-        this.sejmApiClient = Objects.requireNonNull(sejmApiClient, "sejmApiClient must not be null");
-        this.sejmCollectService = Objects.requireNonNull(sejmCollectService, "sejmCollectService must not be null");
-        this.sejmDigestService = Objects.requireNonNull(sejmDigestService, "sejmDigestService must not be null");
-        this.sejmDailyDigestRepository =
-                Objects.requireNonNull(sejmDailyDigestRepository, "sejmDailyDigestRepository must not be null");
-        this.facebookPublisher = Objects.requireNonNull(facebookPublisher, "facebookPublisher must not be null");
-        this.allowedChatId = allowedChatId == null ? "" : allowedChatId.trim();
+    public DefaultAdminUseCase(
+            SejmApiClient sejmApiClient,
+            SejmCollectService sejmCollectService,
+            SejmDigestService sejmDigestService,
+            SejmDailyDigestRepository sejmDailyDigestRepository,
+            Optional<FacebookPublisher> facebookPublisher,
+            @Value("${TELEGRAM_ALLOWED_CHAT_ID}") String allowedChatId) {
+        this.sejmApiClient = sejmApiClient;
+        this.sejmCollectService = sejmCollectService;
+        this.sejmDigestService = sejmDigestService;
+        this.sejmDailyDigestRepository = sejmDailyDigestRepository;
+        this.facebookPublisher = facebookPublisher;
+        this.allowedChatId = allowedChatId;
     }
 
-    /**
-     * Handles one Telegram update. Unsupported updates are ignored.
-     *
-     * @param update Telegram webhook payload
-     */
-    public void handleUpdate(final TelegramUpdate update) {
-        if (update == null || update.message() == null || update.message().chat() == null) {
-            return;
-        }
-
-        var chatId = update.message().chat().id();
+    @Override
+    public TelegramCommandResult handleTelegramCommand(long chatId, String text) {
         if (!this.isChatAllowed(chatId)) {
             LOGGER.warn("Ignoring Telegram command from unauthorized chat {}", chatId);
-            this.telegramNotifier.sendMessage(chatId, this.unsupportedChatMessage(chatId));
-            return;
+            return TelegramCommandResult.reply(this.unsupportedChatMessage(chatId));
         }
 
-        var text = update.message().text();
         if (text == null || text.isBlank()) {
-            return;
+            return TelegramCommandResult.noReply();
         }
 
         var command = this.normalizeCommand(text);
@@ -85,22 +68,19 @@ public class TelegramBotService {
             default -> "Nieznana komenda: " + command + "\n\n" + this.helpMessage();
         };
 
-        this.telegramNotifier.sendMessage(chatId, response);
+        return TelegramCommandResult.reply(response);
     }
 
-    private boolean isChatAllowed(final long chatId) {
-        if (this.allowedChatId.isBlank()) {
-            return false;
-        }
+    private boolean isChatAllowed(long chatId) {
         return this.allowedChatId.equals(Long.toString(chatId));
     }
 
-    private String unsupportedChatMessage(final long chatId) {
+    private String unsupportedChatMessage(long chatId) {
         return "You cannot invoke commands because your chat id " + chatId
                 + " is not supported by the app settings.";
     }
 
-    private String normalizeCommand(final String text) {
+    private String normalizeCommand(String text) {
         var token = text.trim().split("\\s+", 2)[0];
         var atIndex = token.indexOf('@');
         if (atIndex > 0) {
@@ -160,10 +140,10 @@ public class TelegramBotService {
     }
 
     private String formatCollectSummary(
-            final LocalDate date,
-            final int termNum,
-            final int total,
-            final Map<String, Integer> counts) {
+            LocalDate date,
+            int termNum,
+            int total,
+            Map<String, Integer> counts) {
         var result = new StringBuilder();
         result.append("Zbieranie zakończone.\n")
                 .append("Data: ").append(date).append("\n")
@@ -195,7 +175,8 @@ public class TelegramBotService {
             this.sejmDailyDigestRepository.insertPublishLog(date, message, true, null);
             return "Opublikowano digest na Facebooku dla dnia " + date + ".";
         } catch (RuntimeException exception) {
-            this.tryWriteFailedPublishLog(date, exception.getMessage());
+            var errorMessage = exception.getMessage();
+            this.tryWriteFailedPublishLog(date, errorMessage == null ? "Unknown error" : errorMessage);
             LOGGER.warn("Telegram /publish command failed", exception);
             return "Publikacja nie powiodła się: " + exception.getMessage();
         }
@@ -212,7 +193,7 @@ public class TelegramBotService {
                 .findFirst();
     }
 
-    private void tryWriteFailedPublishLog(final LocalDate date, final String errorMessage) {
+    private void tryWriteFailedPublishLog(LocalDate date, String errorMessage) {
         try {
             this.sejmDailyDigestRepository.insertPublishLog(date, null, false, errorMessage);
         } catch (RuntimeException logException) {

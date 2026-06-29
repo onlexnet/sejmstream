@@ -8,15 +8,11 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.web.client.RestClientException;
 
 import onlexnet.app.ports.out.SejmApiClient;
 
-@SpringBootTest(
-        classes = Program.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = "FB_TOKEN=test-placeholder-token-for-sejm-client-test")
+@AppTest(properties = "FB_TOKEN=test-placeholder-token-for-sejm-client-test")
 class SejmApiClientSpringBootTest {
 
     private static final int MAX_ATTEMPTS = 3;

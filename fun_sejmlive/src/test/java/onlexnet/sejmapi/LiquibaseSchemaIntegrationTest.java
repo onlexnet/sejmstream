@@ -11,15 +11,13 @@ import java.util.UUID;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import liquibase.integration.spring.SpringLiquibase;
 
-@SpringBootTest(classes = DatabaseConfiguration.class,
-        webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@AppTest(classes = DatabaseConfiguration.class)
 class LiquibaseSchemaIntegrationTest {
 
     private static final String DB_NAME = "sejmstream";

@@ -1,8 +1,7 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.adapters.in.telegram;
 
 import java.util.Optional;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,25 +14,29 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
-import onlexnet.sejmapi.telegram.TelegramBotService;
+import onlexnet.app.ports.in.AdminUseCase;
+import onlexnet.sejmapi.telegram.TelegramNotifier;
 import onlexnet.sejmapi.telegram.TelegramUpdate;
 
 /**
  * Azure Function webhook entrypoint for Telegram updates.
  */
 @Component
-@ConditionalOnProperty("TELEGRAM_BOT_TOKEN")
 public final class TelegramBotFunctions {
 
     static final String HTTP_FUNCTION_NAME = "Fun_TelegramWebhook";
     static final String HTTP_FUNCTION_ROUTE = "telegram/webhook";
 
-    private final TelegramBotService telegramBotService;
+    private final AdminUseCase adminUseCase;
+    private final TelegramNotifier telegramNotifier;
     private final ObjectMapper objectMapper;
 
-    public TelegramBotFunctions(final TelegramBotService telegramBotService,
+    public TelegramBotFunctions(
+            final AdminUseCase adminUseCase,
+            final TelegramNotifier telegramNotifier,
             final ObjectMapper objectMapper) {
-        this.telegramBotService = telegramBotService;
+        this.adminUseCase = adminUseCase;
+        this.telegramNotifier = telegramNotifier;
         this.objectMapper = objectMapper;
     }
 
@@ -56,7 +59,7 @@ public final class TelegramBotFunctions {
             var payload = request.getBody().orElse("");
             if (!payload.isBlank()) {
                 var update = this.objectMapper.readValue(payload, TelegramUpdate.class);
-                this.telegramBotService.handleUpdate(update);
+                this.handleUpdate(update);
             }
         } catch (RuntimeException runtimeException) {
             context.getLogger().warning("Telegram webhook handling failed: " + runtimeException.getMessage());
@@ -67,5 +70,17 @@ public final class TelegramBotFunctions {
         return request.createResponseBuilder(HttpStatus.OK)
                 .body("OK")
                 .build();
+    }
+
+    private void handleUpdate(final TelegramUpdate update) {
+        if (update == null || update.message() == null || update.message().chat() == null) {
+            return;
+        }
+
+        var chatId = update.message().chat().id();
+        var result = this.adminUseCase.handleTelegramCommand(chatId, update.message().text());
+        if (result instanceof AdminUseCase.TelegramCommandResult.Reply reply) {
+            this.telegramNotifier.sendMessage(chatId, reply.message());
+        }
     }
 }

@@ -9,7 +9,6 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
 import com.microsoft.azure.functions.HttpMethod;
@@ -24,7 +23,7 @@ import com.microsoft.azure.functions.annotation.HttpTrigger;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 
-@SpringBootTest(classes = Program.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@AppTest
 class SejmApiHttpFunctionsTest {
 
     @Autowired
