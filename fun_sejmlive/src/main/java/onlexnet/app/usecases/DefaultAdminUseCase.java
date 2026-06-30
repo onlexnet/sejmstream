@@ -1,18 +1,18 @@
 package onlexnet.app.usecases;
 
 import java.time.LocalDate;
-import java.util.LinkedHashMap;
-import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import onlexnet.app.ports.in.AdminUseCase;
+import onlexnet.app.ports.in.admin.AdminAction;
+import onlexnet.app.ports.in.admin.AdminCommandRequest;
+import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.sejmapi.FacebookPublisher;
 import onlexnet.sejmapi.SejmCollectService;
 import onlexnet.sejmapi.SejmDailyDigestRepository;
@@ -31,7 +31,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
     private final SejmDigestService sejmDigestService;
     private final SejmDailyDigestRepository sejmDailyDigestRepository;
     private final Optional<FacebookPublisher> facebookPublisher;
-    private final String allowedChatId;
+    private final AdminAccessPolicy accessPolicy;
 
     public DefaultAdminUseCase(
             SejmApiClient sejmApiClient,
@@ -39,68 +39,40 @@ public class DefaultAdminUseCase implements AdminUseCase {
             SejmDigestService sejmDigestService,
             SejmDailyDigestRepository sejmDailyDigestRepository,
             Optional<FacebookPublisher> facebookPublisher,
-            @Value("${TELEGRAM_ALLOWED_CHAT_ID}") String allowedChatId) {
+            AdminAccessPolicy accessPolicy) {
         this.sejmApiClient = sejmApiClient;
         this.sejmCollectService = sejmCollectService;
         this.sejmDigestService = sejmDigestService;
         this.sejmDailyDigestRepository = sejmDailyDigestRepository;
         this.facebookPublisher = facebookPublisher;
-        this.allowedChatId = allowedChatId;
+        this.accessPolicy = accessPolicy;
     }
 
     @Override
-    public TelegramCommandResult handleTelegramCommand(long chatId, String text) {
-        if (!this.isChatAllowed(chatId)) {
-            LOGGER.warn("Ignoring Telegram command from unauthorized chat {}", chatId);
-            return TelegramCommandResult.reply(this.unsupportedChatMessage(chatId));
+    public AdminOutcome handleAdminAction(AdminCommandRequest request) {
+        if (request.action() instanceof AdminAction.Noop) {
+            return new AdminOutcome.NoopIgnored();
         }
 
-        if (text == null || text.isBlank()) {
-            return TelegramCommandResult.noReply();
+        if (!this.accessPolicy.isAllowed(request.actor(), request.action())) {
+            LOGGER.warn("Ignoring unauthorized admin action {} from actor {}", request.action(), request.actor());
+            return new AdminOutcome.Unauthorized();
         }
 
-        var command = this.normalizeCommand(text);
-        var response = switch (command) {
-            case "/help", "/start" -> this.helpMessage();
-            case "/data" -> this.handleData();
-            case "/collect" -> this.handleCollect();
-            case "/publish" -> this.handlePublish();
-            default -> "Nieznana komenda: " + command + "\n\n" + this.helpMessage();
+        return switch (request.action()) {
+            case AdminAction.Noop ignored -> new AdminOutcome.NoopIgnored();
+            case AdminAction.Help ignored -> new AdminOutcome.HelpOverview();
+            case AdminAction.Data ignored -> this.handleData();
+            case AdminAction.Collect ignored -> this.handleCollect();
+            case AdminAction.Publish ignored -> this.handlePublish();
+            case AdminAction.Unknown unknown -> new AdminOutcome.UnknownAction(unknown.command());
         };
-
-        return TelegramCommandResult.reply(response);
     }
 
-    private boolean isChatAllowed(long chatId) {
-        return this.allowedChatId.equals(Long.toString(chatId));
-    }
-
-    private String unsupportedChatMessage(long chatId) {
-        return "You cannot invoke commands because your chat id " + chatId
-                + " is not supported by the app settings.";
-    }
-
-    private String normalizeCommand(String text) {
-        var token = text.trim().split("\\s+", 2)[0];
-        var atIndex = token.indexOf('@');
-        if (atIndex > 0) {
-            token = token.substring(0, atIndex);
-        }
-        return token.toLowerCase(Locale.ROOT);
-    }
-
-    private String helpMessage() {
-        return "Dostępne komendy:\n"
-                + "/help - lista komend\n"
-                + "/data - aktualna kadencja Sejmu\n"
-                + "/collect - zbierz dzisiejsze dane sejmowe\n"
-                + "/publish - opublikuj dzisiejszy digest na Facebooku";
-    }
-
-    private String handleData() {
+    private AdminOutcome handleData() {
         var terms = this.sejmApiClient.fetchTerms();
         if (terms == null || terms.isEmpty()) {
-            return "Brak danych o kadencjach Sejmu.";
+            return new AdminOutcome.DataEmpty();
         }
 
         var currentTerm = terms.stream()
@@ -108,77 +80,70 @@ public class DefaultAdminUseCase implements AdminUseCase {
                 .findFirst()
                 .orElse(terms.get(0));
 
-        var toDate = currentTerm.to() == null ? "trwa" : currentTerm.to().toString();
-        return "Aktualna kadencja Sejmu: " + currentTerm.num() + "\n"
-                + "Od: " + currentTerm.from() + "\n"
-                + "Do: " + toDate + "\n"
-                + "Liczba kadencji w odpowiedzi API: " + terms.size();
+        return new AdminOutcome.DataSummary(
+            currentTerm.num(),
+            currentTerm.from(),
+            Optional.ofNullable(currentTerm.to()),
+            terms.size());
     }
 
-    private String handleCollect() {
+    private AdminOutcome handleCollect() {
         try {
             var termNum = this.resolveCurrentTermNumber();
             if (termNum.isEmpty()) {
-                return "Nie udało się ustalić aktualnej kadencji Sejmu.";
+                return new AdminOutcome.CollectTermMissing();
             }
 
             var date = LocalDate.now();
-            var counts = new LinkedHashMap<String, Integer>();
-            counts.put("Głosowania", this.sejmCollectService.collectVotings(termNum.get(), date));
-            counts.put("Komisje", this.sejmCollectService.collectCommitteeSittings(termNum.get(), date));
-            counts.put("Druki", this.sejmCollectService.collectPrints(termNum.get(), date));
-            counts.put("Interpelacje", this.sejmCollectService.collectInterpellations(termNum.get(), date));
-            counts.put("Zapytania", this.sejmCollectService.collectWrittenQuestions(termNum.get(), date));
-            counts.put("Projekty", this.sejmCollectService.collectBills(termNum.get(), date));
+            var votings = this.sejmCollectService.collectVotings(termNum.get(), date);
+            var committeeSittings = this.sejmCollectService.collectCommitteeSittings(termNum.get(), date);
+            var prints = this.sejmCollectService.collectPrints(termNum.get(), date);
+            var interpellations = this.sejmCollectService.collectInterpellations(termNum.get(), date);
+            var writtenQuestions = this.sejmCollectService.collectWrittenQuestions(termNum.get(), date);
+            var bills = this.sejmCollectService.collectBills(termNum.get(), date);
+            var total = votings + committeeSittings + prints + interpellations + writtenQuestions + bills;
 
-            var total = counts.values().stream().mapToInt(Integer::intValue).sum();
-            return this.formatCollectSummary(date, termNum.get(), total, counts);
+            return new AdminOutcome.CollectSuccess(
+                    date,
+                    termNum.get(),
+                    total,
+                    votings,
+                    committeeSittings,
+                    prints,
+                    interpellations,
+                    writtenQuestions,
+                    bills);
         } catch (RuntimeException exception) {
-            LOGGER.warn("Telegram /collect command failed", exception);
-            return "Polecenie /collect nie powiodło się: " + exception.getMessage();
+            LOGGER.warn("Admin collect action failed", exception);
+            return new AdminOutcome.CollectFailure(this.safeErrorMessage(exception));
         }
     }
 
-    private String formatCollectSummary(
-            LocalDate date,
-            int termNum,
-            int total,
-            Map<String, Integer> counts) {
-        var result = new StringBuilder();
-        result.append("Zbieranie zakończone.\n")
-                .append("Data: ").append(date).append("\n")
-                .append("Kadencja: ").append(termNum).append("\n")
-                .append("Łącznie: ").append(total).append("\n");
-
-        counts.forEach((key, value) -> result.append("- ").append(key).append(": ").append(value).append("\n"));
-        return result.toString().trim();
-    }
-
-    private String handlePublish() {
+    private AdminOutcome handlePublish() {
         if (this.facebookPublisher.isEmpty()) {
-            return "Publikacja Facebook jest wyłączona (brak FB_TOKEN).";
+            return new AdminOutcome.PublishDisabled();
         }
 
         var date = LocalDate.now();
         if (this.sejmDailyDigestRepository.alreadyPublishedToday(date)) {
-            return "Digest dla dnia " + date + " został już opublikowany.";
+            return new AdminOutcome.PublishAlreadyDone(date);
         }
 
         try {
             var digest = this.sejmDigestService.buildDigest(date);
             if (digest.isEmpty()) {
-                return "Brak danych do publikacji dla dnia " + date + ".";
+                return new AdminOutcome.PublishNoData(date);
             }
 
             var message = digest.get();
             this.facebookPublisher.get().publish(message);
             this.sejmDailyDigestRepository.insertPublishLog(date, message, true, null);
-            return "Opublikowano digest na Facebooku dla dnia " + date + ".";
+            return new AdminOutcome.PublishSuccess(date);
         } catch (RuntimeException exception) {
             var errorMessage = exception.getMessage();
             this.tryWriteFailedPublishLog(date, errorMessage == null ? "Unknown error" : errorMessage);
-            LOGGER.warn("Telegram /publish command failed", exception);
-            return "Publikacja nie powiodła się: " + exception.getMessage();
+            LOGGER.warn("Admin publish action failed", exception);
+            return new AdminOutcome.PublishFailure(this.safeErrorMessage(exception));
         }
     }
 
@@ -199,5 +164,13 @@ public class DefaultAdminUseCase implements AdminUseCase {
         } catch (RuntimeException logException) {
             LOGGER.warn("Failed to write publish failure log", logException);
         }
+    }
+
+    private String safeErrorMessage(RuntimeException exception) {
+        var message = exception.getMessage();
+        if (message == null || message.isBlank()) {
+            return "Unknown error";
+        }
+        return message;
     }
 }

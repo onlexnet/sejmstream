@@ -8,14 +8,20 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
-import onlexnet.app.ports.in.AdminUseCase.TelegramCommandResult;
+import onlexnet.app.ports.in.admin.AdminAction;
+import onlexnet.app.ports.in.admin.AdminActor;
+import onlexnet.app.ports.in.admin.AdminCommandRequest;
+import onlexnet.app.ports.in.admin.AdminOutcome;
+import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
@@ -27,52 +33,39 @@ import onlexnet.sejmapi.SejmDigestService;
 class DefaultAdminUseCaseTest {
 
     @Test
-    void givenAuthorizedHelpCommand_whenHandled_thenReturnsHelpMessage() {
-        var useCase = this.createUseCase(Optional.empty(), "1001");
+    void givenAuthorizedHelpAction_whenHandled_thenReturnsHelpOutcomeCode() {
+        var accessPolicy = this.allowAllAccessPolicy();
+        var useCase = this.createUseCase(Optional.empty(), accessPolicy);
 
-        var result = useCase.handleTelegramCommand(1001L, "/help");
+        var result = useCase.handleAdminAction(this.request(AdminAction.Help.INSTANCE, "1001"));
 
         assertThat(result)
-            .isInstanceOfSatisfying(TelegramCommandResult.Reply.class, reply -> {
-                assertThat(reply.message()).contains("Dostępne komendy");
-                assertThat(reply.message()).contains("/collect");
+            .isInstanceOfSatisfying(AdminOutcome.HelpOverview.class, reply -> {
+                assertThat(reply.category()).isEqualTo(AdminOutcome.OutcomeCategory.BUSINESS);
             });
     }
 
     @Test
-    void givenUnauthorizedChat_whenHandled_thenUnsupportedMessageWithChatIdIsReturned() {
-        var useCase = this.createUseCase(Optional.empty(), "1001");
+    void givenUnauthorizedActor_whenHandled_thenGenericUnauthorizedOutcomeIsReturned() {
+        var accessPolicy = mock(AdminAccessPolicy.class);
+        when(accessPolicy.isAllowed(any(AdminActor.class), any(AdminAction.class))).thenReturn(false);
+        var useCase = this.createUseCase(Optional.empty(), accessPolicy);
 
-        var result = useCase.handleTelegramCommand(2002L, "/help");
+        var result = useCase.handleAdminAction(this.request(AdminAction.Help.INSTANCE, "2002"));
 
         assertThat(result)
-            .isInstanceOfSatisfying(TelegramCommandResult.Reply.class, reply -> {
-                assertThat(reply.message())
-                    .contains("chat id 2002")
-                    .contains("not supported by the app settings");
+            .isInstanceOfSatisfying(AdminOutcome.Unauthorized.class, reply -> {
+                assertThat(reply.category()).isEqualTo(AdminOutcome.OutcomeCategory.BUSINESS);
             });
     }
 
     @Test
-    void givenMissingAllowedChatId_whenHandled_thenUnsupportedMessageWithChatIdIsReturned() {
-        var useCase = this.createUseCase(Optional.empty(), "");
-
-        var result = useCase.handleTelegramCommand(1001L, "/help");
-
-        assertThat(result)
-            .isInstanceOfSatisfying(TelegramCommandResult.Reply.class, reply -> {
-                assertThat(reply.message())
-                    .contains("chat id 1001")
-                    .contains("not supported by the app settings");
-            });
-    }
-
-    @Test
-    void givenDataCommand_whenHandled_thenReturnsCurrentTermSummary() {
+    void givenDataAction_whenHandled_thenReturnsCurrentTermSummaryArguments() {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
         var sejmDigestService = mock(SejmDigestService.class);
         var repository = mock(SejmDailyDigestRepository.class);
+        var accessPolicy = this.allowAllAccessPolicy();
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
                 new SejmTerm(false, LocalDate.of(2019, 1, 1), 9,
@@ -88,23 +81,24 @@ class DefaultAdminUseCaseTest {
                 sejmDigestService,
                 repository,
                 Optional.empty(),
-                "1001");
+                accessPolicy);
 
-        var result = useCase.handleTelegramCommand(1001L, "/data");
+        var result = useCase.handleAdminAction(this.request(AdminAction.Data.INSTANCE, "1001"));
 
         assertThat(result)
-            .isInstanceOfSatisfying(TelegramCommandResult.Reply.class, reply -> {
-                assertThat(reply.message()).contains("Aktualna kadencja Sejmu: 10");
-                assertThat(reply.message()).contains("Liczba kadencji w odpowiedzi API: 2");
+            .isInstanceOfSatisfying(AdminOutcome.DataSummary.class, reply -> {
+                assertThat(reply.termNum()).isEqualTo(10);
+                assertThat(reply.termCount()).isEqualTo(2);
             });
     }
 
     @Test
-    void givenCollectCommand_whenHandled_thenReturnsCollectionSummary() {
+    void givenCollectAction_whenHandled_thenReturnsCollectionSummaryArguments() {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
         var sejmDigestService = mock(SejmDigestService.class);
         var repository = mock(SejmDailyDigestRepository.class);
+        var accessPolicy = this.allowAllAccessPolicy();
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
@@ -123,35 +117,35 @@ class DefaultAdminUseCaseTest {
                 sejmDigestService,
                 repository,
                 Optional.empty(),
-                "1001");
+                accessPolicy);
 
-        var result = useCase.handleTelegramCommand(1001L, "/collect");
+        var result = useCase.handleAdminAction(this.request(AdminAction.Collect.INSTANCE, "1001"));
 
         assertThat(result)
-            .isInstanceOfSatisfying(TelegramCommandResult.Reply.class, reply -> {
-                assertThat(reply.message()).contains("Zbieranie zakończone.");
-                assertThat(reply.message()).contains("Łącznie: 21");
+            .isInstanceOfSatisfying(AdminOutcome.CollectSuccess.class, reply -> {
+                assertThat(reply.total()).isEqualTo(21);
+                assertThat(reply.votings()).isEqualTo(3);
             });
     }
 
     @Test
-    void givenPublishCommandWithoutFacebookBean_whenHandled_thenReportsDisabledPublishing() {
-        var useCase = this.createUseCase(Optional.empty(), "1001");
+    void givenPublishActionWithoutFacebookBean_whenHandled_thenReportsDisabledPublishing() {
+        var useCase = this.createUseCase(Optional.empty(), this.allowAllAccessPolicy());
 
-        var result = useCase.handleTelegramCommand(1001L, "/publish");
+        var result = useCase.handleAdminAction(this.request(AdminAction.Publish.INSTANCE, "1001"));
 
         assertThat(result)
-            .isInstanceOfSatisfying(TelegramCommandResult.Reply.class,
-                reply -> assertThat(reply.message()).contains("Publikacja Facebook jest wyłączona"));
+            .isInstanceOf(AdminOutcome.PublishDisabled.class);
     }
 
     @Test
-    void givenPublishCommandWithDigest_whenHandled_thenPublishesAndLogsSuccess() {
+    void givenPublishActionWithDigest_whenHandled_thenPublishesAndLogsSuccess() {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
         var sejmDigestService = mock(SejmDigestService.class);
         var repository = mock(SejmDailyDigestRepository.class);
         var facebookPublisher = mock(FacebookPublisher.class);
+        var accessPolicy = this.allowAllAccessPolicy();
 
         when(repository.alreadyPublishedToday(any(LocalDate.class))).thenReturn(false);
         when(sejmDigestService.buildDigest(any(LocalDate.class))).thenReturn(Optional.of("digest message"));
@@ -162,29 +156,42 @@ class DefaultAdminUseCaseTest {
                 sejmDigestService,
                 repository,
                 Optional.of(facebookPublisher),
-                "1001");
+                accessPolicy);
 
-        var result = useCase.handleTelegramCommand(1001L, "/publish");
+        var result = useCase.handleAdminAction(this.request(AdminAction.Publish.INSTANCE, "1001"));
 
         verify(facebookPublisher).publish("digest message");
         verify(repository).insertPublishLog(any(LocalDate.class), anyString(), anyBoolean(), any());
         assertThat(result)
-            .isInstanceOfSatisfying(TelegramCommandResult.Reply.class,
-                reply -> assertThat(reply.message()).contains("Opublikowano digest na Facebooku"));
+            .isInstanceOf(AdminOutcome.PublishSuccess.class);
     }
 
     @Test
-    void givenBlankText_whenHandled_thenNoReplyIsReturned() {
-        var useCase = this.createUseCase(Optional.empty(), "1001");
+    void givenNoopAction_whenHandled_thenNoReplyIsReturned() {
+        var accessPolicy = mock(AdminAccessPolicy.class);
+        var useCase = this.createUseCase(Optional.empty(), accessPolicy);
 
-        var result = useCase.handleTelegramCommand(1001L, "   ");
+        var result = useCase.handleAdminAction(this.request(AdminAction.Noop.INSTANCE, "1001"));
 
-        assertThat(result).isEqualTo(TelegramCommandResult.NoReply.NO_REPLY);
+        assertThat(result)
+            .isInstanceOf(AdminOutcome.NoopIgnored.class);
+    }
+
+    @Test
+    void givenUnknownAction_whenHandled_thenUnknownActionOutcomeIsReturned() {
+        var useCase = this.createUseCase(Optional.empty(), this.allowAllAccessPolicy());
+
+        var result = useCase.handleAdminAction(this.request(new AdminAction.Unknown("/mystery"), "1001"));
+
+        assertThat(result)
+                .isInstanceOfSatisfying(AdminOutcome.UnknownAction.class, reply -> {
+                    assertThat(reply.command()).isEqualTo("/mystery");
+                });
     }
 
     private DefaultAdminUseCase createUseCase(
             Optional<FacebookPublisher> facebookPublisher,
-            String allowedChatId) {
+            AdminAccessPolicy accessPolicy) {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
         var sejmDigestService = mock(SejmDigestService.class);
@@ -196,6 +203,21 @@ class DefaultAdminUseCaseTest {
                 sejmDigestService,
                 repository,
                 facebookPublisher,
-                allowedChatId);
+                accessPolicy);
+    }
+
+    private AdminAccessPolicy allowAllAccessPolicy() {
+        var accessPolicy = mock(AdminAccessPolicy.class);
+        when(accessPolicy.isAllowed(any(AdminActor.class), any(AdminAction.class))).thenReturn(true);
+        return accessPolicy;
+    }
+
+    private AdminCommandRequest request(AdminAction action, String actorId) {
+        return new AdminCommandRequest(
+                "request-id",
+                Instant.parse("2026-06-29T10:15:30Z"),
+                new AdminActor.ExternalActor(actorId),
+                action,
+                Map.of());
     }
 }

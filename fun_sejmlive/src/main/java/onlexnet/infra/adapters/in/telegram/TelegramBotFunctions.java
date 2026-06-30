@@ -1,5 +1,8 @@
 package onlexnet.infra.adapters.in.telegram;
 
+import java.time.Instant;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
@@ -15,6 +18,9 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
 import onlexnet.app.ports.in.AdminUseCase;
+import onlexnet.app.ports.in.admin.AdminAction;
+import onlexnet.app.ports.in.admin.AdminActor;
+import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.sejmapi.telegram.TelegramNotifier;
 import onlexnet.sejmapi.telegram.TelegramUpdate;
 
@@ -28,14 +34,20 @@ public final class TelegramBotFunctions {
     static final String HTTP_FUNCTION_ROUTE = "telegram/webhook";
 
     private final AdminUseCase adminUseCase;
+    private final TelegramAdminActionParser adminActionParser;
+    private final TelegramAdminOutcomePresenter outcomePresenter;
     private final TelegramNotifier telegramNotifier;
     private final ObjectMapper objectMapper;
 
     public TelegramBotFunctions(
             final AdminUseCase adminUseCase,
+            final TelegramAdminActionParser adminActionParser,
+            final TelegramAdminOutcomePresenter outcomePresenter,
             final TelegramNotifier telegramNotifier,
             final ObjectMapper objectMapper) {
         this.adminUseCase = adminUseCase;
+        this.adminActionParser = adminActionParser;
+        this.outcomePresenter = outcomePresenter;
         this.telegramNotifier = telegramNotifier;
         this.objectMapper = objectMapper;
     }
@@ -78,9 +90,29 @@ public final class TelegramBotFunctions {
         }
 
         var chatId = update.message().chat().id();
-        var result = this.adminUseCase.handleTelegramCommand(chatId, update.message().text());
-        if (result instanceof AdminUseCase.TelegramCommandResult.Reply reply) {
-            this.telegramNotifier.sendMessage(chatId, reply.message());
+        AdminAction action = this.adminActionParser.parse(update.message().text());
+        var request = new AdminCommandRequest(
+                this.requestId(update),
+                Instant.now(),
+            new AdminActor.ExternalActor(Long.toString(chatId)),
+                action,
+                this.metadata(update));
+
+        var outcome = this.adminUseCase.handleAdminAction(request);
+        for (var message : this.outcomePresenter.present(outcome)) {
+            this.telegramNotifier.sendMessage(chatId, message);
         }
+    }
+
+    private String requestId(TelegramUpdate update) {
+        return "telegram:" + update.updateId() + ":" + update.message().messageId();
+    }
+
+    private Map<String, String> metadata(TelegramUpdate update) {
+        var metadata = new LinkedHashMap<String, String>();
+        metadata.put("updateId", Long.toString(update.updateId()));
+        metadata.put("messageId", Long.toString(update.message().messageId()));
+        metadata.put("chatType", Optional.ofNullable(update.message().chat().type()).orElse("unknown"));
+        return Map.copyOf(metadata);
     }
 }

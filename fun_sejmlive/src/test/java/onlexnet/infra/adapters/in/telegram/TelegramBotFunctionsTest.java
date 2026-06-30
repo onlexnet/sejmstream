@@ -1,6 +1,8 @@
 package onlexnet.infra.adapters.in.telegram;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -13,6 +15,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -26,6 +29,9 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
 import onlexnet.app.ports.in.AdminUseCase;
+import onlexnet.app.ports.in.admin.AdminAction;
+import onlexnet.app.ports.in.admin.AdminCommandRequest;
+import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.sejmapi.telegram.TelegramNotifier;
 
 class TelegramBotFunctionsTest {
@@ -52,11 +58,18 @@ class TelegramBotFunctionsTest {
     @Test
     void givenValidTelegramPayload_whenWebhookInvoked_thenDelegatesAndReturnsOk() {
         var adminUseCase = mock(AdminUseCase.class);
+        var actionParser = new TelegramAdminActionParser();
+        var outcomePresenter = new TelegramAdminOutcomePresenter();
         var telegramNotifier = mock(TelegramNotifier.class);
-        var functions = new TelegramBotFunctions(adminUseCase, telegramNotifier, new ObjectMapper());
+        var functions = new TelegramBotFunctions(
+            adminUseCase,
+            actionParser,
+            outcomePresenter,
+            telegramNotifier,
+            new ObjectMapper());
 
-        when(adminUseCase.handleTelegramCommand(1001L, "/help"))
-                .thenReturn(AdminUseCase.TelegramCommandResult.reply("Dostępne komendy"));
+        when(adminUseCase.handleAdminAction(any(AdminCommandRequest.class)))
+            .thenReturn(new AdminOutcome.HelpOverview());
 
         var payload = """
                 {
@@ -78,18 +91,29 @@ class TelegramBotFunctionsTest {
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("OK");
-        verify(adminUseCase).handleTelegramCommand(1001L, "/help");
-        verify(telegramNotifier).sendMessage(1001L, "Dostępne komendy");
+
+        var requestCaptor = ArgumentCaptor.forClass(AdminCommandRequest.class);
+        verify(adminUseCase).handleAdminAction(requestCaptor.capture());
+        assertThat(requestCaptor.getValue().action()).isEqualTo(AdminAction.Help.INSTANCE);
+
+        verify(telegramNotifier).sendMessage(eq(1001L), any(String.class));
     }
 
     @Test
     void givenNoReplyCommandResult_whenWebhookInvoked_thenSkipsSendingMessage() {
         var adminUseCase = mock(AdminUseCase.class);
+        var actionParser = new TelegramAdminActionParser();
+        var outcomePresenter = new TelegramAdminOutcomePresenter();
         var telegramNotifier = mock(TelegramNotifier.class);
-        var functions = new TelegramBotFunctions(adminUseCase, telegramNotifier, new ObjectMapper());
+        var functions = new TelegramBotFunctions(
+            adminUseCase,
+            actionParser,
+            outcomePresenter,
+            telegramNotifier,
+            new ObjectMapper());
 
-        when(adminUseCase.handleTelegramCommand(1001L, "   "))
-                .thenReturn(AdminUseCase.TelegramCommandResult.noReply());
+        when(adminUseCase.handleAdminAction(any(AdminCommandRequest.class)))
+            .thenReturn(new AdminOutcome.NoopIgnored());
 
         var payload = """
                 {
@@ -111,15 +135,61 @@ class TelegramBotFunctionsTest {
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("OK");
-        verify(adminUseCase).handleTelegramCommand(1001L, "   ");
-        verify(telegramNotifier, never()).sendMessage(eq(1001L), eq("   "));
+        verify(adminUseCase).handleAdminAction(any(AdminCommandRequest.class));
+        verify(telegramNotifier, never()).sendMessage(eq(1001L), any(String.class));
     }
+
+        @Test
+        void givenDeferredCommandResult_whenWebhookInvoked_thenSendsDeferredAcknowledgement() {
+        var adminUseCase = mock(AdminUseCase.class);
+        var actionParser = new TelegramAdminActionParser();
+        var outcomePresenter = new TelegramAdminOutcomePresenter();
+        var telegramNotifier = mock(TelegramNotifier.class);
+        var functions = new TelegramBotFunctions(
+                                adminUseCase,
+                                actionParser,
+                                outcomePresenter,
+                                telegramNotifier,
+                                new ObjectMapper());
+
+        when(adminUseCase.handleAdminAction(any(AdminCommandRequest.class)))
+            .thenReturn(new AdminOutcome.ActionDeferred("corr-123"));
+
+        var payload = """
+                                {
+                                    "update_id": 1,
+                                    "message": {
+                                        "message_id": 22,
+                                        "chat": {
+                                            "id": 1001,
+                                            "type": "private"
+                                        },
+                                        "text": "/help"
+                                    }
+                                }
+                                """;
+
+        var response = functions.telegramWebhook(
+                                new FakeHttpRequestMessage<>(Optional.of(payload)),
+                                new FakeExecutionContext());
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo("OK");
+        verify(telegramNotifier).sendMessage(eq(1001L), contains("corr-123"));
+        }
 
     @Test
     void givenMalformedPayload_whenWebhookInvoked_thenReturnsOkAndSkipsDelegation() {
         var adminUseCase = mock(AdminUseCase.class);
+        var actionParser = new TelegramAdminActionParser();
+        var outcomePresenter = new TelegramAdminOutcomePresenter();
         var telegramNotifier = mock(TelegramNotifier.class);
-        var functions = new TelegramBotFunctions(adminUseCase, telegramNotifier, new ObjectMapper());
+        var functions = new TelegramBotFunctions(
+            adminUseCase,
+            actionParser,
+            outcomePresenter,
+            telegramNotifier,
+            new ObjectMapper());
 
         var response = functions.telegramWebhook(
                 new FakeHttpRequestMessage<>(Optional.of("{broken-json")),
@@ -127,8 +197,8 @@ class TelegramBotFunctionsTest {
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo("OK");
-        verify(adminUseCase, never()).handleTelegramCommand(eq(1001L), eq("/help"));
-        verify(telegramNotifier, never()).sendMessage(eq(1001L), eq("Dostępne komendy"));
+        verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
+        verify(telegramNotifier, never()).sendMessage(eq(1001L), any(String.class));
     }
 
     private static final class FakeExecutionContext implements ExecutionContext {

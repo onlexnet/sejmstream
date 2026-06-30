@@ -36,8 +36,8 @@ jobs:
           java-version: '21'
           cache: maven
 
-      - name: Run fun_sejmlive tests from its own pom.xml
-        run: mvn -B -q -f fun_sejmlive/pom.xml test
+      - name: Run verification suite (unit, architecture, integration)
+        run: mvn -B -q -f fun_sejmlive/pom.xml verify
 
       - name: Package fun_sejmlive Azure Functions artifact from its own pom.xml
         run: mvn -B -q -f fun_sejmlive/pom.xml -DskipTests package
