@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
  *
  * <p>The {@link SpringLiquibase} dependency is injected intentionally: Spring
  * will only create it when {@code DB_URL} is configured (see
- * {@link DatabaseConfiguration#springLiquibase}), and the mere act of
+ * {@link onlexnet.infra.config.DatabaseConfiguration#springLiquibase}), and the mere act of
  * resolving the bean guarantees that all pending changesets are executed before
  * this function body runs.  This makes the function a lightweight, recurring
  * "migration heartbeat" — it will also catch up on any changesets deployed

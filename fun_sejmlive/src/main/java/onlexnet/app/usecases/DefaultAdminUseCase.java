@@ -13,9 +13,9 @@ import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.AdminAccessPolicy;
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.sejmapi.FacebookPublisher;
 import onlexnet.sejmapi.SejmCollectService;
-import onlexnet.sejmapi.SejmDailyDigestRepository;
 import onlexnet.sejmapi.SejmDigestService;
 
 /**
@@ -29,7 +29,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
     private final SejmApiClient sejmApiClient;
     private final SejmCollectService sejmCollectService;
     private final SejmDigestService sejmDigestService;
-    private final SejmDailyDigestRepository sejmDailyDigestRepository;
+    private final SejmDailyDigestPersistence sejmDailyDigestRepository;
     private final Optional<FacebookPublisher> facebookPublisher;
     private final AdminAccessPolicy accessPolicy;
 
@@ -37,7 +37,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
             SejmApiClient sejmApiClient,
             SejmCollectService sejmCollectService,
             SejmDigestService sejmDigestService,
-            SejmDailyDigestRepository sejmDailyDigestRepository,
+            SejmDailyDigestPersistence sejmDailyDigestRepository,
             Optional<FacebookPublisher> facebookPublisher,
             AdminAccessPolicy accessPolicy) {
         this.sejmApiClient = sejmApiClient;

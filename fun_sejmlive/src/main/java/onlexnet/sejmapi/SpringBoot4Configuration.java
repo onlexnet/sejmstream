@@ -14,9 +14,15 @@ import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.infra.adapters.in.AdaptersInModuleConfigurer;
 import onlexnet.infra.adapters.out.AdaptersOutModuleConfigurer;
 import onlexnet.infra.adapters.out.telegram.DefaultTelegramNotifier;
+import onlexnet.infra.config.DatabaseConfiguration;
 
 @Configuration
-@Import({AdaptersOutModuleConfigurer.class, AdaptersInModuleConfigurer.class, AppModuleConfigurer.class})
+@Import({
+	DatabaseConfiguration.class,
+	AdaptersOutModuleConfigurer.class,
+	AdaptersInModuleConfigurer.class,
+	AppModuleConfigurer.class
+})
 public class SpringBoot4Configuration {
 
 	@Bean

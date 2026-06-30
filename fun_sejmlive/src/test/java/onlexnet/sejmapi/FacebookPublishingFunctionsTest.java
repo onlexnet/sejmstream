@@ -28,6 +28,8 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
+
 class FacebookPublishingFunctionsTest {
 
     @Test
@@ -260,7 +262,7 @@ class FacebookPublishingFunctionsTest {
         }
     }
 
-    private static class RecordingRepository extends SejmDailyDigestRepository {
+    private static class RecordingRepository implements SejmDailyDigestPersistence {
 
         private boolean alreadyPublished;
         private int alreadyPublishedChecks;
@@ -269,8 +271,21 @@ class FacebookPublishingFunctionsTest {
         private boolean lastSuccess;
         private String lastErrorMessage;
 
-        RecordingRepository() {
-            super(null);
+        @Override
+        public int upsertItem(final LocalDate date, final String dataType,
+                final String itemKey, final String title, final String itemJson) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public java.util.List<Map<String, Object>> findByDate(final LocalDate date) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public java.util.List<Map<String, Object>> findByDateAndType(final LocalDate date,
+                final String dataType) {
+            throw new UnsupportedOperationException("Not used by this test");
         }
 
         @Override

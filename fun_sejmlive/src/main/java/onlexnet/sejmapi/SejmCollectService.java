@@ -16,6 +16,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.BillItem;
 import onlexnet.app.ports.out.SejmApiClient.CommitteeSittingItem;
 import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
@@ -34,11 +35,11 @@ public class SejmCollectService {
     private static final Logger LOGGER = Logger.getLogger(SejmCollectService.class.getName());
 
     private final SejmApiClient sejmApiClient;
-    private final SejmDailyDigestRepository repository;
+        private final SejmDailyDigestPersistence repository;
     private final ObjectMapper objectMapper;
 
     public SejmCollectService(final SejmApiClient sejmApiClient,
-            final SejmDailyDigestRepository repository,
+            final SejmDailyDigestPersistence repository,
             final ObjectMapper objectMapper) {
         this.sejmApiClient = Objects.requireNonNull(sejmApiClient, "sejmApiClient must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");

@@ -23,11 +23,11 @@ import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 import onlexnet.sejmapi.FacebookPublisher;
 import onlexnet.sejmapi.SejmCollectService;
-import onlexnet.sejmapi.SejmDailyDigestRepository;
 import onlexnet.sejmapi.SejmDigestService;
 
 class DefaultAdminUseCaseTest {
@@ -64,7 +64,7 @@ class DefaultAdminUseCaseTest {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
         var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestRepository.class);
+        var repository = mock(SejmDailyDigestPersistence.class);
         var accessPolicy = this.allowAllAccessPolicy();
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
@@ -97,7 +97,7 @@ class DefaultAdminUseCaseTest {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
         var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestRepository.class);
+        var repository = mock(SejmDailyDigestPersistence.class);
         var accessPolicy = this.allowAllAccessPolicy();
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
@@ -143,7 +143,7 @@ class DefaultAdminUseCaseTest {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
         var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestRepository.class);
+        var repository = mock(SejmDailyDigestPersistence.class);
         var facebookPublisher = mock(FacebookPublisher.class);
         var accessPolicy = this.allowAllAccessPolicy();
 
@@ -195,7 +195,7 @@ class DefaultAdminUseCaseTest {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
         var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestRepository.class);
+        var repository = mock(SejmDailyDigestPersistence.class);
 
         return new DefaultAdminUseCase(
                 sejmApiClient,

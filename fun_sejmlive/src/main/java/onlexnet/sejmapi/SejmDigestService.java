@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.BillItem;
 import onlexnet.app.ports.out.SejmApiClient.CommitteeSittingItem;
 import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
@@ -46,10 +47,10 @@ public class SejmDigestService {
     private static final String DATA_TYPE_BILL = "BILL";
     private static final String DIGEST_FOOTER = "#SejmStream #Sejm #ParlamentPolski";
 
-    private final SejmDailyDigestRepository repository;
+    private final SejmDailyDigestPersistence repository;
     private final ObjectMapper objectMapper;
 
-    public SejmDigestService(final SejmDailyDigestRepository repository,
+    public SejmDigestService(final SejmDailyDigestPersistence repository,
             final ObjectMapper objectMapper) {
         this.repository = Objects.requireNonNull(repository, "repository cannot be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");

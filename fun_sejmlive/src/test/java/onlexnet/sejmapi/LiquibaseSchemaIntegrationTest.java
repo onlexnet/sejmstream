@@ -16,6 +16,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import liquibase.integration.spring.SpringLiquibase;
+import onlexnet.infra.config.DatabaseConfiguration;
 
 @AppTest(classes = DatabaseConfiguration.class)
 class LiquibaseSchemaIntegrationTest {

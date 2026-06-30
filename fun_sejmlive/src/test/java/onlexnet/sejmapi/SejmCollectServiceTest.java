@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.BillItem;
 import onlexnet.app.ports.out.SejmApiClient.CommitteeSittingItem;
 import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
@@ -329,14 +330,10 @@ class SejmCollectServiceTest {
         assertThat(repository.calls.get(0).dataType()).isEqualTo("COMMITTEE_SITTING");
     }
 
-    private static final class RecordingRepository extends SejmDailyDigestRepository {
+    private static final class RecordingRepository implements SejmDailyDigestPersistence {
 
         private final List<UpsertCall> calls = new ArrayList<>();
         private RuntimeException failWith;
-
-        private RecordingRepository() {
-            super(null);
-        }
 
         @Override
         public int upsertItem(final LocalDate date, final String dataType,
@@ -346,6 +343,28 @@ class SejmCollectServiceTest {
             }
             this.calls.add(new UpsertCall(date, dataType, itemKey, title, itemJson));
             return 1;
+        }
+
+        @Override
+        public List<java.util.Map<String, Object>> findByDate(final LocalDate date) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public List<java.util.Map<String, Object>> findByDateAndType(final LocalDate date,
+                final String dataType) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public int insertPublishLog(final LocalDate date, final String message,
+                final boolean success, final String errorMsg) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public boolean alreadyPublishedToday(final LocalDate date) {
+            throw new UnsupportedOperationException("Not used by this test");
         }
     }
 

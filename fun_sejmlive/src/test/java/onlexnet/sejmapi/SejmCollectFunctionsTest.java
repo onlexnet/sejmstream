@@ -43,6 +43,7 @@ import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 
@@ -331,10 +332,34 @@ class SejmCollectFunctionsTest {
         }
     }
 
-    private static final class NoopRepository extends SejmDailyDigestRepository {
+    private static final class NoopRepository implements SejmDailyDigestPersistence {
 
-        private NoopRepository() {
-            super(null);
+        @Override
+        public int upsertItem(final LocalDate date, final String dataType,
+                final String itemKey, final String title, final String itemJson) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public List<Map<String, Object>> findByDate(final LocalDate date) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public List<Map<String, Object>> findByDateAndType(final LocalDate date,
+                final String dataType) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public int insertPublishLog(final LocalDate date, final String message,
+                final boolean success, final String errorMsg) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public boolean alreadyPublishedToday(final LocalDate date) {
+            throw new UnsupportedOperationException("Not used by this test");
         }
     }
 

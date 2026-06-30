@@ -17,6 +17,8 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
+
 /**
  * Publishes daily Sejm digests to social media on a scheduled basis.
  * <p>
@@ -42,11 +44,11 @@ public final class FacebookPublishingFunctions {
 
     private final FacebookPublisher facebookPublisher;
     private final SejmDigestService digestService;
-    private final SejmDailyDigestRepository repository;
+    private final SejmDailyDigestPersistence repository;
 
     public FacebookPublishingFunctions(final FacebookPublisher facebookPublisher,
             final SejmDigestService digestService,
-            final SejmDailyDigestRepository repository) {
+            final SejmDailyDigestPersistence repository) {
         this.facebookPublisher = facebookPublisher;
         this.digestService = digestService;
         this.repository = repository;

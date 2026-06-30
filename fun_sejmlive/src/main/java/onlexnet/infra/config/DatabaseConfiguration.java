@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.config;
 
 import javax.sql.DataSource;
 
@@ -23,7 +23,7 @@ public class DatabaseConfiguration {
                     "Ensure the Function App has a system-assigned managed identity and the Key Vault " +
                     "grants it 'get' permission on secrets.");
         }
-        final var dataSource = new DriverManagerDataSource();
+        var dataSource = new DriverManagerDataSource();
         dataSource.setUrl(url);
         dataSource.setUsername(username);
         dataSource.setPassword(password);
@@ -38,7 +38,7 @@ public class DatabaseConfiguration {
     @Bean
     public SpringLiquibase springLiquibase(final DataSource dataSource,
             @Value("${spring.datasource.url:}") final String url) {
-        final var liquibase = new SpringLiquibase();
+        var liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog("classpath:db/changelog/db.changelog-master.yaml");
         liquibase.setShouldRun(!url.isBlank());
