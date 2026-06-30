@@ -15,6 +15,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import onlexnet.infra.starters.CustomFunctionInstanceInjector;
+
 /**
  * Verifies that the Spring application context starts the same way Azure Functions starts it:
  * via {@link CustomFunctionInstanceInjector} calling {@code SpringApplication.run(Program.class)}.

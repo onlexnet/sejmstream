@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.starters;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ApplicationContext;
