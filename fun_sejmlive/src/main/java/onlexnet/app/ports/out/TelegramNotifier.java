@@ -1,4 +1,4 @@
-package onlexnet.sejmapi.telegram;
+package onlexnet.app.ports.out;
 
 /**
  * Sends messages to Telegram chats.

@@ -1,4 +1,4 @@
-package onlexnet.sejmapi.telegram;
+package onlexnet.infra.adapters.out.telegram;
 
 import java.util.Map;
 import java.util.Objects;
@@ -7,6 +7,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
+
+import onlexnet.app.ports.out.TelegramNotifier;
 
 /**
  * Telegram notifier implemented against the Bot API using Spring RestClient.

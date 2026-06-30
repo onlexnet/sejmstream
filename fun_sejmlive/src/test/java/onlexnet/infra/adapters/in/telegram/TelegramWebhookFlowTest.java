@@ -23,11 +23,11 @@ import com.microsoft.azure.functions.HttpStatusType;
 
 import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.app.usecases.DefaultAdminUseCase;
 import onlexnet.sejmapi.SejmCollectService;
 import onlexnet.sejmapi.SejmDailyDigestRepository;
 import onlexnet.sejmapi.SejmDigestService;
-import onlexnet.sejmapi.telegram.TelegramNotifier;
 
 class TelegramWebhookFlowTest {
 

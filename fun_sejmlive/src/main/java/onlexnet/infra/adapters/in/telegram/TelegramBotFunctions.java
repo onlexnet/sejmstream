@@ -21,8 +21,8 @@ import onlexnet.app.ports.in.AdminUseCase;
 import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminActor;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
-import onlexnet.sejmapi.telegram.TelegramNotifier;
-import onlexnet.sejmapi.telegram.TelegramUpdate;
+import onlexnet.app.ports.out.TelegramNotifier;
+import onlexnet.infra.adapters.in.telegram.model.TelegramUpdate;
 
 /**
  * Azure Function webhook entrypoint for Telegram updates.
@@ -104,11 +104,11 @@ public final class TelegramBotFunctions {
         }
     }
 
-    private String requestId(TelegramUpdate update) {
+    private String requestId(final TelegramUpdate update) {
         return "telegram:" + update.updateId() + ":" + update.message().messageId();
     }
 
-    private Map<String, String> metadata(TelegramUpdate update) {
+    private Map<String, String> metadata(final TelegramUpdate update) {
         var metadata = new LinkedHashMap<String, String>();
         metadata.put("updateId", Long.toString(update.updateId()));
         metadata.put("messageId", Long.toString(update.message().messageId()));

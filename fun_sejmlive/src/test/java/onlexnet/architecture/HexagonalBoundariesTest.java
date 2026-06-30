@@ -10,7 +10,7 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 class HexagonalBoundariesTest {
 
     @Test
-    void appLayerMustNotDependOnAdaptersOrLegacyTelegramPackage() {
+    void appLayerMustNotDependOnAdapters() {
         JavaClasses classes = new ClassFileImporter().importPackages("onlexnet");
 
         noClasses()
@@ -18,7 +18,7 @@ class HexagonalBoundariesTest {
                 .resideInAPackage("onlexnet.app..")
                 .should()
                 .dependOnClassesThat()
-                .resideInAnyPackage("onlexnet.infra.adapters..", "onlexnet.sejmapi.telegram..")
+                .resideInAnyPackage("onlexnet.infra.adapters..")
                 .check(classes);
     }
 }

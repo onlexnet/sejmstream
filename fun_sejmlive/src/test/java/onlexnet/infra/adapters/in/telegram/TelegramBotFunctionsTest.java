@@ -32,7 +32,7 @@ import onlexnet.app.ports.in.AdminUseCase;
 import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
-import onlexnet.sejmapi.telegram.TelegramNotifier;
+import onlexnet.app.ports.out.TelegramNotifier;
 
 class TelegramBotFunctionsTest {
 

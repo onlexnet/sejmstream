@@ -1,4 +1,4 @@
-package onlexnet.sejmapi.telegram;
+package onlexnet.infra.adapters.in.telegram.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

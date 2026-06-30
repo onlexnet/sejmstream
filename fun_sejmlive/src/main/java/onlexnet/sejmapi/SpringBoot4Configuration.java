@@ -10,10 +10,10 @@ import org.springframework.context.annotation.Import;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import onlexnet.app.AppModuleConfigurer;
+import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.infra.adapters.in.AdaptersInModuleConfigurer;
 import onlexnet.infra.adapters.out.AdaptersOutModuleConfigurer;
-import onlexnet.sejmapi.telegram.DefaultTelegramNotifier;
-import onlexnet.sejmapi.telegram.TelegramNotifier;
+import onlexnet.infra.adapters.out.telegram.DefaultTelegramNotifier;
 
 @Configuration
 @Import({AdaptersOutModuleConfigurer.class, AdaptersInModuleConfigurer.class, AppModuleConfigurer.class})
