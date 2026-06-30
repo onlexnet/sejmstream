@@ -28,10 +28,10 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
-import onlexnet.app.ports.in.AdminUseCase;
 import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
+import onlexnet.app.ports.in.admin.AdminUseCase;
 import onlexnet.app.ports.out.TelegramNotifier;
 
 class TelegramBotFunctionsTest {

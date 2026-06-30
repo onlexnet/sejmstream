@@ -1,7 +1,4 @@
-package onlexnet.app.ports.in;
-
-import onlexnet.app.ports.in.admin.AdminCommandRequest;
-import onlexnet.app.ports.in.admin.AdminOutcome;
+package onlexnet.app.ports.in.admin;
 
 /**
  * Application use case for administrative commands.
