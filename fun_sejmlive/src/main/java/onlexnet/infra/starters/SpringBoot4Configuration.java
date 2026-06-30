@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.starters;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
