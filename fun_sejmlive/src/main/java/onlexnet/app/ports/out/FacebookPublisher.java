@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.app.ports.out;
 
 /**
  * Publishes a Facebook post.

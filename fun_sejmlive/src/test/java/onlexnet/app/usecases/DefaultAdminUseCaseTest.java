@@ -22,11 +22,11 @@ import onlexnet.app.ports.in.admin.AdminActor;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.out.AdminAccessPolicy;
+import onlexnet.app.ports.out.FacebookPublisher;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
-import onlexnet.sejmapi.FacebookPublisher;
 import onlexnet.sejmapi.SejmCollectService;
 import onlexnet.sejmapi.SejmDigestService;
 

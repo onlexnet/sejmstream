@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.adapters.out.facebook;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -8,14 +8,16 @@ import com.restfb.Version;
 import com.restfb.exception.FacebookOAuthException;
 import com.restfb.types.Page;
 
+import onlexnet.app.ports.out.FacebookPublisher;
+
 @Slf4j
-final class DefaultFacebookPublisher implements FacebookPublisher {
+public final class DefaultFacebookPublisher implements FacebookPublisher {
 
     private final String token;
     /** Lazily initialised on the first {@link #publish} call; guarded by {@link #ensureClient()}. */
     private DefaultFacebookClient client = null;
 
-    DefaultFacebookPublisher(final String token) {
+    public DefaultFacebookPublisher(final String token) {
         if (token == null || token.isBlank()) {
             throw new IllegalStateException("Facebook token is not configured");
         }

@@ -28,6 +28,7 @@ import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 
+import onlexnet.app.ports.out.FacebookPublisher;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 
 class FacebookPublishingFunctionsTest {
