@@ -84,30 +84,6 @@ Telegram webhook endpoint:
 
 - `POST /api/telegram/webhook`
 
-## HTTP start/status flow (Durable)
-
-Starter function:
-
-- Route: `POST /api/Fun_HttpStart`
-- Auth: `AuthorizationLevel.FUNCTION`
-
-Example start request:
-
-```bash
-curl -i -X POST \
-   "http://localhost:7071/api/Fun_HttpStart" \
-   -H "Content-Type: application/json" \
-   -d '{"correlationId":"demo-123","sampleSize":2}'
-```
-
-Expected start response:
-
-- HTTP `202 Accepted`
-- Durable status URLs in response payload and `Location` header
-
-Then poll `statusQueryGetUri` from the start response until `runtimeStatus` is `Completed`.
-When completed, output contains a demo payload (`correlationId`, `source="demo-only"`, `demoRows`).
-
 ## Deployment workflow
 
 The GitHub Actions workflow in `.github/workflows/fun_sejmlive-ci.yml` now:

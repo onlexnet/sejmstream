@@ -7,7 +7,7 @@ Add two independent Azure Durable Function workflows to the `fun_sejmlive` modul
 1. **Collection** (timer at 11 PM) — fetches today's Sejm activity from 6 API categories, stores each item as JSON in a new `sejm_daily_digest_item` DB table.
 2. **Publishing** (timer at 11:30 PM) — reads today's collected items from DB, formats a Polish-language digest, publishes to Facebook.
 
-Reuses the existing Durable Functions pattern from `DemoDurableFunctions`, `RestClient` infra, `JdbcTemplate`, and `FacebookPublisher`.
+Reuses the existing Durable Functions pattern, `RestClient` infra, `JdbcTemplate`, and `FacebookPublisher`.
 
 ---
 
@@ -160,7 +160,7 @@ Status: Implemented
 
 New file: `fun_sejmlive/src/main/java/onlexnet/sejmapi/SejmCollectFunctions.java`
 
-Mirrors `DemoDurableFunctions.java` pattern exactly:
+Mirrors the existing durable function scaffolding pattern:
 
 | Function | Trigger | Description |
 |----------|---------|-------------|
