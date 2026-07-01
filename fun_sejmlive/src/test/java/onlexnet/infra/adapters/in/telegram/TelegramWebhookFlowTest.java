@@ -23,11 +23,9 @@ import com.microsoft.azure.functions.HttpStatusType;
 
 import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.app.usecases.DefaultAdminUseCase;
 import onlexnet.sejmapi.SejmCollectService;
-import onlexnet.sejmapi.SejmDigestService;
 
 class TelegramWebhookFlowTest {
 
@@ -35,15 +33,11 @@ class TelegramWebhookFlowTest {
     void givenHelpPayload_whenWebhookInvoked_thenMessageFlowWorksEndToEnd() {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
-        var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestPersistence.class);
         AdminAccessPolicy allowAllPolicy = (actor, action) -> true;
 
         var useCase = new DefaultAdminUseCase(
                 sejmApiClient,
                 sejmCollectService,
-                sejmDigestService,
-                repository,
                 Optional.empty(),
                 allowAllPolicy);
 

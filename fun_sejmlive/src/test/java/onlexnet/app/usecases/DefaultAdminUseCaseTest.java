@@ -2,8 +2,6 @@ package onlexnet.app.usecases;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -13,7 +11,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
@@ -21,21 +18,21 @@ import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminActor;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
+import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
+import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
+import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
 import onlexnet.app.ports.out.AdminAccessPolicy;
-import onlexnet.app.ports.out.FacebookPublisher;
 import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 import onlexnet.sejmapi.SejmCollectService;
-import onlexnet.sejmapi.SejmDigestService;
 
 class DefaultAdminUseCaseTest {
 
     @Test
     void givenAuthorizedHelpAction_whenHandled_thenReturnsHelpOutcomeCode() {
         var accessPolicy = this.allowAllAccessPolicy();
-        var useCase = this.createUseCase(Optional.empty(), accessPolicy);
+        var useCase = this.createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Help.INSTANCE, "1001"));
 
@@ -49,7 +46,7 @@ class DefaultAdminUseCaseTest {
     void givenUnauthorizedActor_whenHandled_thenGenericUnauthorizedOutcomeIsReturned() {
         var accessPolicy = mock(AdminAccessPolicy.class);
         when(accessPolicy.isAllowed(any(AdminActor.class), any(AdminAction.class))).thenReturn(false);
-        var useCase = this.createUseCase(Optional.empty(), accessPolicy);
+        var useCase = this.createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Help.INSTANCE, "2002"));
 
@@ -63,8 +60,6 @@ class DefaultAdminUseCaseTest {
     void givenDataAction_whenHandled_thenReturnsCurrentTermSummaryArguments() {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
-        var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestPersistence.class);
         var accessPolicy = this.allowAllAccessPolicy();
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
@@ -78,9 +73,7 @@ class DefaultAdminUseCaseTest {
         var useCase = new DefaultAdminUseCase(
                 sejmApiClient,
                 sejmCollectService,
-                sejmDigestService,
-                repository,
-                Optional.empty(),
+            mock(PublishDailyDigestUseCase.class),
                 accessPolicy);
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Data.INSTANCE, "1001"));
@@ -96,8 +89,6 @@ class DefaultAdminUseCaseTest {
     void givenCollectAction_whenHandled_thenReturnsCollectionSummaryArguments() {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
-        var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestPersistence.class);
         var accessPolicy = this.allowAllAccessPolicy();
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
@@ -114,9 +105,7 @@ class DefaultAdminUseCaseTest {
         var useCase = new DefaultAdminUseCase(
                 sejmApiClient,
                 sejmCollectService,
-                sejmDigestService,
-                repository,
-                Optional.empty(),
+            mock(PublishDailyDigestUseCase.class),
                 accessPolicy);
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Collect.INSTANCE, "1001"));
@@ -129,39 +118,24 @@ class DefaultAdminUseCaseTest {
     }
 
     @Test
-    void givenPublishActionWithoutFacebookBean_whenHandled_thenReportsDisabledPublishing() {
-        var useCase = this.createUseCase(Optional.empty(), this.allowAllAccessPolicy());
-
-        var result = useCase.handleAdminAction(this.request(AdminAction.Publish.INSTANCE, "1001"));
-
-        assertThat(result)
-            .isInstanceOf(AdminOutcome.PublishDisabled.class);
-    }
-
-    @Test
     void givenPublishActionWithDigest_whenHandled_thenPublishesAndLogsSuccess() {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
-        var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestPersistence.class);
-        var facebookPublisher = mock(FacebookPublisher.class);
+        var publishUseCase = mock(PublishDailyDigestUseCase.class);
         var accessPolicy = this.allowAllAccessPolicy();
 
-        when(repository.alreadyPublishedToday(any(LocalDate.class))).thenReturn(false);
-        when(sejmDigestService.buildDigest(any(LocalDate.class))).thenReturn(Optional.of("digest message"));
+        when(publishUseCase.publish(any(PublishDailyDigestCommand.class)))
+            .thenReturn(new PublishDailyDigestOutcome.Published(LocalDate.now(), "digest message"));
 
         var useCase = new DefaultAdminUseCase(
                 sejmApiClient,
                 sejmCollectService,
-                sejmDigestService,
-                repository,
-                Optional.of(facebookPublisher),
+                publishUseCase,
                 accessPolicy);
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Publish.INSTANCE, "1001"));
 
-        verify(facebookPublisher).publish("digest message");
-        verify(repository).insertPublishLog(any(LocalDate.class), anyString(), anyBoolean(), any());
+        verify(publishUseCase).publish(any(PublishDailyDigestCommand.class));
         assertThat(result)
             .isInstanceOf(AdminOutcome.PublishSuccess.class);
     }
@@ -169,7 +143,7 @@ class DefaultAdminUseCaseTest {
     @Test
     void givenNoopAction_whenHandled_thenNoReplyIsReturned() {
         var accessPolicy = mock(AdminAccessPolicy.class);
-        var useCase = this.createUseCase(Optional.empty(), accessPolicy);
+        var useCase = this.createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Noop.INSTANCE, "1001"));
 
@@ -179,7 +153,7 @@ class DefaultAdminUseCaseTest {
 
     @Test
     void givenUnknownAction_whenHandled_thenUnknownActionOutcomeIsReturned() {
-        var useCase = this.createUseCase(Optional.empty(), this.allowAllAccessPolicy());
+        var useCase = this.createUseCase(mock(PublishDailyDigestUseCase.class), this.allowAllAccessPolicy());
 
         var result = useCase.handleAdminAction(this.request(new AdminAction.Unknown("/mystery"), "1001"));
 
@@ -190,19 +164,15 @@ class DefaultAdminUseCaseTest {
     }
 
     private DefaultAdminUseCase createUseCase(
-            Optional<FacebookPublisher> facebookPublisher,
+            PublishDailyDigestUseCase publishUseCase,
             AdminAccessPolicy accessPolicy) {
         var sejmApiClient = mock(SejmApiClient.class);
         var sejmCollectService = mock(SejmCollectService.class);
-        var sejmDigestService = mock(SejmDigestService.class);
-        var repository = mock(SejmDailyDigestPersistence.class);
 
         return new DefaultAdminUseCase(
                 sejmApiClient,
                 sejmCollectService,
-                sejmDigestService,
-                repository,
-                facebookPublisher,
+                publishUseCase,
                 accessPolicy);
     }
 

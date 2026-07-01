@@ -7,46 +7,31 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.in.admin.AdminUseCase;
+import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
+import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
+import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.AdminAccessPolicy;
-import onlexnet.app.ports.out.FacebookPublisher;
-import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.sejmapi.SejmCollectService;
-import onlexnet.sejmapi.SejmDigestService;
 
 /**
  * Default application implementation for admin command processing.
  */
 @Component
+@RequiredArgsConstructor
 public class DefaultAdminUseCase implements AdminUseCase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAdminUseCase.class);
 
     private final SejmApiClient sejmApiClient;
     private final SejmCollectService sejmCollectService;
-    private final SejmDigestService sejmDigestService;
-    private final SejmDailyDigestPersistence sejmDailyDigestRepository;
-    private final Optional<FacebookPublisher> facebookPublisher;
+    private final PublishDailyDigestUseCase publishDailyDigestUseCase;
     private final AdminAccessPolicy accessPolicy;
-
-    public DefaultAdminUseCase(
-            SejmApiClient sejmApiClient,
-            SejmCollectService sejmCollectService,
-            SejmDigestService sejmDigestService,
-            SejmDailyDigestPersistence sejmDailyDigestRepository,
-            Optional<FacebookPublisher> facebookPublisher,
-            AdminAccessPolicy accessPolicy) {
-        this.sejmApiClient = sejmApiClient;
-        this.sejmCollectService = sejmCollectService;
-        this.sejmDigestService = sejmDigestService;
-        this.sejmDailyDigestRepository = sejmDailyDigestRepository;
-        this.facebookPublisher = facebookPublisher;
-        this.accessPolicy = accessPolicy;
-    }
 
     @Override
     public AdminOutcome handleAdminAction(AdminCommandRequest request) {
@@ -120,31 +105,19 @@ public class DefaultAdminUseCase implements AdminUseCase {
     }
 
     private AdminOutcome handlePublish() {
-        if (this.facebookPublisher.isEmpty()) {
-            return new AdminOutcome.PublishDisabled();
-        }
+        var outcome = this.publishDailyDigestUseCase
+                .publish(new PublishDailyDigestCommand(LocalDate.now()));
 
-        var date = LocalDate.now();
-        if (this.sejmDailyDigestRepository.alreadyPublishedToday(date)) {
-            return new AdminOutcome.PublishAlreadyDone(date);
-        }
-
-        try {
-            var digest = this.sejmDigestService.buildDigest(date);
-            if (digest.isEmpty()) {
-                return new AdminOutcome.PublishNoData(date);
+        return switch (outcome) {
+            case PublishDailyDigestOutcome.Published published -> new AdminOutcome.PublishSuccess(published.date());
+            case PublishDailyDigestOutcome.SkippedAlreadyPublished skipped ->
+                new AdminOutcome.PublishAlreadyDone(skipped.date());
+            case PublishDailyDigestOutcome.SkippedNoDigest skipped -> new AdminOutcome.PublishNoData(skipped.date());
+            case PublishDailyDigestOutcome.Failed failed -> {
+                LOGGER.warn("Admin publish action failed", failed.exception());
+                yield new AdminOutcome.PublishFailure(this.safeErrorMessage(failed.exception()));
             }
-
-            var message = digest.get();
-            this.facebookPublisher.get().publish(message);
-            this.sejmDailyDigestRepository.insertPublishLog(date, message, true, null);
-            return new AdminOutcome.PublishSuccess(date);
-        } catch (RuntimeException exception) {
-            var errorMessage = exception.getMessage();
-            this.tryWriteFailedPublishLog(date, errorMessage == null ? "Unknown error" : errorMessage);
-            LOGGER.warn("Admin publish action failed", exception);
-            return new AdminOutcome.PublishFailure(this.safeErrorMessage(exception));
-        }
+        };
     }
 
     private Optional<Integer> resolveCurrentTermNumber() {
@@ -158,15 +131,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
                 .findFirst();
     }
 
-    private void tryWriteFailedPublishLog(LocalDate date, String errorMessage) {
-        try {
-            this.sejmDailyDigestRepository.insertPublishLog(date, null, false, errorMessage);
-        } catch (RuntimeException logException) {
-            LOGGER.warn("Failed to write publish failure log", logException);
-        }
-    }
-
-    private String safeErrorMessage(RuntimeException exception) {
+    private String safeErrorMessage(final RuntimeException exception) {
         var message = exception.getMessage();
         if (message == null || message.isBlank()) {
             return "Unknown error";

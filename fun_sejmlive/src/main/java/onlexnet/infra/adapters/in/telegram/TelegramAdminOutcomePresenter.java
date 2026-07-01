@@ -35,7 +35,6 @@ public final class TelegramAdminOutcomePresenter {
             case AdminOutcome.CollectTermMissing ignored -> "Nie udało się ustalić aktualnej kadencji Sejmu.";
             case AdminOutcome.CollectSuccess collectSuccess -> this.renderCollectSummary(collectSuccess);
             case AdminOutcome.CollectFailure collectFailure -> "Polecenie /collect nie powiodło się: " + collectFailure.reason();
-            case AdminOutcome.PublishDisabled ignored -> "Publikacja Facebook jest wyłączona (brak FB_TOKEN).";
             case AdminOutcome.PublishAlreadyDone publishAlreadyDone -> "Digest dla dnia "
                     + publishAlreadyDone.date()
                     + " został już opublikowany.";

@@ -79,7 +79,6 @@ public sealed interface AdminOutcome permits AdminOutcome.ImmediateReply, AdminO
             DataSummary,
             CollectTermMissing,
             CollectSuccess,
-            PublishDisabled,
             PublishAlreadyDone,
             PublishNoData,
             PublishSuccess,
@@ -127,9 +126,6 @@ public sealed interface AdminOutcome permits AdminOutcome.ImmediateReply, AdminO
 
     record CollectFailure(
             String reason) implements TechnicalImmediateReply {
-    }
-
-    record PublishDisabled() implements BusinessImmediateReply {
     }
 
     record PublishAlreadyDone(
