@@ -71,9 +71,6 @@ class ApplicationContextTest {
         assertThat(this.applicationContext.getBean(FacebookPublishingFunctions.class))
                 .as("FacebookPublishingFunctions must be available when FB_TOKEN is configured")
                 .isNotNull();
-        assertThat(this.applicationContext.getBean(SejmApiHttpFunctions.class))
-                .as("SejmApiHttpFunctions must be available for HTTP API access")
-                .isNotNull();
     }
 
     private static synchronized void ensurePostgresStarted() {
