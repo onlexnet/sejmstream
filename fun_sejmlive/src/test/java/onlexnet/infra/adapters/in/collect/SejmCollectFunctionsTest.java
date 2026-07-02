@@ -38,6 +38,9 @@ import com.microsoft.durabletask.OrchestrationStatusQuery;
 import com.microsoft.durabletask.OrchestrationStatusQueryResult;
 import com.microsoft.durabletask.PurgeInstanceCriteria;
 import com.microsoft.durabletask.PurgeResult;
+import com.microsoft.durabletask.Task;
+import com.microsoft.durabletask.TaskOptions;
+import com.microsoft.durabletask.TaskOrchestrationContext;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
@@ -276,6 +279,74 @@ class SejmCollectFunctionsTest {
                 .hasCauseInstanceOf(RuntimeException.class)
                 .cause()
                 .hasMessage("service failure");
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void givenOrchestrator_whenInvoked_thenCallsActivitiesWithRetryAndAggregatesCounts() {
+        var collectService = mock(SejmCollectOperations.class);
+        var sejmApiClient = mock(SejmApiClient.class);
+        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+        var votingTask = completedTask(1);
+        var committeesTask = completedTask(2);
+        var printsTask = completedTask(3);
+        var interpellationsTask = completedTask(4);
+        var questionsTask = completedTask(5);
+        var billsTask = completedTask(6);
+
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
+                eq(null),
+                any(TaskOptions.class),
+                eq(Integer.class))).thenReturn(votingTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_COMMITTEES),
+                eq(null),
+                any(TaskOptions.class),
+                eq(Integer.class))).thenReturn(committeesTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_PRINTS),
+                eq(null),
+                any(TaskOptions.class),
+                eq(Integer.class))).thenReturn(printsTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
+                eq(null),
+                any(TaskOptions.class),
+                eq(Integer.class))).thenReturn(interpellationsTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_QUESTIONS),
+                eq(null),
+                any(TaskOptions.class),
+                eq(Integer.class))).thenReturn(questionsTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_BILLS),
+                eq(null),
+                any(TaskOptions.class),
+                eq(Integer.class))).thenReturn(billsTask);
+
+        var result = functions.runOrchestrator(orchestrationContext);
+
+        assertThat(result.countsByType()).containsEntry("VOTING", 1);
+        assertThat(result.countsByType()).containsEntry("COMMITTEE_SITTING", 2);
+        assertThat(result.countsByType()).containsEntry("PRINT", 3);
+        assertThat(result.countsByType()).containsEntry("INTERPELLATION", 4);
+        assertThat(result.countsByType()).containsEntry("WRITTEN_QUESTION", 5);
+        assertThat(result.countsByType()).containsEntry("BILL", 6);
+
+        verify(orchestrationContext, times(6)).callActivity(
+                any(String.class),
+                eq(null),
+                any(TaskOptions.class),
+                eq(Integer.class));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Task<Integer> completedTask(final int value) {
+        var task = mock(Task.class);
+        when(task.await()).thenReturn(value);
+        return task;
     }
 
     private static final class TestDurableClientContext extends DurableClientContext {

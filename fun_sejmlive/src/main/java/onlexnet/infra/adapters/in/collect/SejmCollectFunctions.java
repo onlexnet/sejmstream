@@ -1,5 +1,6 @@
 package onlexnet.infra.adapters.in.collect;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,9 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
+import com.microsoft.durabletask.RetryPolicy;
+import com.microsoft.durabletask.TaskFailedException;
+import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
@@ -55,6 +59,13 @@ public final class SejmCollectFunctions {
         public static final String ACTIVITY_QUESTIONS = "Intern_CollectQuestions";
     /** Activity function name for collecting bills. */
         public static final String ACTIVITY_BILLS = "Intern_CollectBills";
+    /** Retry options for all orchestration activity calls. */
+        // Helps absorb transient API/network/db glitches before failing the whole orchestration.
+        private static final TaskOptions ACTIVITY_RETRY_OPTIONS = new TaskOptions(
+                new RetryPolicy(3, Duration.ofSeconds(10))
+                        .setBackoffCoefficient(2.0)
+                        .setMaxRetryInterval(Duration.ofMinutes(2))
+                        .setRetryTimeout(Duration.ofMinutes(10)));
 
     private final SejmCollectOperations collectService;
     private final SejmApiClient sejmApiClient;
@@ -146,20 +157,35 @@ public final class SejmCollectFunctions {
 
         var counts = new HashMap<String, Integer>();
 
-        counts.put("VOTING", orchestrationContext
-                .callActivity(ACTIVITY_VOTINGS, null, Integer.class).await());
-        counts.put("COMMITTEE_SITTING", orchestrationContext
-                .callActivity(ACTIVITY_COMMITTEES, null, Integer.class).await());
-        counts.put("PRINT", orchestrationContext
-                .callActivity(ACTIVITY_PRINTS, null, Integer.class).await());
-        counts.put("INTERPELLATION", orchestrationContext
-                .callActivity(ACTIVITY_INTERPELLATIONS, null, Integer.class).await());
-        counts.put("WRITTEN_QUESTION", orchestrationContext
-                .callActivity(ACTIVITY_QUESTIONS, null, Integer.class).await());
-        counts.put("BILL", orchestrationContext
-                .callActivity(ACTIVITY_BILLS, null, Integer.class).await());
+        counts.put("VOTING", callActivityWithRetry(orchestrationContext, ACTIVITY_VOTINGS));
+        counts.put("COMMITTEE_SITTING",
+            callActivityWithRetry(orchestrationContext, ACTIVITY_COMMITTEES));
+        counts.put("PRINT", callActivityWithRetry(orchestrationContext, ACTIVITY_PRINTS));
+        counts.put("INTERPELLATION",
+            callActivityWithRetry(orchestrationContext, ACTIVITY_INTERPELLATIONS));
+        counts.put("WRITTEN_QUESTION",
+            callActivityWithRetry(orchestrationContext, ACTIVITY_QUESTIONS));
+        counts.put("BILL", callActivityWithRetry(orchestrationContext, ACTIVITY_BILLS));
 
         return new CollectResult(Map.copyOf(counts));
+    }
+
+    private int callActivityWithRetry(final TaskOrchestrationContext orchestrationContext,
+            final String activityName) {
+        try {
+            return orchestrationContext
+                    .callActivity(activityName, null, ACTIVITY_RETRY_OPTIONS, Integer.class)
+                    .await();
+        } catch (TaskFailedException e) {
+            // Surface inner activity failure details in orchestration history/logs for easier Azure diagnostics.
+            var details = e.getErrorDetails();
+            var errorType = details == null ? "unknown" : details.getErrorType();
+            var errorMessage = details == null ? e.getMessage() : details.getErrorMessage();
+            throw new IllegalStateException(
+                    "Collect orchestrator failed in activity " + activityName + " ("
+                            + errorType + "): " + errorMessage,
+                    e);
+        }
     }
 
     /**
