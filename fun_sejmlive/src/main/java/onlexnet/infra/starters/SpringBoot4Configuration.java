@@ -1,8 +1,6 @@
 package onlexnet.infra.starters;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -33,26 +31,9 @@ public class SpringBoot4Configuration {
 		return new ObjectMapper().findAndRegisterModules();
 	}
 
-	/**
-	 * Creates the real {@link FacebookPublisher} when {@code FB_TOKEN} is configured.
-	 * <p>
-	 * The token is read from Spring's environment (which includes Azure Functions app
-	 * settings exposed as environment variables). Bean creation validates the token
-	 * is non-blank; the actual Facebook API connection is deferred to the first
-	 * {@code publish()} call, so startup is not blocked by network latency.
-	 */
 	@Bean
-	@ConditionalOnProperty(name = "FB_TOKEN")
 	public FacebookPublisher facebookPublisher(@Value("${FB_TOKEN}") final String token) {
 		return new DefaultFacebookPublisher(token);
-	}
-
-	@Bean
-	@ConditionalOnMissingBean(FacebookPublisher.class)
-	public FacebookPublisher noopFacebookPublisher() {
-		return message -> {
-			// FB_TOKEN is not configured; keep startup healthy and skip publishing.
-		};
 	}
 
 	/**
