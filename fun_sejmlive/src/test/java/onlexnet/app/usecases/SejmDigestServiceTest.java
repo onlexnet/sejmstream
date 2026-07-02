@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.app.usecases;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,6 +11,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.Nullable;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -210,8 +211,8 @@ class SejmDigestServiceTest {
         }
 
         @Override
-        public int insertPublishLog(final LocalDate date, final String message,
-                final boolean success, final String errorMsg) {
+        public int insertPublishLog(final LocalDate date, final @Nullable String message,
+                final boolean success, final @Nullable String errorMsg) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 

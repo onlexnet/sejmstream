@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.adapters.out;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -26,7 +26,6 @@ import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
 import onlexnet.app.ports.out.SejmApiClient.PrintItem;
 import onlexnet.app.ports.out.SejmApiClient.VotingItem;
 import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
-import onlexnet.infra.adapters.out.SejmCollectService;
 
 class SejmCollectServiceTest {
 

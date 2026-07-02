@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.starters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -17,7 +17,7 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import onlexnet.infra.adapters.in.facebook.FacebookPublishingFunctions;
 import onlexnet.infra.adapters.in.collect.SejmCollectFunctions;
-import onlexnet.infra.starters.CustomFunctionInstanceInjector;
+import onlexnet.testsupport.AppTest;
 
 /**
  * Verifies that the Spring application context starts the same way Azure Functions starts it:

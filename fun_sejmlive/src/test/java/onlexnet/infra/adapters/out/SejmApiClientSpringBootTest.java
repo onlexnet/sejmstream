@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.adapters.out;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.client.RestClientException;
 
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.testsupport.AppTest;
 
 @AppTest(properties = "FB_TOKEN=test-placeholder-token-for-sejm-client-test")
 class SejmApiClientSpringBootTest {

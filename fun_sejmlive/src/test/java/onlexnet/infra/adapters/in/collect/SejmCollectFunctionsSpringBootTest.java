@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.adapters.in.collect;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,8 +8,8 @@ import org.springframework.context.ApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import onlexnet.infra.adapters.in.collect.SejmCollectFunctions;
 import onlexnet.infra.adapters.out.SejmCollectService;
+import onlexnet.testsupport.AppTest;
 
 @AppTest
 class SejmCollectFunctionsSpringBootTest {

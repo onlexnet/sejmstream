@@ -7,7 +7,6 @@ import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
 import onlexnet.app.ports.out.FacebookPublisher;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
-import onlexnet.sejmapi.SejmDigestService;
 
 /**
  * Default app-layer orchestration for one daily Facebook digest publish attempt.

@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.app.usecases;
 
 import java.time.LocalDate;
 import java.util.ArrayList;

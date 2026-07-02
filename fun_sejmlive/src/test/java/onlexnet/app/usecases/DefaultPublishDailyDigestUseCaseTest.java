@@ -18,7 +18,6 @@ import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
 import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.out.FacebookPublisher;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
-import onlexnet.sejmapi.SejmDigestService;
 
 class DefaultPublishDailyDigestUseCaseTest {
 

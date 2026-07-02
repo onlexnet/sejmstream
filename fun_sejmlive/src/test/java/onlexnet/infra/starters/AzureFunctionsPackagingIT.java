@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.starters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

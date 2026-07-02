@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.config;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
@@ -16,7 +16,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import liquibase.integration.spring.SpringLiquibase;
-import onlexnet.infra.config.DatabaseConfiguration;
+import onlexnet.testsupport.AppTest;
 
 @AppTest(classes = DatabaseConfiguration.class)
 class LiquibaseSchemaIntegrationTest {
