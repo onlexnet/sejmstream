@@ -214,7 +214,7 @@ public final class SejmCollectFunctions {
         } catch (Exception e) {
             log.error("Activity collectVotings failed", e);
             executionContext.getLogger().severe(
-                    "Activity collectVotings failed: " + e.getMessage());
+                "Activity collectVotings failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect votings: " + buildFailureMessage(e),
                     e);
@@ -247,7 +247,7 @@ public final class SejmCollectFunctions {
         } catch (Exception e) {
             log.error("Activity collectCommittees failed", e);
             executionContext.getLogger().severe(
-                    "Activity collectCommittees failed: " + e.getMessage());
+                "Activity collectCommittees failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect committee sittings: " + buildFailureMessage(e),
                     e);
@@ -280,7 +280,7 @@ public final class SejmCollectFunctions {
         } catch (Exception e) {
             log.error("Activity collectPrints failed", e);
             executionContext.getLogger().severe(
-                    "Activity collectPrints failed: " + e.getMessage());
+                "Activity collectPrints failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect prints: " + buildFailureMessage(e),
                     e);
@@ -313,7 +313,7 @@ public final class SejmCollectFunctions {
         } catch (Exception e) {
             log.error("Activity collectInterpellations failed", e);
             executionContext.getLogger().severe(
-                    "Activity collectInterpellations failed: " + e.getMessage());
+                "Activity collectInterpellations failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect interpellations: " + buildFailureMessage(e),
                     e);
@@ -346,7 +346,7 @@ public final class SejmCollectFunctions {
         } catch (Exception e) {
             log.error("Activity collectQuestions failed", e);
             executionContext.getLogger().severe(
-                    "Activity collectQuestions failed: " + e.getMessage());
+                "Activity collectQuestions failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect written questions: " + buildFailureMessage(e),
                     e);
@@ -379,7 +379,7 @@ public final class SejmCollectFunctions {
         } catch (Exception e) {
             log.error("Activity collectBills failed", e);
             executionContext.getLogger().severe(
-                    "Activity collectBills failed: " + e.getMessage());
+                "Activity collectBills failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect bills: " + buildFailureMessage(e),
                     e);
