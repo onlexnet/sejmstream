@@ -8,6 +8,8 @@ import org.springframework.context.ApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import onlexnet.infra.adapters.in.collect.SejmCollectFunctions;
+
 @AppTest
 class SejmCollectFunctionsSpringBootTest {
 

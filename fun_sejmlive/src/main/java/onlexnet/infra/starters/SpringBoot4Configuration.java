@@ -1,6 +1,8 @@
 package onlexnet.infra.starters;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -26,6 +28,7 @@ import onlexnet.infra.config.DatabaseConfiguration;
 public class SpringBoot4Configuration {
 
 	@Bean
+	
 	public ObjectMapper objectMapper() {
 		return new ObjectMapper().findAndRegisterModules();
 	}
@@ -39,8 +42,17 @@ public class SpringBoot4Configuration {
 	 * {@code publish()} call, so startup is not blocked by network latency.
 	 */
 	@Bean
+	@ConditionalOnProperty(name = "FB_TOKEN")
 	public FacebookPublisher facebookPublisher(@Value("${FB_TOKEN}") final String token) {
 		return new DefaultFacebookPublisher(token);
+	}
+
+	@Bean
+	@ConditionalOnMissingBean(FacebookPublisher.class)
+	public FacebookPublisher noopFacebookPublisher() {
+		return message -> {
+			// FB_TOKEN is not configured; keep startup healthy and skip publishing.
+		};
 	}
 
 	/**

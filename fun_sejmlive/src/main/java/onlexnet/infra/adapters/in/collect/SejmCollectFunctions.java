@@ -1,9 +1,8 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.adapters.in.collect;
 
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
@@ -25,6 +24,7 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.sejmapi.SejmCollectOperations;
 
 /**
  * Azure Durable Functions workflow that collects daily Sejm activity into the database.
@@ -38,25 +38,25 @@ import onlexnet.app.ports.out.SejmApiClient;
 public final class SejmCollectFunctions {
 
     /** Timer trigger function name. */
-    static final String TIMER_FUNCTION_NAME = "Fun_SejmCollectTimer";
+        public static final String TIMER_FUNCTION_NAME = "Fun_SejmCollectTimer";
     /** HTTP starter function name for manual trigger. */
-    static final String HTTP_STARTER_FUNCTION_NAME = "Fun_CollectStart";
+        public static final String HTTP_STARTER_FUNCTION_NAME = "Fun_CollectStart";
     /** Durable orchestrator function name. */
-    static final String ORCHESTRATOR_FUNCTION_NAME = "Fun_CollectOrchestrator";
+        public static final String ORCHESTRATOR_FUNCTION_NAME = "Fun_CollectOrchestrator";
     /** Activity function name for collecting votings. */
-    static final String ACTIVITY_VOTINGS = "Intern_CollectVotings";
+        public static final String ACTIVITY_VOTINGS = "Intern_CollectVotings";
     /** Activity function name for collecting committee sittings. */
-    static final String ACTIVITY_COMMITTEES = "Intern_CollectCommittees";
+        public static final String ACTIVITY_COMMITTEES = "Intern_CollectCommittees";
     /** Activity function name for collecting prints. */
-    static final String ACTIVITY_PRINTS = "Intern_CollectPrints";
+        public static final String ACTIVITY_PRINTS = "Intern_CollectPrints";
     /** Activity function name for collecting interpellations. */
-    static final String ACTIVITY_INTERPELLATIONS = "Intern_CollectInterpellations";
+        public static final String ACTIVITY_INTERPELLATIONS = "Intern_CollectInterpellations";
     /** Activity function name for collecting written questions. */
-    static final String ACTIVITY_QUESTIONS = "Intern_CollectQuestions";
+        public static final String ACTIVITY_QUESTIONS = "Intern_CollectQuestions";
     /** Activity function name for collecting bills. */
-    static final String ACTIVITY_BILLS = "Intern_CollectBills";
+        public static final String ACTIVITY_BILLS = "Intern_CollectBills";
 
-    private final SejmCollectService collectService;
+    private final SejmCollectOperations collectService;
     private final SejmApiClient sejmApiClient;
     private CachedTerm cachedTermNum = CachedTerm.NONE;
 

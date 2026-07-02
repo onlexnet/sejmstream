@@ -30,7 +30,7 @@ import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
  * as JSON in the database. Each collect method is idempotent due to database upsert semantics.
  */
 @Component
-public class SejmCollectService {
+public class SejmCollectService implements SejmCollectOperations {
 
     private static final Logger LOGGER = Logger.getLogger(SejmCollectService.class.getName());
 

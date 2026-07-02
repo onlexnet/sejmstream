@@ -21,24 +21,26 @@ import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.azure.functions.HttpStatusType;
 
+import onlexnet.app.ports.in.collect.CollectDailyDigestUseCase;
+import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
 import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.app.usecases.DefaultAdminUseCase;
-import onlexnet.sejmapi.SejmCollectService;
 
 class TelegramWebhookFlowTest {
 
     @Test
     void givenHelpPayload_whenWebhookInvoked_thenMessageFlowWorksEndToEnd() {
         var sejmApiClient = mock(SejmApiClient.class);
-        var sejmCollectService = mock(SejmCollectService.class);
+        var collectDailyDigestUseCase = mock(CollectDailyDigestUseCase.class);
+        var publishDailyDigestUseCase = mock(PublishDailyDigestUseCase.class);
         AdminAccessPolicy allowAllPolicy = (actor, action) -> true;
 
         var useCase = new DefaultAdminUseCase(
                 sejmApiClient,
-                sejmCollectService,
-                Optional.empty(),
+            collectDailyDigestUseCase,
+            publishDailyDigestUseCase,
                 allowAllPolicy);
 
         var notifier = mock(TelegramNotifier.class);

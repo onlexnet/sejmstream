@@ -2,6 +2,8 @@ package onlexnet.sejmapi;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -10,7 +12,6 @@ import static org.mockito.Mockito.when;
 import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -20,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
@@ -43,9 +43,9 @@ import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
 import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
+import onlexnet.infra.adapters.in.collect.SejmCollectFunctions;
 
 @AppTest
 class SejmCollectFunctionsTest {
@@ -146,7 +146,7 @@ class SejmCollectFunctionsTest {
 
         @Test
     void givenTimerTrigger_whenInvoked_thenSchedulesCollectOrchestrator() {
-        var collectService = new RecordingCollectService();
+            var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
         var durableContext = new TestDurableClientContext(false);
@@ -160,7 +160,7 @@ class SejmCollectFunctionsTest {
 
     @Test
     void givenTimerTrigger_whenSchedulingFails_thenThrowsIllegalStateException() {
-        var collectService = new RecordingCollectService();
+        var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
         var durableContext = new TestDurableClientContext(true);
@@ -174,7 +174,7 @@ class SejmCollectFunctionsTest {
 
     @Test
     void givenHttpStart_whenInvoked_thenReturnsAcceptedStatusEndpointsResponse() {
-        var collectService = new RecordingCollectService();
+        var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
         var durableContext = new TestDurableClientContext(false);
@@ -192,7 +192,7 @@ class SejmCollectFunctionsTest {
 
     @Test
     void givenHttpStart_whenSchedulingFails_thenReturnsInternalServerError() {
-        var collectService = new RecordingCollectService();
+        var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
         var durableContext = new TestDurableClientContext(true);
@@ -206,9 +206,9 @@ class SejmCollectFunctionsTest {
 
     @Test
     void givenActivities_whenInvoked_thenDelegateToServiceUsingCurrentTermAndToday() {
-        var collectService = new RecordingCollectService();
-        collectService.votingsCount = 11;
-        collectService.billsCount = 22;
+        var collectService = mock(SejmCollectOperations.class);
+        when(collectService.collectVotings(eq(10), any(LocalDate.class))).thenReturn(11);
+        when(collectService.collectBills(eq(10), any(LocalDate.class))).thenReturn(22);
         var sejmApiClient = mock(SejmApiClient.class);
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
                 new SejmTerm(false, LocalDate.of(2023, 1, 1), 9,
@@ -229,23 +229,24 @@ class SejmCollectFunctionsTest {
 
         assertThat(votingResult).isEqualTo(11);
         assertThat(billsResult).isEqualTo(22);
-        assertThat(collectService.lastVotingsTerm).isEqualTo(10);
-        assertThat(collectService.lastBillsTerm).isEqualTo(10);
-                assertThat(collectService.lastVotingsDate)
-                    .isBetween(beforeVotings, afterVotings);
-                assertThat(collectService.lastBillsDate)
-                    .isBetween(beforeBills, afterBills);
+        var votingsDateCaptor = org.mockito.ArgumentCaptor.forClass(LocalDate.class);
+        var billsDateCaptor = org.mockito.ArgumentCaptor.forClass(LocalDate.class);
+        verify(collectService, times(1)).collectVotings(eq(10), votingsDateCaptor.capture());
+        verify(collectService, times(1)).collectBills(eq(10), billsDateCaptor.capture());
+        assertThat(votingsDateCaptor.getValue()).isBetween(beforeVotings, afterVotings);
+        assertThat(billsDateCaptor.getValue()).isBetween(beforeBills, afterBills);
         verify(sejmApiClient, times(1)).fetchTerms();
     }
 
     @Test
     void givenNoCurrentTerm_whenRunningActivity_thenWrapsAsIllegalStateException() {
+        var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
                 new SejmTerm(false, LocalDate.of(2023, 1, 1), 9,
                         new SejmPrints(0, null, "/term9/prints"),
                         LocalDate.of(2023, 10, 10))));
-        var functions = new SejmCollectFunctions(new RecordingCollectService(), sejmApiClient);
+        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
 
         assertThatThrownBy(() -> functions.collectCommittees(null, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
@@ -257,8 +258,9 @@ class SejmCollectFunctionsTest {
 
     @Test
     void givenServiceThrows_whenCollectQuestions_thenWrapsAsIllegalStateException() {
-        var collectService = new RecordingCollectService();
-        collectService.questionsFailure = new RuntimeException("service failure");
+        var collectService = mock(SejmCollectOperations.class);
+        when(collectService.collectWrittenQuestions(eq(10), any(LocalDate.class)))
+            .thenThrow(new RuntimeException("service failure"));
         var sejmApiClient = mock(SejmApiClient.class);
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
@@ -272,137 +274,6 @@ class SejmCollectFunctionsTest {
                 .hasCauseInstanceOf(RuntimeException.class)
                 .cause()
                 .hasMessage("service failure");
-    }
-
-    private static final class RecordingCollectService extends SejmCollectService {
-
-        private int votingsCount;
-        private int committeesCount;
-        private int printsCount;
-        private int interpellationsCount;
-        private int questionsCount;
-        private int billsCount;
-
-        private int lastVotingsTerm;
-        private int lastBillsTerm;
-        private LocalDate lastVotingsDate;
-        private LocalDate lastBillsDate;
-
-        private RuntimeException questionsFailure;
-
-        private RecordingCollectService() {
-            super(new NoopSejmApiClient(), new NoopRepository(), new ObjectMapper());
-        }
-
-        @Override
-        public int collectVotings(final int termNum, final LocalDate date) {
-            this.lastVotingsTerm = termNum;
-            this.lastVotingsDate = date;
-            return this.votingsCount;
-        }
-
-        @Override
-        public int collectCommitteeSittings(final int termNum, final LocalDate date) {
-            return this.committeesCount;
-        }
-
-        @Override
-        public int collectPrints(final int termNum, final LocalDate date) {
-            return this.printsCount;
-        }
-
-        @Override
-        public int collectInterpellations(final int termNum, final LocalDate date) {
-            return this.interpellationsCount;
-        }
-
-        @Override
-        public int collectWrittenQuestions(final int termNum, final LocalDate date) {
-            if (this.questionsFailure != null) {
-                throw this.questionsFailure;
-            }
-            return this.questionsCount;
-        }
-
-        @Override
-        public int collectBills(final int termNum, final LocalDate date) {
-            this.lastBillsTerm = termNum;
-            this.lastBillsDate = date;
-            return this.billsCount;
-        }
-    }
-
-    private static final class NoopRepository implements SejmDailyDigestPersistence {
-
-        @Override
-        public int upsertItem(final LocalDate date, final String dataType,
-                final String itemKey, final String title, final String itemJson) {
-            throw new UnsupportedOperationException("Not used by this test");
-        }
-
-        @Override
-        public List<Map<String, Object>> findByDate(final LocalDate date) {
-            throw new UnsupportedOperationException("Not used by this test");
-        }
-
-        @Override
-        public List<Map<String, Object>> findByDateAndType(final LocalDate date,
-                final String dataType) {
-            throw new UnsupportedOperationException("Not used by this test");
-        }
-
-        @Override
-        public int insertPublishLog(final LocalDate date, final String message,
-                final boolean success, final String errorMsg) {
-            throw new UnsupportedOperationException("Not used by this test");
-        }
-
-        @Override
-        public boolean alreadyPublishedToday(final LocalDate date) {
-            throw new UnsupportedOperationException("Not used by this test");
-        }
-    }
-
-    private static final class NoopSejmApiClient implements SejmApiClient {
-
-        @Override
-        public List<SejmTerm> fetchTerms() {
-            return List.of();
-        }
-
-        @Override
-        public List<VotingItem> fetchVotingsForDate(final int termNum, final LocalDate date) {
-            return List.of();
-        }
-
-        @Override
-        public List<CommitteeSittingItem> fetchCommitteeSittingsForDate(final int termNum,
-                final LocalDate date) {
-            return List.of();
-        }
-
-        @Override
-        public List<PrintItem> fetchPrintsModifiedSince(final int termNum,
-                final LocalDate since) {
-            return List.of();
-        }
-
-        @Override
-        public List<InterpellationItem> fetchInterpellationsModifiedSince(final int termNum,
-                final LocalDateTime since) {
-            return List.of();
-        }
-
-        @Override
-        public List<WrittenQuestionItem> fetchWrittenQuestionsModifiedSince(final int termNum,
-                final LocalDateTime since) {
-            return List.of();
-        }
-
-        @Override
-        public List<BillItem> fetchBillsReceivedSince(final int termNum, final LocalDate since) {
-            return List.of();
-        }
     }
 
     private static final class TestDurableClientContext extends DurableClientContext {

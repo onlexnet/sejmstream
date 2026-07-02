@@ -16,6 +16,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import onlexnet.infra.adapters.in.facebook.FacebookPublishingFunctions;
+import onlexnet.infra.adapters.in.collect.SejmCollectFunctions;
 import onlexnet.infra.starters.CustomFunctionInstanceInjector;
 
 /**

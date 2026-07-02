@@ -12,12 +12,14 @@ import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.in.admin.AdminUseCase;
+import onlexnet.app.ports.in.collect.CollectDailyDigestCommand;
+import onlexnet.app.ports.in.collect.CollectDailyDigestOutcome;
+import onlexnet.app.ports.in.collect.CollectDailyDigestUseCase;
 import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
 import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.AdminAccessPolicy;
-import onlexnet.sejmapi.SejmCollectService;
 
 /**
  * Default application implementation for admin command processing.
@@ -29,7 +31,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAdminUseCase.class);
 
     private final SejmApiClient sejmApiClient;
-    private final SejmCollectService sejmCollectService;
+    private final CollectDailyDigestUseCase collectDailyDigestUseCase;
     private final PublishDailyDigestUseCase publishDailyDigestUseCase;
     private final AdminAccessPolicy accessPolicy;
 
@@ -73,35 +75,39 @@ public class DefaultAdminUseCase implements AdminUseCase {
     }
 
     private AdminOutcome handleCollect() {
-        try {
-            var termNum = this.resolveCurrentTermNumber();
-            if (termNum.isEmpty()) {
-                return new AdminOutcome.CollectTermMissing();
+        var outcome = this.collectDailyDigestUseCase
+                .collect(new CollectDailyDigestCommand(LocalDate.now()));
+
+        return switch (outcome) {
+            case CollectDailyDigestOutcome.TermMissing ignored -> new AdminOutcome.CollectTermMissing();
+            case CollectDailyDigestOutcome.Collected collected -> {
+                var votings = this.countFor(collected, CollectDailyDigestOutcome.TYPE_VOTING);
+                var committeeSittings = this.countFor(collected,
+                    CollectDailyDigestOutcome.TYPE_COMMITTEE_SITTING);
+                var prints = this.countFor(collected, CollectDailyDigestOutcome.TYPE_PRINT);
+                var interpellations = this.countFor(collected,
+                    CollectDailyDigestOutcome.TYPE_INTERPELLATION);
+                var writtenQuestions = this.countFor(collected,
+                    CollectDailyDigestOutcome.TYPE_WRITTEN_QUESTION);
+                var bills = this.countFor(collected, CollectDailyDigestOutcome.TYPE_BILL);
+                var total = votings + committeeSittings + prints + interpellations + writtenQuestions + bills;
+
+                yield new AdminOutcome.CollectSuccess(
+                        collected.date(),
+                        collected.termNum(),
+                        total,
+                        votings,
+                        committeeSittings,
+                        prints,
+                        interpellations,
+                        writtenQuestions,
+                        bills);
             }
-
-            var date = LocalDate.now();
-            var votings = this.sejmCollectService.collectVotings(termNum.get(), date);
-            var committeeSittings = this.sejmCollectService.collectCommitteeSittings(termNum.get(), date);
-            var prints = this.sejmCollectService.collectPrints(termNum.get(), date);
-            var interpellations = this.sejmCollectService.collectInterpellations(termNum.get(), date);
-            var writtenQuestions = this.sejmCollectService.collectWrittenQuestions(termNum.get(), date);
-            var bills = this.sejmCollectService.collectBills(termNum.get(), date);
-            var total = votings + committeeSittings + prints + interpellations + writtenQuestions + bills;
-
-            return new AdminOutcome.CollectSuccess(
-                    date,
-                    termNum.get(),
-                    total,
-                    votings,
-                    committeeSittings,
-                    prints,
-                    interpellations,
-                    writtenQuestions,
-                    bills);
-        } catch (RuntimeException exception) {
-            LOGGER.warn("Admin collect action failed", exception);
-            return new AdminOutcome.CollectFailure(this.safeErrorMessage(exception));
-        }
+            case CollectDailyDigestOutcome.Failed failed -> {
+                LOGGER.warn("Admin collect action failed", failed.exception());
+                yield new AdminOutcome.CollectFailure(this.safeErrorMessage(failed.exception()));
+            }
+        };
     }
 
     private AdminOutcome handlePublish() {
@@ -120,15 +126,10 @@ public class DefaultAdminUseCase implements AdminUseCase {
         };
     }
 
-    private Optional<Integer> resolveCurrentTermNumber() {
-        var terms = this.sejmApiClient.fetchTerms();
-        if (terms == null || terms.isEmpty()) {
-            return Optional.empty();
-        }
-        return terms.stream()
-                .filter(term -> term != null && term.current())
-                .map(term -> term.num())
-                .findFirst();
+    private int countFor(
+            final CollectDailyDigestOutcome.Collected collected,
+            final String type) {
+        return collected.countsByType().getOrDefault(type, 0);
     }
 
     private String safeErrorMessage(final RuntimeException exception) {
