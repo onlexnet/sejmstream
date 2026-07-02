@@ -215,7 +215,9 @@ public final class SejmCollectFunctions {
             log.error("Activity collectVotings failed", e);
             executionContext.getLogger().severe(
                     "Activity collectVotings failed: " + e.getMessage());
-            throw new IllegalStateException("Failed to collect votings", e);
+            throw new IllegalStateException(
+                    "Failed to collect votings: " + buildFailureMessage(e),
+                    e);
         }
     }
 
@@ -246,7 +248,9 @@ public final class SejmCollectFunctions {
             log.error("Activity collectCommittees failed", e);
             executionContext.getLogger().severe(
                     "Activity collectCommittees failed: " + e.getMessage());
-            throw new IllegalStateException("Failed to collect committee sittings", e);
+            throw new IllegalStateException(
+                    "Failed to collect committee sittings: " + buildFailureMessage(e),
+                    e);
         }
     }
 
@@ -277,7 +281,9 @@ public final class SejmCollectFunctions {
             log.error("Activity collectPrints failed", e);
             executionContext.getLogger().severe(
                     "Activity collectPrints failed: " + e.getMessage());
-            throw new IllegalStateException("Failed to collect prints", e);
+            throw new IllegalStateException(
+                    "Failed to collect prints: " + buildFailureMessage(e),
+                    e);
         }
     }
 
@@ -308,7 +314,9 @@ public final class SejmCollectFunctions {
             log.error("Activity collectInterpellations failed", e);
             executionContext.getLogger().severe(
                     "Activity collectInterpellations failed: " + e.getMessage());
-            throw new IllegalStateException("Failed to collect interpellations", e);
+            throw new IllegalStateException(
+                    "Failed to collect interpellations: " + buildFailureMessage(e),
+                    e);
         }
     }
 
@@ -339,7 +347,9 @@ public final class SejmCollectFunctions {
             log.error("Activity collectQuestions failed", e);
             executionContext.getLogger().severe(
                     "Activity collectQuestions failed: " + e.getMessage());
-            throw new IllegalStateException("Failed to collect written questions", e);
+            throw new IllegalStateException(
+                    "Failed to collect written questions: " + buildFailureMessage(e),
+                    e);
         }
     }
 
@@ -370,8 +380,21 @@ public final class SejmCollectFunctions {
             log.error("Activity collectBills failed", e);
             executionContext.getLogger().severe(
                     "Activity collectBills failed: " + e.getMessage());
-            throw new IllegalStateException("Failed to collect bills", e);
+            throw new IllegalStateException(
+                    "Failed to collect bills: " + buildFailureMessage(e),
+                    e);
         }
+    }
+
+    // Durable activity failures in Azure often surface only top-level exception messages.
+    // Include cause type/message so Portal and instance history immediately show actionable details.
+    private static String buildFailureMessage(final Exception exception) {
+        var cause = exception.getCause();
+        if (cause == null) {
+            return exception.getClass().getSimpleName() + ": " + exception.getMessage();
+        }
+        var causeMessage = cause.getMessage() == null ? "(no message)" : cause.getMessage();
+        return cause.getClass().getSimpleName() + ": " + causeMessage;
     }
 
     /**
