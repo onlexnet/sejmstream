@@ -15,7 +15,7 @@
 		<azure.functions.java.library.version>3.2.1</azure.functions.java.library.version>
 		<azure.functions.java.spi.version>1.0.0</azure.functions.java.spi.version>
 		<durable.task.azure.functions.version>1.0.0</durable.task.azure.functions.version>
-		<restfb.version>2026.7.1</restfb.version>
+		<restfb.version>2026.8.0</restfb.version>
 		<azure.keyvault.version>4.10.7</azure.keyvault.version>
 		<azure.identity.version>1.16.1</azure.identity.version>
 		<assertj.version>3.27.4</assertj.version>
