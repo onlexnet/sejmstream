@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import onlexnet.infra.adapters.in.collect.SejmCollectFunctions;
+import onlexnet.infra.adapters.out.SejmCollectService;
 
 @AppTest
 class SejmCollectFunctionsSpringBootTest {

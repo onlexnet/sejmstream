@@ -9,7 +9,7 @@ import onlexnet.app.ports.in.collect.CollectDailyDigestCommand;
 import onlexnet.app.ports.in.collect.CollectDailyDigestOutcome;
 import onlexnet.app.ports.in.collect.CollectDailyDigestUseCase;
 import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.sejmapi.SejmCollectOperations;
+import onlexnet.app.ports.out.SejmCollectOperations;
 
 /**
  * Default application implementation for daily collect processing.

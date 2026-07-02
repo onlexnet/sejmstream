@@ -1,4 +1,4 @@
-package onlexnet.sejmapi;
+package onlexnet.infra.adapters.out;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -16,13 +16,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.BillItem;
 import onlexnet.app.ports.out.SejmApiClient.CommitteeSittingItem;
 import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
 import onlexnet.app.ports.out.SejmApiClient.PrintItem;
 import onlexnet.app.ports.out.SejmApiClient.VotingItem;
 import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
+import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 
 /**
  * Service that collects Sejm activity data from the API and stores it in the daily digest table.
@@ -35,7 +36,7 @@ public class SejmCollectService implements SejmCollectOperations {
     private static final Logger LOGGER = Logger.getLogger(SejmCollectService.class.getName());
 
     private final SejmApiClient sejmApiClient;
-        private final SejmDailyDigestPersistence repository;
+    private final SejmDailyDigestPersistence repository;
     private final ObjectMapper objectMapper;
 
     public SejmCollectService(final SejmApiClient sejmApiClient,

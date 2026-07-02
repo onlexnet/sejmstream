@@ -24,7 +24,7 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.sejmapi.SejmCollectOperations;
+import onlexnet.app.ports.out.SejmCollectOperations;
 
 /**
  * Azure Durable Functions workflow that collects daily Sejm activity into the database.

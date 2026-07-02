@@ -15,8 +15,8 @@ import onlexnet.app.ports.in.collect.CollectDailyDigestCommand;
 import onlexnet.app.ports.in.collect.CollectDailyDigestOutcome;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
+import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
-import onlexnet.sejmapi.SejmCollectOperations;
 
 class DefaultCollectDailyDigestUseCaseTest {
 

@@ -1,9 +1,9 @@
-package onlexnet.sejmapi;
+package onlexnet.app.ports.out;
 
 import java.time.LocalDate;
 
 /**
- * Collection operations for ingesting Sejm activity into the daily digest store.
+ * Output port for collecting Sejm activity and persisting it to the digest store.
  */
 public interface SejmCollectOperations {
 

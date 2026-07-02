@@ -26,6 +26,7 @@ import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
 import onlexnet.app.ports.out.SejmApiClient.PrintItem;
 import onlexnet.app.ports.out.SejmApiClient.VotingItem;
 import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
+import onlexnet.infra.adapters.out.SejmCollectService;
 
 class SejmCollectServiceTest {
 

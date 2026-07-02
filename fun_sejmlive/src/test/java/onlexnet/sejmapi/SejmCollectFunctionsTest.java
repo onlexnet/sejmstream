@@ -45,7 +45,9 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
+import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.infra.adapters.in.collect.SejmCollectFunctions;
+import onlexnet.infra.adapters.out.SejmCollectService;
 
 @AppTest
 class SejmCollectFunctionsTest {
