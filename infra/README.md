@@ -74,8 +74,11 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
 
 - Flex Consumption Function service plan (`azurerm_service_plan`, SKU `FC1`)
 - Dedicated storage account for Function host and Durable state (`azurerm_storage_account`)
-- Linux Function App on Java 21 (`azurerm_linux_function_app`)
+- Linux Function App Flex Consumption on Java 21 (`azurerm_function_app_flex_consumption`)
 - System-assigned managed identity on the Function App
+- Azure Storage Queue resources for interpellation publish flow:
+   - main queue (`azurerm_storage_queue.interpellation_publish`)
+   - dead-letter queue (`azurerm_storage_queue.interpellation_publish_dead_letter`)
 - Storage data-plane role assignments for that identity:
    - `Storage Blob Data Contributor`
    - `Storage Queue Data Contributor`
@@ -85,18 +88,30 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
 - Application Insights telemetry enabled by default for the Function App runtime
 - Diagnostic settings routing Function logs and metrics to Log Analytics
 
-The Function App runtime settings include durable host storage via managed identity (`AzureWebJobsStorage__*`) and a configurable task hub name (`function_durable_hub_name`).
+The Function App runtime settings include durable host storage via `AzureWebJobsStorage` (connection string) and a configurable task hub name (`function_durable_hub_name`).
+
+For interpellation queue processing, the Function App app settings are also set from Terraform variables:
+
+- `INTERPELLATION_PUBLISH_QUEUE_NAME`
+- `INTERPELLATION_PUBLISH_DEAD_LETTER_QUEUE_NAME`
+- `INTERPELLATION_PUBLISH_MAX_ATTEMPTS` (default `5`)
+- `INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS`
+- `INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER`
+- `INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS`
+
+### Queue RBAC assessment
+
+No additional RBAC role assignments are required for runtime queue access. Existing role assignment `azurerm_role_assignment.function_storage_queue_data_contributor` grants the Function App managed identity `Storage Queue Data Contributor` on the storage account scope, which covers read/write/dequeue operations on both publish queues.
 
 ## Phase 1 baseline confirmation
 
 The current hosting baseline has been verified against the repo state and matches the existing `fun_sejmlive` runtime contract:
 
-- Flex Consumption plan (`sku_name = "FC1"`) with Java 21 runtime on `azurerm_linux_function_app`.
+- Flex Consumption plan (`sku_name = "FC1"`) with Java 21 runtime on `azurerm_function_app_flex_consumption`.
 - System-assigned managed identity plus storage RBAC for blobs, queues, and tables.
 - Durable host app settings in `infra/main.tf`:
   - `FUNCTIONS_WORKER_RUNTIME=java`
-  - `AzureWebJobsStorage__credential=managedidentity`
-  - `AzureWebJobsStorage__accountName`, `blobServiceUri`, `queueServiceUri`, `tableServiceUri`
+   - `AzureWebJobsStorage = azurerm_storage_account.function_app.primary_connection_string`
   - `AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name` (default `SejmApiDemoHub`)
 - Diagnostic settings routed to the shared Log Analytics workspace.
 
@@ -124,6 +139,10 @@ Use these outputs to discover the deployed Function infrastructure without expos
 - `function_storage_blob_service_endpoint`
 - `function_storage_queue_service_endpoint`
 - `function_storage_table_service_endpoint`
+- `interpellation_publish_queue_name`
+- `interpellation_publish_queue_url`
+- `interpellation_publish_dead_letter_queue_name`
+- `interpellation_publish_dead_letter_queue_url`
 
 Example:
 
@@ -131,7 +150,20 @@ Example:
 terraform output -raw function_app_name
 terraform output -raw function_app_default_hostname
 terraform output -raw function_storage_account_name
+terraform output -raw interpellation_publish_queue_name
+terraform output -raw interpellation_publish_dead_letter_queue_name
 ```
+
+## Queue/retry Terraform variables
+
+The interpellation publish queue resources and retry behavior can be customized with these variables (safe defaults included):
+
+- `interpellation_publish_queue_name` (default `sejm-interpellations-publish`)
+- `interpellation_publish_dead_letter_queue_name` (default `sejm-interpellations-publish-deadletter`)
+- `interpellation_publish_max_attempts` (default `5`)
+- `interpellation_publish_retry_delay_seconds` (default `60`)
+- `interpellation_publish_backoff_multiplier` (default `2.0`)
+- `interpellation_publish_max_retry_delay_seconds` (default `900`)
 
 Do not print or share sensitive outputs in logs or documentation.
 

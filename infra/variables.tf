@@ -26,6 +26,72 @@ variable "function_durable_hub_name" {
   }
 }
 
+variable "interpellation_publish_queue_name" {
+  description = "Main Azure Storage Queue name for interpellation publish jobs."
+  type        = string
+  default     = "sejm-interpellations-publish"
+
+  validation {
+    condition     = can(regex("^[a-z0-9](?:[a-z0-9-]{1,61})[a-z0-9]$", var.interpellation_publish_queue_name))
+    error_message = "interpellation_publish_queue_name must be 3-63 chars, lowercase alphanumeric or hyphen, and start/end with alphanumeric."
+  }
+}
+
+variable "interpellation_publish_dead_letter_queue_name" {
+  description = "Dead-letter Azure Storage Queue name for interpellation publish jobs."
+  type        = string
+  default     = "sejm-interpellations-publish-deadletter"
+
+  validation {
+    condition     = can(regex("^[a-z0-9](?:[a-z0-9-]{1,61})[a-z0-9]$", var.interpellation_publish_dead_letter_queue_name))
+    error_message = "interpellation_publish_dead_letter_queue_name must be 3-63 chars, lowercase alphanumeric or hyphen, and start/end with alphanumeric."
+  }
+}
+
+variable "interpellation_publish_max_attempts" {
+  description = "Maximum publish attempts before moving a message to dead-letter handling."
+  type        = number
+  default     = 5
+
+  validation {
+    condition     = var.interpellation_publish_max_attempts >= 1 && var.interpellation_publish_max_attempts <= 20
+    error_message = "interpellation_publish_max_attempts must be between 1 and 20."
+  }
+}
+
+variable "interpellation_publish_retry_delay_seconds" {
+  description = "Base retry delay in seconds for interpellation publish retries."
+  type        = number
+  default     = 60
+
+  validation {
+    condition     = var.interpellation_publish_retry_delay_seconds >= 1 && var.interpellation_publish_retry_delay_seconds <= 86400
+    error_message = "interpellation_publish_retry_delay_seconds must be between 1 and 86400."
+  }
+}
+
+variable "interpellation_publish_backoff_multiplier" {
+  description = "Exponential backoff multiplier for interpellation publish retries."
+  type        = number
+  default     = 2.0
+
+  validation {
+    condition     = var.interpellation_publish_backoff_multiplier >= 1.0 && var.interpellation_publish_backoff_multiplier <= 10.0
+    error_message = "interpellation_publish_backoff_multiplier must be between 1.0 and 10.0."
+  }
+}
+
+variable "interpellation_publish_max_retry_delay_seconds" {
+  description = "Maximum retry delay cap in seconds for interpellation publish retries."
+  type        = number
+  default     = 900
+
+  validation {
+    condition     = var.interpellation_publish_max_retry_delay_seconds >= 1 && var.interpellation_publish_max_retry_delay_seconds <= 604800
+    error_message = "interpellation_publish_max_retry_delay_seconds must be between 1 and 604800."
+  }
+}
+
 variable "spring_datasource_url" {
   description = "Optional JDBC URL for external PostgreSQL (for example Neon)."
   type        = string

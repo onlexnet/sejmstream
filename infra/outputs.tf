@@ -67,6 +67,22 @@ output "function_storage_queue_service_endpoint" {
   value = azurerm_storage_account.function_app.primary_queue_endpoint
 }
 
+output "interpellation_publish_queue_name" {
+  value = azurerm_storage_queue.interpellation_publish.name
+}
+
+output "interpellation_publish_queue_url" {
+  value = "${azurerm_storage_account.function_app.primary_queue_endpoint}${azurerm_storage_queue.interpellation_publish.name}"
+}
+
+output "interpellation_publish_dead_letter_queue_name" {
+  value = azurerm_storage_queue.interpellation_publish_dead_letter.name
+}
+
+output "interpellation_publish_dead_letter_queue_url" {
+  value = "${azurerm_storage_account.function_app.primary_queue_endpoint}${azurerm_storage_queue.interpellation_publish_dead_letter.name}"
+}
+
 output "function_storage_table_service_endpoint" {
   value = azurerm_storage_account.function_app.primary_table_endpoint
 }

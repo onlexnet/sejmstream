@@ -128,6 +128,16 @@ resource "azurerm_storage_container" "function_app_deployment" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_queue" "interpellation_publish" {
+  name               = var.interpellation_publish_queue_name
+  storage_account_id = azurerm_storage_account.function_app.id
+}
+
+resource "azurerm_storage_queue" "interpellation_publish_dead_letter" {
+  name               = var.interpellation_publish_dead_letter_queue_name
+  storage_account_id = azurerm_storage_account.function_app.id
+}
+
 resource "azurerm_function_app_flex_consumption" "main" {
   name                = local.function_app_name
   location            = azurerm_resource_group.main.location
@@ -163,15 +173,21 @@ resource "azurerm_function_app_flex_consumption" "main" {
       AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
       # Required for Flex Consumption when using connection-string storage auth.
       # Remove together with storage_access_key above once MSI is fully supported.
-      AzureWebJobsStorage                   = azurerm_storage_account.function_app.primary_connection_string
-      APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.main[0].connection_string
-      APPINSIGHTS_INSTRUMENTATIONKEY        = azurerm_application_insights.main[0].instrumentation_key
-      FB_TOKEN                              = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.facebook_token[0].versionless_id})"
-      DB_URL                                = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_url[0].versionless_id})"
-      DB_USERNAME                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_username[0].versionless_id})"
-      DB_PASSWORD                           = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_password[0].versionless_id})"
-      TELEGRAM_BOT_TOKEN                    = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_bot_token[0].versionless_id})"
-      TELEGRAM_ALLOWED_CHAT_ID              = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_allowed_chat_id[0].versionless_id})"
+      AzureWebJobsStorage                            = azurerm_storage_account.function_app.primary_connection_string
+      APPLICATIONINSIGHTS_CONNECTION_STRING          = azurerm_application_insights.main[0].connection_string
+      APPINSIGHTS_INSTRUMENTATIONKEY                 = azurerm_application_insights.main[0].instrumentation_key
+      FB_TOKEN                                       = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.facebook_token[0].versionless_id})"
+      DB_URL                                         = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_url[0].versionless_id})"
+      DB_USERNAME                                    = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_username[0].versionless_id})"
+      DB_PASSWORD                                    = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_password[0].versionless_id})"
+      TELEGRAM_BOT_TOKEN                             = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_bot_token[0].versionless_id})"
+      TELEGRAM_ALLOWED_CHAT_ID                       = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_allowed_chat_id[0].versionless_id})"
+      INTERPELLATION_PUBLISH_QUEUE_NAME              = azurerm_storage_queue.interpellation_publish.name
+      INTERPELLATION_PUBLISH_DEAD_LETTER_QUEUE_NAME  = azurerm_storage_queue.interpellation_publish_dead_letter.name
+      INTERPELLATION_PUBLISH_MAX_ATTEMPTS            = tostring(var.interpellation_publish_max_attempts)
+      INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS     = tostring(var.interpellation_publish_retry_delay_seconds)
+      INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER      = tostring(var.interpellation_publish_backoff_multiplier)
+      INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS = tostring(var.interpellation_publish_max_retry_delay_seconds)
     }
   )
 
