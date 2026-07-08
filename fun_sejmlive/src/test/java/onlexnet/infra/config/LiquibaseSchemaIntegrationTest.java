@@ -64,12 +64,16 @@ class LiquibaseSchemaIntegrationTest {
                 SELECT table_name
                 FROM information_schema.tables
                 WHERE table_schema = 'public'
-                  AND table_name IN ('sejm_daily_digest_item', 'sejm_publish_log')
+                                    AND table_name IN (
+                                            'sejm_daily_digest_item',
+                                            'sejm_publish_log',
+                                            'sejm_interpellation_publish_state')
                 ORDER BY table_name
                 """, String.class);
 
         assertThat(tableNames).containsExactly(
                 "sejm_daily_digest_item",
+                                "sejm_interpellation_publish_state",
                 "sejm_publish_log");
     }
 
@@ -167,6 +171,75 @@ class LiquibaseSchemaIntegrationTest {
                 .contains("WRITTEN_QUESTION")
                 .contains("BILL");
     }
+
+            @Test
+            void givenLiquibaseConfiguration_whenContextStarts_thenInterpellationPublishStateColumnsMatchSchema() {
+            var columns = findColumnsFor("sejm_interpellation_publish_state");
+
+            assertThat(columns)
+                .extracting(ColumnDefinition::name,
+                    ColumnDefinition::dataType,
+                    ColumnDefinition::nullable,
+                    ColumnDefinition::maxLength,
+                    ColumnDefinition::defaultValue)
+                .containsExactly(
+                    tuple("id", "bigint", false, null, null),
+                    tuple("term_num", "integer", false, null, null),
+                    tuple("interpellation_num", "integer", false, null, null),
+                    tuple("domain_message_id", "character varying", false, 140, null),
+                    tuple("collection_date", "date", false, null, null),
+                    tuple("interpellation_title", "character varying", true, 1000, null),
+                    tuple("status", "character varying", false, 30, null),
+                    tuple("attempt", "integer", false, null, null),
+                    tuple("first_queued_at", "timestamp without time zone", false, null, null),
+                    tuple("last_attempt_at", "timestamp without time zone", true, null, null),
+                    tuple("published_at", "timestamp without time zone", true, null, null),
+                    tuple("facebook_post_message", "text", true, null, null),
+                    tuple("last_error", "character varying", true, 1000, null),
+                    tuple("created_at", "timestamp without time zone", false, null, "now()"),
+                    tuple("updated_at", "timestamp without time zone", false, null, "now()"));
+            }
+
+            @Test
+            void givenLiquibaseConfiguration_whenContextStarts_thenInterpellationStateUniqueConstraintsExist() {
+            var constraints = this.jdbcTemplate.queryForList("""
+                SELECT con.conname
+                FROM pg_constraint con
+                JOIN pg_class rel ON rel.oid = con.conrelid
+                JOIN pg_namespace nsp ON nsp.oid = con.connamespace
+                WHERE nsp.nspname = 'public'
+                  AND rel.relname = 'sejm_interpellation_publish_state'
+                  AND con.contype = 'u'
+                ORDER BY con.conname
+                """, String.class);
+
+            assertThat(constraints).containsExactly(
+                "uk_interpellation_publish_state_message_id",
+                "uk_interpellation_publish_state_term_interpellation");
+            }
+
+            @Test
+            void givenLiquibaseConfiguration_whenContextStarts_thenInterpellationStateStatusConstraintExists() {
+            var constraintDefinition = this.jdbcTemplate.queryForObject("""
+                SELECT pg_get_constraintdef(con.oid)
+                FROM pg_constraint con
+                JOIN pg_class rel ON rel.oid = con.conrelid
+                JOIN pg_namespace nsp ON nsp.oid = con.connamespace
+                WHERE nsp.nspname = 'public'
+                  AND rel.relname = 'sejm_interpellation_publish_state'
+                  AND con.conname = 'chk_interpellation_publish_state_status'
+                """, String.class);
+
+            assertThat(constraintDefinition)
+                .contains("CHECK")
+                .contains("QUEUED")
+                .contains("PROCESSING")
+                .contains("RETRY_SCHEDULED")
+                .contains("PUBLISHED")
+                .contains("DEAD_LETTER")
+                .contains("PUBLISH_CONFIRMATION_PENDING")
+                .contains("QUEUE_ENQUEUE_FAILED");
+            }
 
     private java.util.List<ColumnDefinition> findColumnsFor(final String tableName) {
         return this.jdbcTemplate.query("""

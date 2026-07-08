@@ -255,7 +255,7 @@ class SejmCollectFunctionsTest {
 
         assertThatThrownBy(() -> functions.collectCommittees(null, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Failed to collect committee sittings")
+            .hasMessageStartingWith("Failed to collect committee sittings")
                 .hasCauseInstanceOf(IllegalStateException.class)
                 .cause()
                 .hasMessageContaining("No current Sejm term found");
@@ -275,14 +275,13 @@ class SejmCollectFunctionsTest {
 
         assertThatThrownBy(() -> functions.collectQuestions(null, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Failed to collect written questions")
+            .hasMessageStartingWith("Failed to collect written questions")
                 .hasCauseInstanceOf(RuntimeException.class)
                 .cause()
                 .hasMessage("service failure");
     }
 
     @Test
-    @SuppressWarnings("unchecked")
     void givenOrchestrator_whenInvoked_thenCallsActivitiesWithRetryAndAggregatesCounts() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);

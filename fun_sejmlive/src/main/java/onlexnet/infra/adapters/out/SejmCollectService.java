@@ -3,6 +3,8 @@ package onlexnet.infra.adapters.out;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Instant;
+import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
@@ -22,6 +24,9 @@ import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
 import onlexnet.app.ports.out.SejmApiClient.PrintItem;
 import onlexnet.app.ports.out.SejmApiClient.VotingItem;
 import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
+import onlexnet.app.ports.out.InterpellationPublishQueueMessage;
+import onlexnet.app.ports.out.InterpellationPublishQueuePort;
+import onlexnet.app.ports.out.InterpellationPublishStatePort;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 
@@ -37,13 +42,23 @@ public class SejmCollectService implements SejmCollectOperations {
 
     private final SejmApiClient sejmApiClient;
     private final SejmDailyDigestPersistence repository;
+        private final InterpellationPublishQueuePort interpellationQueuePort;
+        private final InterpellationPublishStatePort interpellationPublishStatePort;
     private final ObjectMapper objectMapper;
 
     public SejmCollectService(final SejmApiClient sejmApiClient,
             final SejmDailyDigestPersistence repository,
+            final InterpellationPublishQueuePort interpellationQueuePort,
+            final InterpellationPublishStatePort interpellationPublishStatePort,
             final ObjectMapper objectMapper) {
         this.sejmApiClient = Objects.requireNonNull(sejmApiClient, "sejmApiClient must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
+        this.interpellationQueuePort = Objects.requireNonNull(
+            interpellationQueuePort,
+            "interpellationQueuePort must not be null");
+        this.interpellationPublishStatePort = Objects.requireNonNull(
+            interpellationPublishStatePort,
+            "interpellationPublishStatePort must not be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
     }
 
@@ -116,10 +131,29 @@ public class SejmCollectService implements SejmCollectOperations {
         Objects.requireNonNull(date, "date must not be null");
         try {
             var since = startOfDay(date);
-            return collectItems(termNum, date, since, "INTERPELLATION", "interpellation(s)",
-                    "interpellations",
-                    () -> sejmApiClient.fetchInterpellationsModifiedSince(termNum, since),
-                    item -> String.valueOf(item.num()), InterpellationItem::title);
+            var items = this.sejmApiClient.fetchInterpellationsModifiedSince(termNum, since);
+            if (items == null) {
+                LOGGER.fine(buildNoItemsMessage(termNum, "interpellations", since, date));
+                return 0;
+            }
+
+            var count = 0;
+            for (var item : items) {
+                if (item == null) {
+                    continue;
+                }
+
+                count += this.repository.upsertItem(
+                        date,
+                        "INTERPELLATION",
+                        String.valueOf(item.num()),
+                        item.title(),
+                        toJson(item));
+                this.enqueueInterpellationPublish(termNum, date, item);
+            }
+
+            LOGGER.fine("Collected " + count + " interpellation(s) for term " + termNum);
+            return count;
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Error collecting interpellations for term " + termNum, e);
             throw new IllegalStateException("Failed to collect interpellations", e);
@@ -194,6 +228,50 @@ public class SejmCollectService implements SejmCollectOperations {
             return "No " + noItemsLabel + " returned for term " + termNum + " since " + since;
         }
         return "No " + noItemsLabel + " returned for term " + termNum + " on " + date;
+    }
+
+    private void enqueueInterpellationPublish(
+            final int termNum,
+            final LocalDate collectionDate,
+            final InterpellationItem item) {
+        var firstQueuedAt = Instant.now();
+        var message = new InterpellationPublishQueueMessage(
+                buildDomainMessageId(termNum, item.num()),
+                termNum,
+                item.num(),
+                item.title(),
+                item.to() == null ? List.of() : item.to(),
+                item.sentDate(),
+                1,
+                firstQueuedAt,
+                null);
+        var claimed = this.interpellationPublishStatePort.tryCreateQueuedRecord(message, collectionDate);
+        if (!claimed) {
+            return;
+        }
+        try {
+            this.interpellationQueuePort.enqueue(message, Duration.ZERO);
+        } catch (RuntimeException exception) {
+            var error = "Failed to enqueue interpellation publish message: " + safeErrorMessage(exception);
+            try {
+                this.interpellationPublishStatePort.markEnqueueFailed(message.withLastError(error), error);
+            } catch (RuntimeException stateException) {
+                exception.addSuppressed(stateException);
+            }
+            throw new IllegalStateException(error, exception);
+        }
+    }
+
+    private String buildDomainMessageId(final int termNum, final int interpellationNum) {
+        return "term-" + termNum + "-interpellation-" + interpellationNum;
+    }
+
+    private String safeErrorMessage(final RuntimeException exception) {
+        var message = exception.getMessage();
+        if (message == null || message.isBlank()) {
+            return exception.getClass().getSimpleName();
+        }
+        return message;
     }
 
     /**

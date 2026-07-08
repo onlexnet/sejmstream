@@ -5,3 +5,12 @@ databaseChangeLog:
   - include:
       file: db/changelog/changes/002-create-sejm-daily-digest-tables.yaml
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/003-create-interpellation-publish-state-table.yaml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/004-allow-processing-status-in-interpellation-state.yaml
+      relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/005-extend-interpellation-state-statuses.yaml
+      relativeToChangelogFile: false

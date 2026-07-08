@@ -8,9 +8,12 @@ import static org.mockito.Mockito.when;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.junit.jupiter.api.Test;
 
@@ -20,6 +23,9 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
+import onlexnet.app.ports.out.InterpellationPublishQueueMessage;
+import onlexnet.app.ports.out.InterpellationPublishQueuePort;
+import onlexnet.app.ports.out.InterpellationPublishStatePort;
 import onlexnet.app.ports.out.SejmApiClient.BillItem;
 import onlexnet.app.ports.out.SejmApiClient.CommitteeSittingItem;
 import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
@@ -35,8 +41,14 @@ class SejmCollectServiceTest {
     void givenNullDate_whenCollectVotings_thenThrowsNullPointerExceptionWithMessage() {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
+        var queuePort = new RecordingQueuePort();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
 
         assertThatThrownBy(() -> service.collectVotings(10, null))
                 .isInstanceOf(NullPointerException.class)
@@ -48,7 +60,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
 
         assertThatThrownBy(() -> service.collectCommitteeSittings(10, null))
                 .isInstanceOf(NullPointerException.class)
@@ -60,7 +77,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
 
         assertThatThrownBy(() -> service.collectPrints(10, null))
                 .isInstanceOf(NullPointerException.class)
@@ -72,7 +94,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
 
         assertThatThrownBy(() -> service.collectInterpellations(10, null))
                 .isInstanceOf(NullPointerException.class)
@@ -84,7 +111,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
 
         assertThatThrownBy(() -> service.collectWrittenQuestions(10, null))
                 .isInstanceOf(NullPointerException.class)
@@ -96,7 +128,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
 
         assertThatThrownBy(() -> service.collectBills(10, null))
                 .isInstanceOf(NullPointerException.class)
@@ -108,7 +145,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
         var item1 = new VotingItem(
                 LocalDateTime.of(2026, 6, 13, 10, 0),
                 3,
@@ -150,7 +192,13 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var queuePort = new RecordingQueuePort();
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
         when(sejmApiClient.fetchCommitteeSittingsForDate(10, TEST_DATE)).thenReturn(null);
 
         var count = service.collectCommitteeSittings(10, TEST_DATE);
@@ -164,8 +212,14 @@ class SejmCollectServiceTest {
     void givenDate_whenCollectInterpellations_thenCallsApiWithMidnightDateTime() {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
+        var queuePort = new RecordingQueuePort();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
         var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
         when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
                 .thenReturn(List.of(new InterpellationItem(
@@ -182,15 +236,114 @@ class SejmCollectServiceTest {
         assertThat(repository.calls.get(0).date()).isEqualTo(TEST_DATE);
         assertThat(repository.calls.get(0).dataType()).isEqualTo("INTERPELLATION");
         assertThat(repository.calls.get(0).itemKey()).isEqualTo("77");
+        assertThat(queuePort.enqueued).hasSize(1);
+        assertThat(queuePort.enqueued.getFirst().message().domainMessageId())
+            .isEqualTo("term-10-interpellation-77");
+        assertThat(queuePort.enqueued.getFirst().message().attempt()).isEqualTo(1);
+        assertThat(queuePort.enqueued.getFirst().visibilityDelay()).isEqualTo(Duration.ZERO);
         verify(sejmApiClient).fetchInterpellationsModifiedSince(10, expectedSince);
     }
+
+    @Test
+    void givenQueuedStateAlreadyExists_whenCollectInterpellations_thenDoesNotEnqueueDuplicateMessage() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        var queuePort = new RecordingQueuePort();
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
+        var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
+        when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
+                .thenReturn(List.of(new InterpellationItem(
+                        77,
+                        "Interpelacja testowa",
+                        List.of("Ministerstwo"),
+                        "2026-06-13",
+                        "2026-06-13T00:00:00")));
+        repository.statuses.put("10:77", "QUEUED");
+
+        var count = service.collectInterpellations(10, TEST_DATE);
+
+        assertThat(count).isEqualTo(1);
+        assertThat(queuePort.enqueued).isEmpty();
+    }
+
+        @Test
+        void givenQueueEnqueueFails_whenCollectInterpellations_thenMarksRetryableEnqueueFailureState() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        var queuePort = new RecordingQueuePort();
+        queuePort.failWith = new RuntimeException("queue unavailable");
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
+        var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
+        when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
+            .thenReturn(List.of(new InterpellationItem(
+                77,
+                "Interpelacja testowa",
+                List.of("Ministerstwo"),
+                "2026-06-13",
+                "2026-06-13T00:00:00")));
+
+        assertThatThrownBy(() -> service.collectInterpellations(10, TEST_DATE))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessage("Failed to collect interpellations")
+            .hasCauseInstanceOf(IllegalStateException.class)
+            .cause()
+            .hasMessageContaining("Failed to enqueue interpellation publish message");
+
+        assertThat(repository.statuses.get("10:77")).isEqualTo("QUEUE_ENQUEUE_FAILED");
+        }
+
+        @Test
+        void givenPreviouslyFailedEnqueueState_whenCollectInterpellations_thenEnqueuesAgainAndTransitionsToQueued() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        repository.statuses.put("10:77", "QUEUE_ENQUEUE_FAILED");
+        var queuePort = new RecordingQueuePort();
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
+        var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
+        when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
+            .thenReturn(List.of(new InterpellationItem(
+                77,
+                "Interpelacja testowa",
+                List.of("Ministerstwo"),
+                "2026-06-13",
+                "2026-06-13T00:00:00")));
+
+        var count = service.collectInterpellations(10, TEST_DATE);
+
+        assertThat(count).isEqualTo(1);
+        assertThat(queuePort.enqueued).hasSize(1);
+        assertThat(repository.statuses.get("10:77")).isEqualTo("QUEUED");
+        }
 
     @Test
     void givenPrintItems_whenCollectPrints_thenCallsPrintApiAndUsesNumberAsKey() {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
         var item = new PrintItem(
                 "123-A",
                 "Projekt ustawy",
@@ -213,7 +366,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
         var item = new BillItem(
                 "UC-1",
                 "Ustawa o testach",
@@ -237,7 +395,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
         repository.failWith = new RuntimeException("database unavailable");
         when(sejmApiClient.fetchBillsReceivedSince(10, TEST_DATE))
                 .thenReturn(List.of(new BillItem("UC-1", "Ustawa", "2026-06-13", "Rządowy", "Nowy")));
@@ -263,7 +426,12 @@ class SejmCollectServiceTest {
             }
         };
         objectMapper.registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
         when(sejmApiClient.fetchPrintsModifiedSince(10, TEST_DATE))
                 .thenReturn(List.of(new PrintItem(
                         "123",
@@ -284,7 +452,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
         var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
         when(sejmApiClient.fetchWrittenQuestionsModifiedSince(10, expectedSince))
             .thenReturn(Arrays.asList(
@@ -310,7 +483,12 @@ class SejmCollectServiceTest {
         var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        var service = new SejmCollectService(sejmApiClient, repository, objectMapper);
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
 
         when(sejmApiClient.fetchCommitteeSittingsForDate(10, TEST_DATE))
                 .thenReturn(List.of(new CommitteeSittingItem(
@@ -330,9 +508,11 @@ class SejmCollectServiceTest {
         assertThat(repository.calls.get(0).dataType()).isEqualTo("COMMITTEE_SITTING");
     }
 
-    private static final class RecordingRepository implements SejmDailyDigestPersistence {
+        private static final class RecordingRepository
+            implements SejmDailyDigestPersistence, InterpellationPublishStatePort {
 
         private final List<UpsertCall> calls = new ArrayList<>();
+        private final Map<String, String> statuses = new HashMap<>();
         private RuntimeException failWith;
 
         @Override
@@ -366,9 +546,100 @@ class SejmCollectServiceTest {
         public boolean alreadyPublishedToday(final LocalDate date) {
             throw new UnsupportedOperationException("Not used by this test");
         }
+
+        @Override
+        public boolean tryCreateQueuedRecord(
+                final InterpellationPublishQueueMessage message,
+                final LocalDate collectionDate) {
+            var key = key(message.termNum(), message.interpellationNum());
+            var current = this.statuses.get(key);
+            if (current == null || "QUEUE_ENQUEUE_FAILED".equals(current)) {
+                this.statuses.put(key, "QUEUED");
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean tryClaimForPublish(final InterpellationPublishQueueMessage message) {
+            var key = key(message.termNum(), message.interpellationNum());
+            var current = this.statuses.get(key);
+            if ("QUEUED".equals(current) || "RETRY_SCHEDULED".equals(current)) {
+                this.statuses.put(key, "PROCESSING");
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean isPublished(final int termNum, final int interpellationNum) {
+            return "PUBLISHED".equals(this.statuses.get(key(termNum, interpellationNum)));
+        }
+
+        @Override
+        public void markPublished(
+                final InterpellationPublishQueueMessage message,
+                final String facebookPostMessage) {
+            this.statuses.put(key(message.termNum(), message.interpellationNum()), "PUBLISHED");
+        }
+
+        @Override
+        public void markPublishConfirmationPending(
+                final InterpellationPublishQueueMessage message,
+                final String errorMessage,
+                final String facebookPostMessage) {
+            this.statuses.put(key(message.termNum(), message.interpellationNum()), "PUBLISH_CONFIRMATION_PENDING");
+        }
+
+        @Override
+        public void markRetryScheduled(
+                final InterpellationPublishQueueMessage message,
+                final String errorMessage) {
+            this.statuses.put(key(message.termNum(), message.interpellationNum()), "RETRY_SCHEDULED");
+        }
+
+        @Override
+        public void markEnqueueFailed(
+                final InterpellationPublishQueueMessage message,
+                final String errorMessage) {
+            this.statuses.put(key(message.termNum(), message.interpellationNum()), "QUEUE_ENQUEUE_FAILED");
+        }
+
+        @Override
+        public void markDeadLetter(
+                final InterpellationPublishQueueMessage message,
+                final String errorMessage) {
+            this.statuses.put(key(message.termNum(), message.interpellationNum()), "DEAD_LETTER");
+        }
+
+        private String key(final int termNum, final int interpellationNum) {
+            return termNum + ":" + interpellationNum;
+        }
+    }
+
+    private static final class RecordingQueuePort implements InterpellationPublishQueuePort {
+
+        private final List<QueueCall> enqueued = new ArrayList<>();
+        private RuntimeException failWith;
+
+        @Override
+        public void enqueue(final InterpellationPublishQueueMessage message, final Duration visibilityDelay) {
+            if (this.failWith != null) {
+                throw this.failWith;
+            }
+            this.enqueued.add(new QueueCall(message, visibilityDelay));
+        }
+
+        @Override
+        public void enqueueDeadLetter(final InterpellationPublishQueueMessage message) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
     }
 
     private record UpsertCall(LocalDate date, String dataType, String itemKey,
             String title, String itemJson) {
+    }
+
+    private record QueueCall(InterpellationPublishQueueMessage message, Duration visibilityDelay) {
     }
 }

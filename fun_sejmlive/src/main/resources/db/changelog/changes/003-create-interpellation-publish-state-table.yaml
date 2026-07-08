@@ -1,0 +1,99 @@
+databaseChangeLog:
+  - changeSet:
+      id: 003-create-interpellation-publish-state-table
+      author: sejmstream
+      changes:
+        - createTable:
+            tableName: sejm_interpellation_publish_state
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: term_num
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: interpellation_num
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: domain_message_id
+                  type: VARCHAR(140)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: collection_date
+                  type: DATE
+                  constraints:
+                    nullable: false
+              - column:
+                  name: interpellation_title
+                  type: VARCHAR(1000)
+              - column:
+                  name: status
+                  type: VARCHAR(30)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attempt
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: first_queued_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_attempt_at
+                  type: TIMESTAMP
+              - column:
+                  name: published_at
+                  type: TIMESTAMP
+              - column:
+                  name: facebook_post_message
+                  type: TEXT
+              - column:
+                  name: last_error
+                  type: VARCHAR(1000)
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: sejm_interpellation_publish_state
+            columnNames: term_num, interpellation_num
+            constraintName: uk_interpellation_publish_state_term_interpellation
+        - addUniqueConstraint:
+            tableName: sejm_interpellation_publish_state
+            columnNames: domain_message_id
+            constraintName: uk_interpellation_publish_state_message_id
+        - sql:
+            sql: ALTER TABLE sejm_interpellation_publish_state ADD CONSTRAINT chk_interpellation_publish_state_status CHECK (status IN ('QUEUED', 'RETRY_SCHEDULED', 'PUBLISHED', 'DEAD_LETTER'))
+        - createIndex:
+            tableName: sejm_interpellation_publish_state
+            indexName: idx_interpellation_publish_state_status
+            columns:
+              - column:
+                  name: status
+        - createIndex:
+            tableName: sejm_interpellation_publish_state
+            indexName: idx_interpellation_publish_state_collection_date
+            columns:
+              - column:
+                  name: collection_date

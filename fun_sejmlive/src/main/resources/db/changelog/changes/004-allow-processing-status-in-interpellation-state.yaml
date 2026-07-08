@@ -1,0 +1,9 @@
+databaseChangeLog:
+  - changeSet:
+      id: 004-allow-processing-status-in-interpellation-state
+      author: sejmstream
+      changes:
+        - sql:
+            sql: ALTER TABLE sejm_interpellation_publish_state DROP CONSTRAINT chk_interpellation_publish_state_status
+        - sql:
+            sql: ALTER TABLE sejm_interpellation_publish_state ADD CONSTRAINT chk_interpellation_publish_state_status CHECK (status IN ('QUEUED', 'PROCESSING', 'RETRY_SCHEDULED', 'PUBLISHED', 'DEAD_LETTER'))

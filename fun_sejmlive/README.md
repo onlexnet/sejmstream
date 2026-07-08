@@ -26,20 +26,28 @@ For the scheduled timer functions, set these values in local settings when you w
 - `TZ=Europe/Warsaw`
 - `WEBSITE_TIME_ZONE=Europe/Warsaw`
 
+For INTERPELLATION queue-based Facebook publication, also set:
+
+- `INTERPELLATION_PUBLISH_QUEUE_NAME=sejm-interpellations-publish`
+- `INTERPELLATION_PUBLISH_DEAD_LETTER_QUEUE_NAME=sejm-interpellations-publish-deadletter`
+- `INTERPELLATION_PUBLISH_MAX_ATTEMPTS=5`
+- `INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS=60`
+- `INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER=2.0`
+- `INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS=900`
+
 The timer expression is `0 30 23 * * *`, which resolves to 23:30 in the configured Poland time zone. On Linux-hosted Azure Functions, `TZ` is the setting that keeps the timer aligned with local Warsaw time.
+
+Daily digest publication remains timer/HTTP-triggered and unchanged in scope. INTERPELLATION publication now runs as a separate queue-triggered flow with retry and dead-letter handling.
 
 
 1. Copy `local.settings.json.example` to `local.settings.json`.
 2. Set `AzureWebJobsStorage` in `local.settings.json`:
    - For Azurite, use `UseDevelopmentStorage=true`.
    - For Azure Storage, use a connection string from your storage account.
-3. Set `Storage` in `local.settings.json`:
-   - For Azurite, use `UseDevelopmentStorage=true`.
-   - For Azure Storage, use the same connection string value used by `AzureWebJobsStorage`.
-4. Set `FUNCTIONS_WORKER_RUNTIME` to `java`.
-5. Optional but recommended for telemetry: set `APPLICATIONINSIGHTS_CONNECTION_STRING`.
-6. Legacy compatibility (optional): set `APPINSIGHTS_INSTRUMENTATIONKEY`.
-7. Keep `local.settings.json` out of source control.
+3. Set `FUNCTIONS_WORKER_RUNTIME` to `java`.
+4. Optional but recommended for telemetry: set `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+5. Legacy compatibility (optional): set `APPINSIGHTS_INSTRUMENTATIONKEY`.
+6. Keep `local.settings.json` out of source control.
 
 If you use `UseDevelopmentStorage=true`, make sure Azurite is running before starting Functions.
 
@@ -74,7 +82,7 @@ Run the function host locally from module root:
 
 Example with explicit local env overrides:
 
-- `Storage=UseDevelopmentStorage=true AzureWebJobsStorage=UseDevelopmentStorage=true FUNCTIONS_WORKER_RUNTIME=java mvn azure-functions:run`
+- `AzureWebJobsStorage=UseDevelopmentStorage=true FUNCTIONS_WORKER_RUNTIME=java mvn azure-functions:run`
 
 Default local endpoint:
 
