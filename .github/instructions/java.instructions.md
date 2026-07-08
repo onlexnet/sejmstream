@@ -16,7 +16,7 @@ applyTo: '**/*.java'
 - **Records**: For classes primarily intended to store data (e.g., DTOs, immutable data structures), **Java Records should be used instead of traditional classes**.
 - **Pattern Matching**: Utilize pattern matching for `instanceof` and `switch` expressions to simplify conditional logic and type casting.
 - **Type Inference**: Use `var` for local variable declarations to improve readability, but only when the type is explicitly clear from the right-hand side of the expression.
-- **Immutability**: Favor immutable objects. Make classes and fields `final` when possible.  Do not make method args or variables as `final` when they are effectively final. Use collections from `List.of()`/`Map.of()` for fixed data. Use `Stream.toList()` to create immutable lists.
+- **Immutability**: Favor immutable objects. Make classes and fields `final` when possible. Do not mark method parameters as final, do not mark variables as `final` when they are effectively final. Use collections from `List.of()`/`Map.of()` for fixed data. Use `Stream.toList()` to create immutable lists.
 - **Streams and Lambdas**: Use the Streams API and lambda expressions for collection processing. Employ method references (e.g., `stream.map(Foo::toBar)`).
 - **Null Handling**: Avoid returning or accepting `null`. Use `Optional<T>` for possibly-absent values. Use JSpecify annotations to understand where null is allowed to skip unnecessary null checks.
 - **JavaDoc for Public Contracts**: Add short JavaDoc comments to public classes, interfaces, and methods when they define a contract. Describe the responsibility, intent, inputs, outputs, and guarantees of the API, not obvious implementation details. Do not add JavaDoc to methods overriding a base class or interface contract unless they need to document important implementation-specific behavior or constraints.
@@ -32,6 +32,11 @@ applyTo: '**/*.java'
   - `lowercase` for package names.
 - Use nouns for classes (`UserService`) and verbs for methods (`getUserById`).
 - Avoid abbreviations and Hungarian notation.
+
+### Spring patterns
+- Avoid generating constructor, use Lombok @RequiredArgsConstructor to inject dependencies
+- if a class is a Spring bean (like @Component) and additional creation-related logic should be invoked, create method `init' marked with @PostConstruct
+- do not check nullability of injected dependencies for Spring beans - it is guaranted by Spring they are not null.
 
 ### Common Bug Patterns
 
