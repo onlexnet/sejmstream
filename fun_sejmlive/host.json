@@ -7,6 +7,12 @@
   "extensions": {
     "durableTask": {
       "hubName": "SejmApiDemoHub"
+    },
+    "queues": {
+      "maxPollingInterval": "00:00:05",
+      "visibilityTimeout": "00:00:30",
+      "batchSize": 1,
+      "maxDequeueCount": 1
     }
   },
   "logging": {
