@@ -5,9 +5,6 @@ RUN apt update && apt upgrade -y && apt install -y \
     git \
     zip \
     unzip \
-    python3.11 \
-    python3.11-venv \
-    python3-pip \
     # require graphviz to run PlantUML vscode plugin
     # more: https://plantuml.com/graphviz-dot
     graphviz \
@@ -30,5 +27,3 @@ USER worker
 # Ensure ~/.local/bin is in PATH (needed for tools like GitHub Copilot CLI)
 ENV PATH="/home/worker/.local/bin:$PATH"
 
-# Install SDKMAN
-RUN curl -s "https://get.sdkman.io" | bash
