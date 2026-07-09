@@ -1,0 +1,24 @@
+@startuml C4_Context
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title System Context Diagram - SejmStream
+
+Person(admin, "Admin", "Manages system via Telegram bot commands")
+
+System(sejmstream, "SejmStream", "Collects Polish Sejm data daily and publishes digests to social media")
+
+System_Ext(sejm_api, "Sejm API", "api.sejm.gov.pl - Official Polish Parliament REST API")
+System_Ext(facebook, "Facebook Graph API", "Social media publishing platform")
+System_Ext(telegram, "Telegram Bot API", "Admin interface and notifications")
+
+SystemDb_Ext(postgres, "PostgreSQL", "Stores collected digest items and publish state")
+
+Rel(sejmstream, sejm_api, "Fetches votings, interpellations, prints, bills, committees, questions", "HTTPS/JSON")
+Rel(sejmstream, facebook, "Publishes daily digests and interpellation posts", "HTTPS/REST")
+Rel(sejmstream, telegram, "Sends admin responses", "HTTPS/Bot API")
+Rel(telegram, sejmstream, "Delivers webhook messages", "HTTPS POST")
+Rel(admin, telegram, "Sends commands: /help, /data, /collect, /publish")
+Rel(sejmstream, postgres, "Reads/writes digest items, publish state, audit logs", "JDBC")
+
+SHOW_LEGEND()
+@enduml

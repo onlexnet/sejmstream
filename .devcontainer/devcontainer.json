@@ -43,7 +43,8 @@
         "github.vscode-github-actions",
         "GitHub.vscode-pull-request-github",
         "databricks.neon-local-connect",
-        "ms-vscode.vscode-chat-customizations-evaluations"
+        "ms-vscode.vscode-chat-customizations-evaluations",
+        "jebbs.plantuml"
       ],
       "settings": {
         "java.configuration.detectJdksAtStart": true,

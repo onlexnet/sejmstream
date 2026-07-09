@@ -1,0 +1,78 @@
+@startuml seq_collect_daily_digest
+title Hourly Data Collection (Durable Orchestrator)
+
+participant "Timer/HTTP" as trigger
+participant "SejmCollectFunctions" as fn
+participant "Durable Orchestrator" as orch
+participant "SejmCollectOperations" as ops
+participant "SejmApiClient" as api
+participant "SejmDailyDigestPersistence" as db
+participant "InterpellationPublishQueuePort" as queue
+
+trigger -> fn: Timer fires (0 0 * * * *)\nor HTTP POST
+activate fn
+
+fn -> orch: startNewOrchestration("Fun_CollectOrchestrator")
+activate orch
+
+orch -> orch: getCurrentTermNum()\n(SejmApiClient.fetchTerms(), cached)
+
+note right of orch
+  Activities execute **sequentially**
+  with retry policy:
+  maxRetries=3, delay=10s,
+  backoffCoefficient=2.0,
+  maxInterval=2min, timeout=10min
+end note
+
+orch -> ops: callActivityWithRetry("Intern_CollectVotings")
+activate ops
+ops -> api: fetchVotingsForDate(termNum, today)
+api --> ops: List<VotingItem>
+ops -> db: upsertItem(date, VOTING, key, json)
+ops --> orch: count
+deactivate ops
+
+orch -> ops: callActivityWithRetry("Intern_CollectCommittees")
+activate ops
+ops -> api: fetchCommitteeSittingsForDate(termNum, today)
+ops -> db: upsertItem(date, COMMITTEE_SITTING, key, json)
+ops --> orch: count
+deactivate ops
+
+orch -> ops: callActivityWithRetry("Intern_CollectPrints")
+activate ops
+ops -> api: fetchPrintsModifiedSince(termNum, today)
+ops -> db: upsertItem(date, PRINT, key, json)
+ops --> orch: count
+deactivate ops
+
+orch -> ops: callActivityWithRetry("Intern_CollectInterpellations")
+activate ops
+ops -> api: fetchInterpellationsModifiedSince(termNum, since)
+ops -> db: upsertItem(date, INTERPELLATION, key, json)
+ops -> queue: enqueue(InterpellationPublishQueueMessage, Duration.ZERO)
+ops --> orch: count
+deactivate ops
+
+orch -> ops: callActivityWithRetry("Intern_CollectQuestions")
+activate ops
+ops -> api: fetchWrittenQuestionsModifiedSince(termNum, since)
+ops -> db: upsertItem(date, WRITTEN_QUESTION, key, json)
+ops --> orch: count
+deactivate ops
+
+orch -> ops: callActivityWithRetry("Intern_CollectBills")
+activate ops
+ops -> api: fetchBillsReceivedSince(termNum, today)
+ops -> db: upsertItem(date, BILL, key, json)
+ops --> orch: count
+deactivate ops
+
+orch --> fn: CollectResult(countsByType)
+deactivate orch
+
+fn --> trigger: 200 OK / CollectDailyDigestOutcome.Collected
+deactivate fn
+
+@enduml

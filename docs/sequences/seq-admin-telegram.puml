@@ -1,0 +1,102 @@
+@startuml seq_admin_telegram
+title Admin Command via Telegram Bot
+
+actor "Admin" as admin
+participant "Telegram API" as tg_api
+participant "TelegramBotFunctions" as fn
+participant "TelegramAdminActionParser" as parser
+participant "AdminUseCase" as uc
+participant "AdminAccessPolicy" as policy
+participant "CollectDailyDigestUseCase" as collect
+participant "PublishDailyDigestUseCase" as publish
+participant "SejmApiClient" as api
+participant "TelegramAdminOutcomePresenter" as presenter
+participant "TelegramNotifier" as notifier
+
+admin -> tg_api: Send message "/collect"
+tg_api -> fn: POST /api/telegram/webhook\n{update: {message: {chat: {id}, text}}}
+activate fn
+
+fn -> fn: Parse TelegramUpdate\nBuild AdminCommandRequest(\n  requestId, requestedAt,\n  ExternalActor(chatId), action, metadata)
+
+fn -> parser: parse(messageText)
+activate parser
+parser --> fn: AdminAction.Collect
+deactivate parser
+
+fn -> uc: handleAdminAction(AdminCommandRequest)
+activate uc
+
+uc -> policy: isAllowed(actor, action)
+activate policy
+policy --> uc: true/false
+deactivate policy
+
+alt Unauthorized
+    uc --> fn: AdminOutcome.Unauthorized
+else Authorized
+
+    alt Action = Help
+        uc --> fn: AdminOutcome.HelpOverview
+
+    else Action = Data
+        uc -> api: fetchTerms()
+        api --> uc: List<SejmTerm>
+        alt No terms found
+            uc --> fn: AdminOutcome.DataEmpty
+        else Terms found
+            uc --> fn: AdminOutcome.DataSummary(termNum, from, to, termCount)
+        end
+
+    else Action = Collect
+        uc -> collect: collect(CollectDailyDigestCommand(today))
+        alt TermMissing
+            collect --> uc: CollectDailyDigestOutcome.TermMissing
+            uc --> fn: AdminOutcome.CollectTermMissing
+        else Collected
+            collect --> uc: CollectDailyDigestOutcome.Collected(...)
+            uc --> fn: AdminOutcome.CollectSuccess(date, termNum, counts...)
+        else Failed
+            collect --> uc: CollectDailyDigestOutcome.Failed(reason)
+            uc --> fn: AdminOutcome.CollectFailure(reason)
+        end
+
+    else Action = Publish
+        uc -> publish: publish(PublishDailyDigestCommand(today))
+        publish --> uc: PublishDailyDigestOutcome
+        uc --> fn: AdminOutcome.PublishSuccess / PublishAlreadyDone / PublishNoData / PublishFailure
+
+    else Action = Noop
+        uc --> fn: AdminOutcome.NoopIgnored
+
+    else Action = Unknown(command)
+        uc --> fn: AdminOutcome.UnknownAction(command)
+    end
+end
+
+deactivate uc
+
+fn -> fn: Check outcome.deliveryPolicy()
+
+alt deliveryPolicy == IMMEDIATE_REPLY
+    fn -> presenter: present(AdminOutcome)
+    activate presenter
+    presenter --> fn: String responseText
+    deactivate presenter
+
+    fn -> notifier: sendMessage(chatId, responseText)
+    activate notifier
+    notifier -> tg_api: POST /sendMessage
+    tg_api --> notifier: 200 OK
+    notifier --> fn: sent
+    deactivate notifier
+else deliveryPolicy == NO_REPLY
+    fn -> fn: No response sent (Noop)
+end
+
+fn --> tg_api: 200 OK
+deactivate fn
+
+tg_api -> admin: Display response message
+
+@enduml

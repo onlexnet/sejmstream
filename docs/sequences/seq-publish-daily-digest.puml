@@ -1,0 +1,58 @@
+@startuml seq_publish_daily_digest
+title Daily Digest Publishing to Facebook
+
+participant "Timer/HTTP" as trigger
+participant "FacebookPublishingFunctions" as fn
+participant "PublishDailyDigestUseCase" as uc
+participant "SejmDailyDigestPersistence" as db
+participant "SejmDigestService" as svc
+participant "FacebookPublisher" as fb
+
+trigger -> fn: Timer fires (0 30 23 * * *)\nor HTTP POST /api/publish
+activate fn
+
+fn -> uc: publish(PublishDailyDigestCommand(date))
+activate uc
+
+uc -> db: alreadyPublishedToday(date)
+db --> uc: boolean
+
+alt Already published today
+    uc --> fn: SkippedAlreadyPublished
+else No previous publish
+
+    uc -> db: findByDate(date)
+    db --> uc: List<SejmDailyDigestItem>
+
+    alt No items collected
+        uc --> fn: SkippedNoDigest
+    else Items found
+
+        uc -> svc: buildDigest(items)
+        activate svc
+        note right of svc
+            Formats Polish-language post:
+            "📋 Podsumowanie dnia [date]"
+            Sections: Głosowania, Komisje,
+            Druki, Interpelacje, Zapytania, Ustawy
+        end note
+        svc --> uc: String digestText
+        deactivate svc
+
+        uc -> fb: publish(digestText)
+        activate fb
+        fb --> uc: success/failure
+        deactivate fb
+
+        uc -> db: insertPublishLog(date, digestText, success, null)
+
+        uc --> fn: Published / Failed
+    end
+end
+
+deactivate uc
+
+fn --> trigger: HTTP 200 + outcome
+deactivate fn
+
+@enduml

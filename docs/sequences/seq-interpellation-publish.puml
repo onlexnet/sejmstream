@@ -1,0 +1,108 @@
+@startuml seq_interpellation_publish
+title Interpellation Queue Processing with Retry
+
+participant "Azure Storage Queue" as queue
+participant "InterpellationPublishQueueFunctions" as fn
+participant "ProcessInterpellationPublishUseCase" as uc
+participant "InterpellationPublishStatePort" as state
+participant "FacebookPublisher" as fb
+participant "InterpellationPublishQueuePort" as qport
+participant "InterpellationPublishRetryPolicy" as retry
+
+queue -> fn: Message dequeued\n(sejm-interpellations-publish)
+activate fn
+
+fn -> fn: Deserialize InterpellationPublishQueueMessage
+fn -> uc: process(ProcessInterpellationPublishCommand)
+activate uc
+
+uc -> state: isPublished(termNum, interpellationNum)
+state --> uc: boolean
+
+alt Already published
+    uc --> fn: SkippedAlreadyPublished
+else Not yet published
+
+    uc -> state: tryClaimForPublish(message)
+    activate state
+    note right of state
+        UPDATE ... SET status='PROCESSING'
+        WHERE status IN ('QUEUED', 'RETRY_SCHEDULED')
+    end note
+    state --> uc: boolean (claimed)
+    deactivate state
+
+    alt Claim failed (concurrent processing)
+        uc --> fn: SkippedAlreadyPublished
+    else Claimed successfully
+
+        uc -> fb: publish(formatFacebookPost(message))
+        activate fb
+
+        alt Publish successful
+            fb --> uc: success
+            deactivate fb
+            uc -> state: markPublished(message, postMessage)
+            uc --> fn: Published
+
+        else Publish failed (confirmation uncertain)
+            fb --> uc: ambiguous exception
+            deactivate fb
+            uc -> state: markPublishConfirmationPending(message, error, postMessage)
+            uc --> fn: PublishConfirmationPending
+
+        else Publish failed (definite)
+            fb --> uc: exception
+            deactivate fb
+
+            uc -> retry: maxAttempts()
+            activate retry
+            retry --> uc: int maxAttempts
+            deactivate retry
+
+            alt attempt < maxAttempts
+                uc -> retry: retryDelayForAttempt(attempt)
+                activate retry
+                note right of retry
+                    Exponential backoff:
+                    delay × backoffMultiplier^(attempt-1)
+                    capped at maxRetryDelaySeconds (900s)
+                end note
+                retry --> uc: Duration delay
+                deactivate retry
+
+                uc -> qport: enqueue(message.withAttempt(next).withLastError(err), delay)
+                activate qport
+                note right of qport
+                    Re-enqueue to same queue
+                    with VisibilityTimeout = delay
+                end note
+                qport --> uc: enqueued
+                deactivate qport
+
+                uc -> state: markRetryScheduled(message, error)
+                uc --> fn: RetryScheduled
+
+            else attempt >= maxAttempts
+                uc -> qport: enqueueDeadLetter(message)
+                activate qport
+                note right of qport
+                    Enqueue to:
+                    sejm-interpellations-publish-deadletter
+                end note
+                qport --> uc: enqueued
+                deactivate qport
+
+                uc -> state: markDeadLetter(message, error)
+                uc --> fn: DeadLettered
+            end
+        end
+    end
+end
+
+deactivate uc
+
+fn --> queue: Message completed
+deactivate fn
+
+@enduml

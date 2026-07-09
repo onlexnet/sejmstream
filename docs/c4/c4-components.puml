@@ -1,0 +1,55 @@
+@startuml C4_Components
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram - SejmStream Function App (Hexagonal Architecture)
+
+Container_Boundary(func_app, "Azure Function App") {
+
+    ' === INBOUND ADAPTERS (Driving) ===
+    Component(collect_fn, "SejmCollectFunctions", "Timer + HTTP + Durable Orchestrator", "Hourly collection trigger with 6 sequential activities (with retry)")
+    Component(publish_fn, "FacebookPublishingFunctions", "Timer + HTTP", "Daily digest publish at 23:30")
+    Component(interpellation_fn, "InterpellationPublishQueueFunctions", "Queue Trigger", "Processes interpellation publish messages")
+    Component(telegram_fn, "TelegramBotFunctions", "HTTP Webhook", "Receives Telegram admin commands")
+
+    ' === USE CASES (Application Core) ===
+    Component(collect_uc, "CollectDailyDigestUseCase", "Use Case", "Orchestrates data collection from Sejm API")
+    Component(publish_uc, "PublishDailyDigestUseCase", "Use Case", "Formats and publishes daily digest")
+    Component(interpellation_uc, "ProcessInterpellationPublishUseCase", "Use Case", "Publishes interpellations with retry logic")
+    Component(admin_uc, "AdminUseCase", "Use Case", "Handles admin commands with authorization")
+    Component(digest_svc, "SejmDigestService", "Domain Service", "Builds Polish-language digest text")
+
+    ' === OUTBOUND ADAPTERS (Driven) ===
+    Component(sejm_client, "DefaultSejmApiClient", "REST Client", "OpenAPI-generated Sejm API client")
+    Component(fb_publisher, "DefaultFacebookPublisher", "RestFB", "Publishes to Facebook page")
+    Component(tg_notifier, "DefaultTelegramNotifier", "HTTP Client", "Sends Telegram messages")
+    Component(persistence, "DefaultSejmDailyDigestPersistence", "JdbcTemplate", "Upsert/query digest items")
+    Component(state_port, "InterpellationPublishStateAdapter", "JdbcTemplate", "Tracks publish state and retries")
+    Component(queue_port, "InterpellationPublishQueueAdapter", "Azure SDK", "Enqueues messages with visibility timeout")
+    Component(collect_ops, "SejmCollectService", "Service", "Delegates collection per data type to API + persistence")
+    Component(access_policy, "PropertyAdminAccessPolicy", "Config", "Actor+action-based authorization")
+}
+
+' === Inbound relationships ===
+Rel(collect_fn, collect_uc, "invokes")
+Rel(publish_fn, publish_uc, "invokes")
+Rel(interpellation_fn, interpellation_uc, "invokes")
+Rel(telegram_fn, admin_uc, "invokes")
+
+' === Use case to outbound ===
+Rel(collect_uc, collect_ops, "delegates collection")
+Rel(collect_ops, sejm_client, "fetches data")
+Rel(collect_ops, persistence, "upserts items")
+Rel(collect_ops, queue_port, "enqueues interpellations")
+Rel(publish_uc, persistence, "queries by date")
+Rel(publish_uc, digest_svc, "builds digest text")
+Rel(publish_uc, fb_publisher, "publishes post")
+Rel(interpellation_uc, state_port, "claim/update state")
+Rel(interpellation_uc, fb_publisher, "publishes post")
+Rel(interpellation_uc, queue_port, "retry/dead-letter")
+Rel(admin_uc, access_policy, "checks authorization")
+Rel(admin_uc, collect_uc, "triggers collection")
+Rel(admin_uc, publish_uc, "triggers publishing")
+Rel(admin_uc, tg_notifier, "sends response")
+
+SHOW_LEGEND()
+@enduml

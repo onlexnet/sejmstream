@@ -1,0 +1,33 @@
+@startuml C4_Containers
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram - SejmStream
+
+Person(admin, "Admin", "Manages system via Telegram")
+
+System_Boundary(azure, "Azure Cloud") {
+    Container(func_app, "Azure Function App", "Java 21, Spring Boot, Flex Consumption", "Hosts all business logic: collection, publishing, admin")
+    ContainerDb(storage_queues, "Azure Storage Queues", "Azure Storage", "sejm-interpellations-publish\nsejm-interpellations-publish-deadletter")
+    Container(durable_hub, "Durable Task Hub", "Azure Storage", "Orchestrates parallel collection activities")
+    Container(key_vault, "Azure Key Vault", "Azure Key Vault", "Stores secrets: FB_TOKEN, DB credentials, Telegram token")
+    Container(app_insights, "Application Insights", "Azure Monitor", "Telemetry, logging, alerting")
+}
+
+SystemDb_Ext(postgres, "PostgreSQL", "Digest items, publish state, audit logs")
+System_Ext(sejm_api, "Sejm API", "api.sejm.gov.pl")
+System_Ext(facebook, "Facebook Graph API", "Publishing platform")
+System_Ext(telegram, "Telegram Bot API", "Admin interface")
+
+Rel(admin, telegram, "Commands")
+Rel(telegram, func_app, "Webhook POST /api/telegram/webhook", "HTTPS")
+Rel(func_app, sejm_api, "Fetches parliamentary data", "HTTPS")
+Rel(func_app, facebook, "Publishes posts", "HTTPS")
+Rel(func_app, telegram, "Sends responses", "HTTPS")
+Rel(func_app, postgres, "CRUD operations", "JDBC")
+Rel(func_app, storage_queues, "Enqueue/dequeue interpellation messages", "Azure SDK")
+Rel(func_app, durable_hub, "Orchestrator state, activity scheduling", "Azure SDK")
+Rel(func_app, key_vault, "Reads secrets at startup", "MSI")
+Rel(func_app, app_insights, "Sends telemetry", "SDK")
+
+SHOW_LEGEND()
+@enduml
