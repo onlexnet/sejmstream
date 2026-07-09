@@ -156,7 +156,7 @@ resource "azurerm_function_app_flex_consumption" "main" {
   storage_access_key          = azurerm_storage_account.function_app.primary_access_key
 
   runtime_name           = "java"
-  runtime_version        = "21"
+  runtime_version        = "25"
   maximum_instance_count = 100
   instance_memory_in_mb  = 2048
 
