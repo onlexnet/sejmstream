@@ -8,7 +8,7 @@
 	<description>Azure Functions module for Sejm API demo workflows</description>
 
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<azure.functions.maven.plugin.version>1.39.0</azure.functions.maven.plugin.version>
