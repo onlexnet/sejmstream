@@ -31,6 +31,8 @@ services:
       - devcontainer-gh:/home/worker/.config/gh
       # Persist Copilot CLI config/login state across rebuilds
       - devcontainer-copilot:/home/worker/.config/github-copilot
+      # Persist Copilot CLI credentials/auth token (stored in ~/.copilot/config.json)
+      - devcontainer-copilot-cli:/home/worker/.copilot
 
     # Overrides default command so things don't shut down after the process ends.
     command: /bin/sh -c "while sleep 1000; do :; done"
@@ -41,3 +43,4 @@ volumes:
   devcontainer-azure:
   devcontainer-gh:
   devcontainer-copilot:
+  devcontainer-copilot-cli:

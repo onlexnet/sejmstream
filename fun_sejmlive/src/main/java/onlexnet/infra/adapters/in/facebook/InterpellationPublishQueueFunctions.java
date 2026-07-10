@@ -50,6 +50,8 @@ public class InterpellationPublishQueueFunctions {
                     name = "message",
                     queueName = "%INTERPELLATION_PUBLISH_QUEUE_NAME%",
                 connection = "AzureWebJobsStorage")
+            // Consumer expects a raw JSON string produced by QueueClient.sendMessage(String).
+            // This requires host.json queues.messageEncoding="none"; base64 mode would fail before this method is invoked.
             final String queueMessage,
             final ExecutionContext executionContext) {
         final InterpellationPublishQueueMessage payload;

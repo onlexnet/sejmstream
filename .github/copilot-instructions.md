@@ -1,5 +1,22 @@
 # Copilot Instructions for SejmStream Project
 
+## Docs-First Execution Policy (Mandatory)
+
+Before any implementation:
+- Review relevant docs under docs/ (domain model, ports/contracts, runbook, ADRs, C4, sequences).
+- Treat docs as authoritative for behavior and architecture.
+
+During implementation:
+- Keep naming, boundaries, and flow aligned with docs.
+- If docs are missing or outdated, update docs in the same change.
+- If ADR-level behavior changes, update or add ADR before finalizing code.
+
+For every substantial change, include a brief sync section:
+- Docs used
+- Code changed
+- Docs changed
+- Any intentional temporary drift with follow-up action
+
 ## Project Overview
 This is a Spring Boot application that interacts with the Sejm API and Face API to track MP (Member of Parliament) statistics.
 
