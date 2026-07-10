@@ -21,6 +21,7 @@ Edit `local.settings.json` with:
   "IsEncrypted": false,
   "Values": {
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "Storage": "UseDevelopmentStorage=true",
     "FUNCTIONS_WORKER_RUNTIME": "java",
     "DB_URL": "jdbc:postgresql://localhost:5432/sejmstream",
     "DB_USERNAME": "postgres",
@@ -34,6 +35,10 @@ Edit `local.settings.json` with:
   }
 }
 ```
+
+`AzureWebJobsStorage` and `Storage` point to different Azure Storage accounts in production
+(see ADR-007): `AzureWebJobsStorage` is reserved for the Functions host/runtime, while `Storage`
+backs domain-logic queues. Locally both can point at the same Azurite instance.
 
 ### Database Setup
 ```bash
@@ -316,7 +321,8 @@ ORDER BY updated_at DESC;
 | Resource | Name Pattern | Purpose |
 |----------|-------------|---------|
 | Function App | `sejmstr-{env}-func-*` | Application runtime |
-| Storage Account | `sejmstr{env}st*` | Queues + function state |
+| Function Storage Account | `sejmstr{env}fn*` | Function host/runtime only: deployment package, Durable Functions state (`AzureWebJobsStorage`) |
+| Domain Storage Account | `sejmstr{env}dom*` | Domain logic queues: interpellation publish + dead-letter (`Storage`) |
 | Key Vault | `sejmstr{env}kv*` | Secrets management |
 | App Insights | `sejmstr-{env}-appi-*` | Monitoring |
 

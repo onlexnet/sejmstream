@@ -7,8 +7,8 @@ Person(admin, "Admin", "Manages system via Telegram")
 
 System_Boundary(azure, "Azure Cloud") {
     Container(func_app, "Azure Function App", "Java 21, Spring Boot, Flex Consumption", "Hosts all business logic: collection, publishing, admin")
-    ContainerDb(storage_queues, "Azure Storage Queues", "Azure Storage", "sejm-interpellations-publish\nsejm-interpellations-publish-deadletter")
-    Container(durable_hub, "Durable Task Hub", "Azure Storage", "Orchestrates parallel collection activities")
+    ContainerDb(storage_queues, "Domain Storage Account", "Azure Storage (Storage)", "sejm-interpellations-publish\nsejm-interpellations-publish-deadletter")
+    Container(durable_hub, "Function Storage Account", "Azure Storage (AzureWebJobsStorage)", "Function host bookkeeping, deployment package, Durable Task Hub state")
     Container(key_vault, "Azure Key Vault", "Azure Key Vault", "Stores secrets: FB_TOKEN, DB credentials, Telegram token")
     Container(app_insights, "Application Insights", "Azure Monitor", "Telemetry, logging, alerting")
 }

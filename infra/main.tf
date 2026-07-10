@@ -47,6 +47,7 @@ locals {
 
   function_service_plan_name    = "${local.resource_prefix}-func-plan-flex"
   function_storage_account_name = "${local.name_prefix}${local.environment}fn${local.global_suffix}"
+  domain_storage_account_name   = "${local.name_prefix}${local.environment}dom${local.global_suffix}"
   function_app_name             = "${local.resource_prefix}-func-flex-${local.global_suffix}"
 }
 
@@ -128,14 +129,28 @@ resource "azurerm_storage_container" "function_app_deployment" {
   container_access_type = "private"
 }
 
+# Dedicated storage account for domain logic (interpellation publish queues), kept separate
+# from the Functions runtime/host storage account (azurerm_storage_account.function_app) which
+# is required solely to create and run the Azure Function App (AzureWebJobsStorage, deployment
+# container, Durable Functions task hub state).
+resource "azurerm_storage_account" "domain" {
+  name                     = local.domain_storage_account_name
+  resource_group_name      = azurerm_resource_group.main.name
+  location                 = azurerm_resource_group.main.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  min_tls_version          = "TLS1_2"
+  tags                     = local.common_tags
+}
+
 resource "azurerm_storage_queue" "interpellation_publish" {
   name               = var.interpellation_publish_queue_name
-  storage_account_id = azurerm_storage_account.function_app.id
+  storage_account_id = azurerm_storage_account.domain.id
 }
 
 resource "azurerm_storage_queue" "interpellation_publish_dead_letter" {
   name               = var.interpellation_publish_dead_letter_queue_name
-  storage_account_id = azurerm_storage_account.function_app.id
+  storage_account_id = azurerm_storage_account.domain.id
 }
 
 resource "azurerm_function_app_flex_consumption" "main" {
@@ -173,7 +188,11 @@ resource "azurerm_function_app_flex_consumption" "main" {
       AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
       # Required for Flex Consumption when using connection-string storage auth.
       # Remove together with storage_access_key above once MSI is fully supported.
-      AzureWebJobsStorage                            = azurerm_storage_account.function_app.primary_connection_string
+      # Function/runtime storage only (host bookkeeping, deployment, Durable Functions state).
+      AzureWebJobsStorage = azurerm_storage_account.function_app.primary_connection_string
+      # Domain-logic storage (interpellation publish queues), separate from the function
+      # runtime storage above. Consumed by domain adapters and the queue trigger binding.
+      Storage                                        = azurerm_storage_account.domain.primary_connection_string
       APPLICATIONINSIGHTS_CONNECTION_STRING          = azurerm_application_insights.main[0].connection_string
       APPINSIGHTS_INSTRUMENTATIONKEY                 = azurerm_application_insights.main[0].instrumentation_key
       FB_TOKEN                                       = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.facebook_token[0].versionless_id})"
@@ -220,6 +239,20 @@ resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
   scope                = azurerm_storage_account.function_app.id
   role_definition_name = "Storage Table Data Contributor"
   principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
+}
+
+# Domain storage account access: function app identity needs queue read/write for the
+# interpellation publish queue trigger and the outbound queue adapter.
+resource "azurerm_role_assignment" "domain_storage_queue_data_contributor" {
+  scope                = azurerm_storage_account.domain.id
+  role_definition_name = "Storage Queue Data Contributor"
+  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "deployment_domain_storage_queue_data_contributor" {
+  scope                = azurerm_storage_account.domain.id
+  role_definition_name = "Storage Queue Data Contributor"
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_monitor_diagnostic_setting" "function_app" {

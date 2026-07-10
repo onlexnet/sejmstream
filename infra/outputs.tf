@@ -72,7 +72,7 @@ output "interpellation_publish_queue_name" {
 }
 
 output "interpellation_publish_queue_url" {
-  value = "${azurerm_storage_account.function_app.primary_queue_endpoint}${azurerm_storage_queue.interpellation_publish.name}"
+  value = "${azurerm_storage_account.domain.primary_queue_endpoint}${azurerm_storage_queue.interpellation_publish.name}"
 }
 
 output "interpellation_publish_dead_letter_queue_name" {
@@ -80,11 +80,23 @@ output "interpellation_publish_dead_letter_queue_name" {
 }
 
 output "interpellation_publish_dead_letter_queue_url" {
-  value = "${azurerm_storage_account.function_app.primary_queue_endpoint}${azurerm_storage_queue.interpellation_publish_dead_letter.name}"
+  value = "${azurerm_storage_account.domain.primary_queue_endpoint}${azurerm_storage_queue.interpellation_publish_dead_letter.name}"
 }
 
 output "function_storage_table_service_endpoint" {
   value = azurerm_storage_account.function_app.primary_table_endpoint
+}
+
+output "domain_storage_account_id" {
+  value = azurerm_storage_account.domain.id
+}
+
+output "domain_storage_account_name" {
+  value = azurerm_storage_account.domain.name
+}
+
+output "domain_storage_queue_service_endpoint" {
+  value = azurerm_storage_account.domain.primary_queue_endpoint
 }
 
 output "key_vault_id" {

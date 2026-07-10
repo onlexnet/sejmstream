@@ -49,7 +49,9 @@ public class InterpellationPublishQueueFunctions {
             @QueueTrigger(
                     name = "message",
                     queueName = "%INTERPELLATION_PUBLISH_QUEUE_NAME%",
-                connection = "AzureWebJobsStorage")
+                // Points to the domain-logic storage account ("Storage" app setting), which is
+                // separate from "AzureWebJobsStorage" (reserved for the Functions host/runtime).
+                connection = "Storage")
             // Consumer expects a raw JSON string produced by QueueClient.sendMessage(String).
             // This requires host.json queues.messageEncoding="none"; base64 mode would fail before this method is invoked.
             final String queueMessage,

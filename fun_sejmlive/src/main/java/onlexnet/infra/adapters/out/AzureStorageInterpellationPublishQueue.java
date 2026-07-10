@@ -25,7 +25,9 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
     private final ObjectMapper objectMapper;
 
     public AzureStorageInterpellationPublishQueue(
-            @Value("${AzureWebJobsStorage:}") final String storageConnectionString,
+            // "Storage" is dedicated to domain-logic storage (queues), kept separate from
+            // "AzureWebJobsStorage" which is reserved for the Azure Functions host/runtime.
+            @Value("${Storage:}") final String storageConnectionString,
             @Value("${interpellation.publish.queue.name:sejm-interpellations-publish}")
             final String publishQueueName,
             @Value("${interpellation.publish.queue.dead-letter-name:sejm-interpellations-publish-deadletter}")

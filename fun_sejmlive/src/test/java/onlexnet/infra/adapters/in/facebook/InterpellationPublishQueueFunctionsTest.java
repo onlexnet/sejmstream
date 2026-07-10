@@ -38,7 +38,7 @@ class InterpellationPublishQueueFunctionsTest {
         assertThat(functionName.value()).isEqualTo("Fun_InterpellationPublishFromQueue");
         assertThat(trigger).isNotNull();
         assertThat(trigger.queueName()).isEqualTo("%INTERPELLATION_PUBLISH_QUEUE_NAME%");
-        assertThat(trigger.connection()).isEqualTo("AzureWebJobsStorage");
+        assertThat(trigger.connection()).isEqualTo("Storage");
     }
 
     @Test
