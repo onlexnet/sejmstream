@@ -23,8 +23,7 @@
 		<assertj.version>3.27.4</assertj.version>
 		<lombok.version>1.18.38</lombok.version>
 		<jspecify.version>1.0.0</jspecify.version>
-		<maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
-		<errorprone.version>2.50.0</errorprone.version>
+		<maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
 		<plexus.compiler.javac.errorprone.version>2.15.0</plexus.compiler.javac.errorprone.version>
 		<maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
 		<maven.failsafe.plugin.version>3.5.2</maven.failsafe.plugin.version>
@@ -35,7 +34,8 @@
 		<testcontainers.version>1.21.3</testcontainers.version>
 	    <mapstruct.version>1.6.3</mapstruct.version>
 	    <mapstruct-spi-protobuf.version>1.1.0</mapstruct-spi-protobuf.version>
-	    <nullaway.version>0.12.10</nullaway.version>
+	    <nullaway.version>0.13.7</nullaway.version>
+		<errorprone.version>2.50.0</errorprone.version>
 	</properties>
 
 	<dependencyManagement>
@@ -224,6 +224,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-resources-plugin</artifactId>
+				<version>3.5.0</version>
 				<configuration>
 					<delimiters>
 						<delimiter>@</delimiter>
@@ -280,7 +281,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>${maven.compiler.plugin.version}</version>
+				<version>${maven-compiler-plugin.version}</version>
 				<configuration>
 				<release>25</release>
 				<fork>true</fork>
