@@ -45,6 +45,7 @@ public final class TelegramAdminOutcomePresenter {
                     + publishSuccess.date()
                     + ".";
             case AdminOutcome.PublishFailure publishFailure -> "Publikacja nie powiodła się: " + publishFailure.reason();
+            case AdminOutcome.VersionInfo versionInfo -> "Wersja: " + versionInfo.buildVersion();
             case AdminOutcome.UnknownAction unknownAction -> "Nieznana komenda: " + unknownAction.command() + "\n\n"
                     + this.helpText();
         };
@@ -55,7 +56,8 @@ public final class TelegramAdminOutcomePresenter {
                 + "/help - lista komend\n"
                 + "/data - aktualna kadencja Sejmu\n"
                 + "/collect - zbierz dzisiejsze dane sejmowe\n"
-                + "/publish - opublikuj dzisiejszy digest na Facebooku";
+                + "/publish - opublikuj dzisiejszy digest na Facebooku\n"
+                + "/version - numer builda wrzuconego na produkcję";
     }
 
     private String renderDeferred(AdminOutcome.DeferredReply outcome) {

@@ -82,6 +82,7 @@ public sealed interface AdminOutcome permits AdminOutcome.ImmediateReply, AdminO
             PublishAlreadyDone,
             PublishNoData,
             PublishSuccess,
+            VersionInfo,
             UnknownAction {
     }
 
@@ -142,6 +143,10 @@ public sealed interface AdminOutcome permits AdminOutcome.ImmediateReply, AdminO
 
     record PublishFailure(
             String reason) implements TechnicalImmediateReply {
+    }
+
+    record VersionInfo(
+            String buildVersion) implements BusinessImmediateReply {
     }
 
     record UnknownAction(

@@ -36,11 +36,15 @@ jobs:
           java-version: '21'
           cache: maven
 
+      - name: Set build version
+        id: build_version
+        run: echo "value=$(date +'%Y.%m.%d')-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+
       - name: Run verification suite (unit, architecture, integration)
-        run: mvn -B -q -f fun_sejmlive/pom.xml verify
+        run: mvn -B -q -f fun_sejmlive/pom.xml verify -Dbuild.version=${{ steps.build_version.outputs.value }}
 
       - name: Package fun_sejmlive Azure Functions artifact from its own pom.xml
-        run: mvn -B -q -f fun_sejmlive/pom.xml -DskipTests package
+        run: mvn -B -q -f fun_sejmlive/pom.xml -DskipTests package -Dbuild.version=${{ steps.build_version.outputs.value }}
 
       - name: Upload Surefire reports
         if: always()

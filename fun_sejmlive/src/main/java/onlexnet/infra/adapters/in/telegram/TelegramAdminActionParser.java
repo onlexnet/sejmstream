@@ -27,6 +27,7 @@ public final class TelegramAdminActionParser {
             case "/data" -> AdminAction.Data.INSTANCE;
             case "/collect" -> AdminAction.Collect.INSTANCE;
             case "/publish" -> AdminAction.Publish.INSTANCE;
+            case "/version" -> AdminAction.Version.INSTANCE;
             default -> new AdminAction.Unknown(token);
         };
     }

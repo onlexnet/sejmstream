@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,9 @@ public class DefaultAdminUseCase implements AdminUseCase {
     private final PublishDailyDigestUseCase publishDailyDigestUseCase;
     private final AdminAccessPolicy accessPolicy;
 
+    @Value("${build.version:unknown}")
+    private String buildVersion;
+
     @Override
     public AdminOutcome handleAdminAction(AdminCommandRequest request) {
         if (request.action() instanceof AdminAction.Noop) {
@@ -52,6 +56,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
             case AdminAction.Data ignored -> this.handleData();
             case AdminAction.Collect ignored -> this.handleCollect();
             case AdminAction.Publish ignored -> this.handlePublish();
+            case AdminAction.Version ignored -> new AdminOutcome.VersionInfo(this.buildVersion);
             case AdminAction.Unknown unknown -> new AdminOutcome.UnknownAction(unknown.command());
         };
     }

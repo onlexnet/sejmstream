@@ -19,6 +19,7 @@
 		<azure.keyvault.version>4.10.7</azure.keyvault.version>
 		<azure.identity.version>1.16.1</azure.identity.version>
 		<azure.storage.queue.version>12.24.1</azure.storage.queue.version>
+		<build.version>local</build.version>
 		<assertj.version>3.27.4</assertj.version>
 		<lombok.version>1.18.38</lombok.version>
 		<jspecify.version>1.0.0</jspecify.version>
@@ -213,7 +214,23 @@
 	</dependencies>
 
 	<build>
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<configuration>
+					<delimiters>
+						<delimiter>@</delimiter>
+					</delimiters>
+					<useDefaultDelimiters>false</useDefaultDelimiters>
+				</configuration>
+			</plugin>
 			<plugin>
 				<groupId>org.openapitools</groupId>
 				<artifactId>openapi-generator-maven-plugin</artifactId>

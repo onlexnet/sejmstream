@@ -4,7 +4,7 @@ package onlexnet.app.ports.in.admin;
  * Canonical admin action understood by the application core.
  */
 public sealed interface AdminAction permits AdminAction.Noop, AdminAction.Help, AdminAction.Data,
-        AdminAction.Collect, AdminAction.Publish, AdminAction.Unknown {
+        AdminAction.Collect, AdminAction.Publish, AdminAction.Version, AdminAction.Unknown {
 
     /**
      * No actionable command was supplied.
@@ -38,6 +38,13 @@ public sealed interface AdminAction permits AdminAction.Noop, AdminAction.Help, 
      * User requested publish side-effect.
      */
     enum Publish implements AdminAction {
+        INSTANCE
+    }
+
+    /**
+     * User requested the current build version.
+     */
+    enum Version implements AdminAction {
         INSTANCE
     }
 
