@@ -20,22 +20,20 @@
 		<azure.identity.version>1.16.1</azure.identity.version>
 		<azure.storage.queue.version>12.24.1</azure.storage.queue.version>
 		<build.version>local</build.version>
-		<assertj.version>3.27.4</assertj.version>
 		<lombok.version>1.18.38</lombok.version>
 		<jspecify.version>1.0.0</jspecify.version>
 		<maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
-		<plexus.compiler.javac.errorprone.version>2.15.0</plexus.compiler.javac.errorprone.version>
 		<maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
 		<maven.failsafe.plugin.version>3.5.2</maven.failsafe.plugin.version>
 		<spring-boot.version>4.1.0</spring-boot.version>
-		<jackson.annotations.version>2.21</jackson.annotations.version>
-		<jackson.version>2.21.2</jackson.version>
 		<openapi.generator.version>7.23.0</openapi.generator.version>
-		<testcontainers.version>1.21.3</testcontainers.version>
+		<testcontainers.version>1.21.4</testcontainers.version>
 	    <mapstruct.version>1.6.3</mapstruct.version>
 	    <mapstruct-spi-protobuf.version>1.1.0</mapstruct-spi-protobuf.version>
 	    <nullaway.version>0.13.7</nullaway.version>
 		<errorprone.version>2.50.0</errorprone.version>
+		<archunit-junit5.version>1.4.2</archunit-junit5.version>
+		<liquibase-core.version>5.0.3</liquibase-core.version>
 	</properties>
 
 	<dependencyManagement>
@@ -46,26 +44,6 @@
 				<version>${spring-boot.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-annotations</artifactId>
-				<version>${jackson.annotations.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-core</artifactId>
-				<version>${jackson.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.core</groupId>
-				<artifactId>jackson-databind</artifactId>
-				<version>${jackson.version}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.fasterxml.jackson.datatype</groupId>
-				<artifactId>jackson-datatype-jsr310</artifactId>
-				<version>${jackson.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -146,7 +124,7 @@
 		<dependency>
 			<groupId>org.liquibase</groupId>
 			<artifactId>liquibase-core</artifactId>
-			<version>4.29.2</version>
+			<version>${liquibase-core.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -190,13 +168,12 @@
 		<dependency>
 			<groupId>org.assertj</groupId>
 			<artifactId>assertj-core</artifactId>
-			<version>${assertj.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.tngtech.archunit</groupId>
 			<artifactId>archunit-junit5</artifactId>
-			<version>1.3.0</version>
+			<version>${archunit-junit5.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

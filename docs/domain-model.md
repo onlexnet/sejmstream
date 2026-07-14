@@ -72,7 +72,9 @@ record PrintItem(String number, String title, LocalDateTime changeDate, String d
 record InterpellationItem(int num, String title, List<String> to,
     String sentDate, String lastModified, List<ReplyItem> replies)
 
-record ReplyItem(String key, String from, LocalDate receiptDate)
+sealed interface ReplyItem permits ReplyItem.ActualReply, ReplyItem.Prolongation
+  record ActualReply(String key, ReplyFrom from, LocalDate receiptDate) implements ReplyItem
+  record Prolongation() implements ReplyItem  // ministry requested deadline extension, no document
 
 record WrittenQuestionItem(int num, String title, List<String> to,
     String sentDate, String lastModified)

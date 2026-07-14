@@ -51,12 +51,12 @@ public class DefaultAdminUseCase implements AdminUseCase {
         }
 
         return switch (request.action()) {
-            case AdminAction.Noop ignored -> new AdminOutcome.NoopIgnored();
-            case AdminAction.Help ignored -> new AdminOutcome.HelpOverview();
-            case AdminAction.Data ignored -> this.handleData();
-            case AdminAction.Collect ignored -> this.handleCollect();
-            case AdminAction.Publish ignored -> this.handlePublish();
-            case AdminAction.Version ignored -> new AdminOutcome.VersionInfo(this.buildVersion);
+            case AdminAction.Noop _ -> new AdminOutcome.NoopIgnored();
+            case AdminAction.Help _ -> new AdminOutcome.HelpOverview();
+            case AdminAction.Data _ -> this.handleData();
+            case AdminAction.Collect _ -> this.handleCollect();
+            case AdminAction.Publish _ -> this.handlePublish();
+            case AdminAction.Version _ -> new AdminOutcome.VersionInfo(this.buildVersion);
             case AdminAction.Unknown unknown -> new AdminOutcome.UnknownAction(unknown.command());
         };
     }

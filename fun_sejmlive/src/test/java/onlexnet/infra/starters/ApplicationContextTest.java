@@ -113,7 +113,7 @@ class ApplicationContextTest {
     private static void waitForDatabaseReady() {
         long deadline = System.nanoTime() + STARTUP_TIMEOUT.toNanos();
         while (System.nanoTime() < deadline) {
-            try (var connection = DriverManager.getConnection(jdbcUrl, DB_USERNAME, DB_PASSWORD)) {
+            try (var _ = DriverManager.getConnection(jdbcUrl, DB_USERNAME, DB_PASSWORD)) {
                 return;
             } catch (Exception ignored) {
                 sleepMillis(1000);

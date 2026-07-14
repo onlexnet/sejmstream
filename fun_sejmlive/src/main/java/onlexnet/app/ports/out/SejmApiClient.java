@@ -51,21 +51,14 @@ public interface SejmApiClient {
     }
 
     /**
-     * Represents the author of a reply.
-     * Use {@link Known} when the author name is present, {@link Unknown} when the API did not provide it.
+     * A single entry in the replies list for an interpellation.
+     * Use {@link ActualReply} for a real reply, {@link Prolongation} when the ministry requested a deadline extension.
      */
-    sealed interface ReplyFrom permits ReplyFrom.Known, ReplyFrom.Unknown {
-        /** The author name is known. */
-        record Known(String value) implements ReplyFrom {}
-        /** The author name was absent in the API response. */
-        record Unknown() implements ReplyFrom {}
-    }
-
-    /** A single reply received by the Sejm in response to an interpellation. */
-    record ReplyItem(
-        String key,
-        ReplyFrom from,
-        LocalDate receiptDate) {
+    sealed interface ReplyItem permits ReplyItem.ActualReply, ReplyItem.Prolongation {
+        /** A substantive reply with a document key, author and receipt date. */
+        record ActualReply(String key, String from, LocalDate receiptDate) implements ReplyItem {}
+        /** The ministry requested a deadline extension — no reply document exists. */
+        record Prolongation(String from) implements ReplyItem {}
     }
 
     record InterpellationItem(
