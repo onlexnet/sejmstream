@@ -41,7 +41,8 @@ class TelegramWebhookFlowTest {
                 sejmApiClient,
             collectDailyDigestUseCase,
             publishDailyDigestUseCase,
-                allowAllPolicy);
+                allowAllPolicy,
+                "test-version");
 
         var notifier = mock(TelegramNotifier.class);
         var functions = new TelegramBotFunctions(

@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
@@ -26,7 +25,6 @@ import onlexnet.app.ports.out.AdminAccessPolicy;
  * Default application implementation for admin command processing.
  */
 @Component
-@RequiredArgsConstructor
 public class DefaultAdminUseCase implements AdminUseCase {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAdminUseCase.class);
@@ -35,9 +33,20 @@ public class DefaultAdminUseCase implements AdminUseCase {
     private final CollectDailyDigestUseCase collectDailyDigestUseCase;
     private final PublishDailyDigestUseCase publishDailyDigestUseCase;
     private final AdminAccessPolicy accessPolicy;
+    private final String buildVersion;
 
-    @Value("${build.version:unknown}")
-    private String buildVersion;
+    public DefaultAdminUseCase(
+            final SejmApiClient sejmApiClient,
+            final CollectDailyDigestUseCase collectDailyDigestUseCase,
+            final PublishDailyDigestUseCase publishDailyDigestUseCase,
+            final AdminAccessPolicy accessPolicy,
+            @Value("${build.version:unknown}") final String buildVersion) {
+        this.sejmApiClient = sejmApiClient;
+        this.collectDailyDigestUseCase = collectDailyDigestUseCase;
+        this.publishDailyDigestUseCase = publishDailyDigestUseCase;
+        this.accessPolicy = accessPolicy;
+        this.buildVersion = buildVersion;
+    }
 
     @Override
     public AdminOutcome handleAdminAction(AdminCommandRequest request) {
