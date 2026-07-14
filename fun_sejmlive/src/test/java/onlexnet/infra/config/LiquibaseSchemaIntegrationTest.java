@@ -197,7 +197,9 @@ class LiquibaseSchemaIntegrationTest {
                     tuple("facebook_post_message", "text", true, null, null),
                     tuple("last_error", "character varying", true, 1000, null),
                     tuple("created_at", "timestamp without time zone", false, null, "now()"),
-                    tuple("updated_at", "timestamp without time zone", false, null, "now()"));
+                    tuple("updated_at", "timestamp without time zone", false, null, "now()"),
+                    tuple("last_known_reply_count", "integer", false, null, "0"),
+                    tuple("reply_notification_published_at", "timestamp without time zone", true, null, null));
             }
 
             @Test

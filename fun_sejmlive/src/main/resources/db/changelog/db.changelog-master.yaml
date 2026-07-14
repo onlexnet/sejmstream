@@ -14,3 +14,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/changes/005-extend-interpellation-state-statuses.yaml
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/006-add-reply-state-columns.yaml
+      relativeToChangelogFile: false

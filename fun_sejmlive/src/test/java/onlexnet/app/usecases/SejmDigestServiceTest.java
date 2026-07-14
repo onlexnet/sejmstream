@@ -68,7 +68,8 @@ class SejmDigestServiceTest {
                         "Interpelacja w sprawie transportu",
                         List.of("Minister Infrastruktury"),
                         "2026-06-13",
-                        "2026-06-13T08:00:00"))),
+                        "2026-06-13T08:00:00",
+                        List.of()))),
                 row("WRITTEN_QUESTION", this.objectMapper.writeValueAsString(new WrittenQuestionItem(
                         888,
                         "Zapytanie o finansowanie szpitali",

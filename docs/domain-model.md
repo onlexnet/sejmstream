@@ -37,6 +37,8 @@ Tracks the publishing lifecycle of an individual interpellation post.
 | lastError | String | Last failure reason |
 | createdAt | Instant | Record creation time |
 | updatedAt | Instant | Last modification time |
+| lastKnownReplyCount | int | Reply count last recorded (default 0) |
+| replyNotificationPublishedAt | Instant | When reply notification was last published (nullable) |
 
 **Uniqueness**: `(termNum, interpellationNum)`, `(domainMessageId)`
 
@@ -68,7 +70,9 @@ record CommitteeSittingItem(String code, LocalDate date, int num,
 record PrintItem(String number, String title, LocalDateTime changeDate, String deliveryDate)
 
 record InterpellationItem(int num, String title, List<String> to,
-    String sentDate, String lastModified)
+    String sentDate, String lastModified, List<ReplyItem> replies)
+
+record ReplyItem(String key, String from, LocalDate receiptDate)
 
 record WrittenQuestionItem(int num, String title, List<String> to,
     String sentDate, String lastModified)

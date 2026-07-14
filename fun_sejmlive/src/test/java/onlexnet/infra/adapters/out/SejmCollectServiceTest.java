@@ -227,7 +227,8 @@ class SejmCollectServiceTest {
                         "Interpelacja testowa",
                         List.of("Ministerstwo"),
                         "2026-06-13",
-                        "2026-06-13T00:00:00")));
+                        "2026-06-13T00:00:00",
+                        List.of())));
 
         var count = service.collectInterpellations(10, TEST_DATE);
 
@@ -263,7 +264,8 @@ class SejmCollectServiceTest {
                         "Interpelacja testowa",
                         List.of("Ministerstwo"),
                         "2026-06-13",
-                        "2026-06-13T00:00:00")));
+                        "2026-06-13T00:00:00",
+                        List.of())));
         repository.statuses.put("10:77", "QUEUED");
 
         var count = service.collectInterpellations(10, TEST_DATE);
@@ -292,7 +294,8 @@ class SejmCollectServiceTest {
                 "Interpelacja testowa",
                 List.of("Ministerstwo"),
                 "2026-06-13",
-                "2026-06-13T00:00:00")));
+                "2026-06-13T00:00:00",
+                List.of())));
 
         assertThatThrownBy(() -> service.collectInterpellations(10, TEST_DATE))
             .isInstanceOf(IllegalStateException.class)
@@ -324,7 +327,8 @@ class SejmCollectServiceTest {
                 "Interpelacja testowa",
                 List.of("Ministerstwo"),
                 "2026-06-13",
-                "2026-06-13T00:00:00")));
+                "2026-06-13T00:00:00",
+                List.of())));
 
         var count = service.collectInterpellations(10, TEST_DATE);
 
@@ -610,6 +614,22 @@ class SejmCollectServiceTest {
                 final InterpellationPublishQueueMessage message,
                 final String errorMessage) {
             this.statuses.put(key(message.termNum(), message.interpellationNum()), "DEAD_LETTER");
+        }
+
+        @Override
+        public int getLastKnownReplyCount(final int termNum, final int interpellationNum) {
+            return 0;
+        }
+
+        @Override
+        public void updateLastKnownReplyCount(final int termNum, final int interpellationNum, final int replyCount) {
+            // not used in these tests
+        }
+
+        @Override
+        public void markReplyNotificationPublished(
+                final int termNum, final int interpellationNum, final java.time.LocalDateTime publishedAt) {
+            // not used in these tests
         }
 
         private String key(final int termNum, final int interpellationNum) {

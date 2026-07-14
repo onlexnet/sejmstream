@@ -37,6 +37,7 @@ import onlexnet.infra.adapters.out.sejm.generated.model.CommitteeSitting;
 import onlexnet.infra.adapters.out.sejm.generated.model.Interpellation;
 import onlexnet.infra.adapters.out.sejm.generated.model.Print;
 import onlexnet.infra.adapters.out.sejm.generated.model.PrintInfo;
+import onlexnet.infra.adapters.out.sejm.generated.model.Reply;
 import onlexnet.infra.adapters.out.sejm.generated.model.Term;
 import onlexnet.infra.adapters.out.sejm.generated.model.Voting;
 import onlexnet.infra.adapters.out.sejm.generated.model.WrittenQuestion;
@@ -262,7 +263,18 @@ final class DefaultSejmApiClient implements SejmApiClient {
                                 interpellation.getTitle(),
                                 nullSafe(interpellation.getTo()),
                                 interpellation.getSentDate() == null ? null : interpellation.getSentDate().toString(),
-                                interpellation.getLastModified() == null ? null : interpellation.getLastModified().toString());
+                                interpellation.getLastModified() == null ? null : interpellation.getLastModified().toString(),
+                                nullSafe(interpellation.getReplies()).stream().map(this::mapReply).toList());
+        }
+
+        private ReplyItem mapReply(final Reply reply) {
+                var from = reply.getFrom() != null
+                        ? new SejmApiClient.ReplyFrom.Known(reply.getFrom())
+                        : new SejmApiClient.ReplyFrom.Unknown();
+                return new ReplyItem(
+                        Objects.requireNonNull(reply.getKey(), "ReplyItem.key must not be null"),
+                        from,
+                        Objects.requireNonNull(reply.getReceiptDate(), "ReplyItem.receiptDate must not be null"));
         }
 
         private WrittenQuestionItem mapWrittenQuestion(final WrittenQuestion question) {

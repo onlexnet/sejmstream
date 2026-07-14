@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 006-add-reply-state-columns
+      author: sejmstream
+      changes:
+        - addColumn:
+            tableName: sejm_interpellation_publish_state
+            columns:
+              - column:
+                  name: last_known_reply_count
+                  type: INT
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reply_notification_published_at
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: true

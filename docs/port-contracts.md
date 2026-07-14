@@ -152,6 +152,9 @@ public interface InterpellationPublishStatePort {
     void markRetryScheduled(InterpellationPublishQueueMessage message, String errorMessage);
     void markEnqueueFailed(InterpellationPublishQueueMessage message, String errorMessage);
     void markDeadLetter(InterpellationPublishQueueMessage message, String errorMessage);
+    int getLastKnownReplyCount(int termNum, int interpellationNum);
+    void updateLastKnownReplyCount(int termNum, int interpellationNum, int replyCount);
+    void markReplyNotificationPublished(int termNum, int interpellationNum, LocalDateTime publishedAt);
 }
 ```
 **Adapter**: JdbcTemplate implementation with `INSERT ... ON CONFLICT` for claim semantics

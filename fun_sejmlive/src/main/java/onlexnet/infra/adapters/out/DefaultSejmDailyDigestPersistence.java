@@ -3,6 +3,7 @@ package onlexnet.infra.adapters.out;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -389,5 +390,37 @@ public class DefaultSejmDailyDigestPersistence
                 message.attempt(),
                 Timestamp.from(message.firstQueuedAt()),
                 errorMessage);
+    }
+
+    @Override
+    public int getLastKnownReplyCount(final int termNum, final int interpellationNum) {
+        var sql = """
+                SELECT COALESCE(last_known_reply_count, 0)
+                FROM sejm_interpellation_publish_state
+                WHERE term_num = ? AND interpellation_num = ?
+                """;
+        var count = this.jdbcTemplate.queryForObject(sql, Integer.class, termNum, interpellationNum);
+        return count == null ? 0 : count;
+    }
+
+    @Override
+    public void updateLastKnownReplyCount(final int termNum, final int interpellationNum, final int replyCount) {
+        var sql = """
+                UPDATE sejm_interpellation_publish_state
+                SET last_known_reply_count = ?, updated_at = NOW()
+                WHERE term_num = ? AND interpellation_num = ?
+                """;
+        this.jdbcTemplate.update(sql, replyCount, termNum, interpellationNum);
+    }
+
+    @Override
+    public void markReplyNotificationPublished(
+            final int termNum, final int interpellationNum, final LocalDateTime publishedAt) {
+        var sql = """
+                UPDATE sejm_interpellation_publish_state
+                SET reply_notification_published_at = ?, updated_at = NOW()
+                WHERE term_num = ? AND interpellation_num = ?
+                """;
+        this.jdbcTemplate.update(sql, Timestamp.valueOf(publishedAt), termNum, interpellationNum);
     }
 }

@@ -50,12 +50,31 @@ public interface SejmApiClient {
         String deliveryDate) {
     }
 
+    /**
+     * Represents the author of a reply.
+     * Use {@link Known} when the author name is present, {@link Unknown} when the API did not provide it.
+     */
+    sealed interface ReplyFrom permits ReplyFrom.Known, ReplyFrom.Unknown {
+        /** The author name is known. */
+        record Known(String value) implements ReplyFrom {}
+        /** The author name was absent in the API response. */
+        record Unknown() implements ReplyFrom {}
+    }
+
+    /** A single reply received by the Sejm in response to an interpellation. */
+    record ReplyItem(
+        String key,
+        ReplyFrom from,
+        LocalDate receiptDate) {
+    }
+
     record InterpellationItem(
         int num,
         String title,
         List<String> to,
         String sentDate,
-        String lastModified) {
+        String lastModified,
+        List<ReplyItem> replies) {
     }
 
     record WrittenQuestionItem(
