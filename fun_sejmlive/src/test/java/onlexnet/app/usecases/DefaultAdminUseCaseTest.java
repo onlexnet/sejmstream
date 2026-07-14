@@ -76,7 +76,8 @@ class DefaultAdminUseCaseTest {
                 sejmApiClient,
                 collectDailyDigestUseCase,
                 mock(PublishDailyDigestUseCase.class),
-                accessPolicy);
+                accessPolicy,
+                "test-version");
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Data.INSTANCE, "1001"));
 
@@ -105,7 +106,8 @@ class DefaultAdminUseCaseTest {
                 sejmApiClient,
             collectDailyDigestUseCase,
             mock(PublishDailyDigestUseCase.class),
-                accessPolicy);
+                accessPolicy,
+                "test-version");
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Collect.INSTANCE, "1001"));
 
@@ -130,7 +132,8 @@ class DefaultAdminUseCaseTest {
                 sejmApiClient,
                 collectDailyDigestUseCase,
                 publishUseCase,
-                accessPolicy);
+                accessPolicy,
+                "test-version");
 
         var result = useCase.handleAdminAction(this.request(AdminAction.Publish.INSTANCE, "1001"));
 
@@ -172,7 +175,8 @@ class DefaultAdminUseCaseTest {
                 sejmApiClient,
             collectDailyDigestUseCase,
                 publishUseCase,
-                accessPolicy);
+                accessPolicy,
+                "test-version");
     }
 
     private AdminAccessPolicy allowAllAccessPolicy() {
