@@ -12,7 +12,7 @@
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<azure.functions.maven.plugin.version>1.39.0</azure.functions.maven.plugin.version>
-		<azure.functions.java.library.version>3.2.1</azure.functions.java.library.version>
+		<azure.functions.java.library.version>3.3.0</azure.functions.java.library.version>
 		<azure.functions.java.spi.version>1.0.0</azure.functions.java.spi.version>
 		<durable.task.azure.functions.version>1.0.0</durable.task.azure.functions.version>
 		<restfb.version>2026.8.0</restfb.version>
