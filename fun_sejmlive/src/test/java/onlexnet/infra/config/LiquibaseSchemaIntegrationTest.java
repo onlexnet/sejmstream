@@ -4,17 +4,26 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 
 import java.nio.charset.StandardCharsets;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import onlexnet.app.ports.out.SejmApiClient.VotingItem;
+import onlexnet.app.usecases.SejmDigestService;
+import onlexnet.infra.adapters.out.DefaultSejmDailyDigestPersistence;
 import liquibase.integration.spring.SpringLiquibase;
 import onlexnet.testsupport.AppTest;
 
@@ -43,9 +52,17 @@ class LiquibaseSchemaIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
+
         @Autowired
         @SuppressWarnings("unused")
         private SpringLiquibase springLiquibase;
+
+    @BeforeEach
+    void clearDigestTables() {
+        this.jdbcTemplate.update("TRUNCATE TABLE sejm_daily_digest_item RESTART IDENTITY CASCADE");
+        this.jdbcTemplate.update("TRUNCATE TABLE sejm_publish_log RESTART IDENTITY CASCADE");
+    }
 
     @DynamicPropertySource
     static void configureProperties(final DynamicPropertyRegistry registry) {
@@ -125,10 +142,85 @@ class LiquibaseSchemaIntegrationTest {
                         tuple("collection_date", "date", false, null, null),
                         tuple("data_type", "character varying", false, 50, null),
                         tuple("item_key", "character varying", false, 255, null),
-                        tuple("item_title", "character varying", true, 1000, null),
-                        tuple("item_json", "text", true, null, null),
+                    tuple("item_title", "text", true, null, null),
+                    tuple("item_json", "jsonb", true, null, null),
                         tuple("collected_at", "timestamp without time zone", false, null, "now()"));
     }
+
+            @Test
+            void givenLongTitleAndJsonPayload_whenUpsertAndRead_thenBothValuesAreStored() throws Exception {
+            var persistence = createPersistence();
+            var collectionDate = LocalDate.of(2026, 7, 16);
+            var dataType = "PRINT";
+            var itemKey = "print-9001";
+            var longTitle = "Tytul ".repeat(400);
+            var itemJson = """
+                {"number":"9001","title":"Projekt testowy","metadata":{"source":"it","version":1}}
+                """;
+
+            var affectedRows = persistence.upsertItem(collectionDate, dataType, itemKey, longTitle, itemJson);
+
+            assertThat(affectedRows).isEqualTo(1);
+            var rows = persistence.findByDateAndType(collectionDate, dataType);
+            assertThat(rows).hasSize(1);
+
+            var storedRow = rows.getFirst();
+            assertThat(storedRow.get("item_title")).isEqualTo(longTitle);
+            assertThat(storedRow.get("item_json").getClass().getName()).isEqualTo("org.postgresql.util.PGobject");
+            assertThat(this.objectMapper.readTree(extractJsonValue(storedRow.get("item_json"))))
+                .isEqualTo(this.objectMapper.readTree(itemJson));
+            }
+
+            @Test
+            void givenConflictOnNaturalKey_whenUpsertCalledTwice_thenLatestTitleAndJsonAreSaved() throws Exception {
+            var persistence = createPersistence();
+            var collectionDate = LocalDate.of(2026, 7, 16);
+            var firstJson = "{" + "\"topic\":\"Pierwsza wersja\",\"yes\":100}";
+            var secondJson = "{" + "\"topic\":\"Druga wersja\",\"yes\":101}";
+
+            persistence.upsertItem(collectionDate, "VOTING", "1/10", "Tytul 1", firstJson);
+            persistence.upsertItem(collectionDate, "VOTING", "1/10", "Tytul 2", secondJson);
+
+            var rows = persistence.findByDateAndType(collectionDate, "VOTING");
+            assertThat(rows).hasSize(1);
+            assertThat(rows.getFirst().get("item_title")).isEqualTo("Tytul 2");
+            assertThat(this.objectMapper.readTree(extractJsonValue(rows.getFirst().get("item_json"))))
+                .isEqualTo(this.objectMapper.readTree(secondJson));
+
+            var count = this.jdbcTemplate.queryForObject("""
+                SELECT COUNT(*)
+                FROM sejm_daily_digest_item
+                WHERE collection_date = ?
+                  AND data_type = ?
+                  AND item_key = ?
+                """, Integer.class, Date.valueOf(collectionDate), "VOTING", "1/10");
+            assertThat(count).isEqualTo(1);
+            }
+
+            @Test
+            void givenJsonbStoredItem_whenDigestIsBuilt_thenServiceReadsDriverSpecificJsonValue() throws Exception {
+            var persistence = createPersistence();
+            var collectionDate = LocalDate.of(2026, 7, 16);
+            var votingJson = this.objectMapper.writeValueAsString(new VotingItem(
+                LocalDateTime.of(2026, 7, 16, 10, 0),
+                7,
+                42,
+                "Temat jsonb",
+                200,
+                100,
+                10,
+                310,
+                0));
+            persistence.upsertItem(collectionDate, "VOTING", "7/42", "Temat jsonb", votingJson);
+
+            var digestService = new SejmDigestService(persistence, this.objectMapper);
+            var digest = digestService.buildDigest(collectionDate);
+
+            assertThat(digest).isPresent();
+            assertThat(digest.orElseThrow())
+                .contains("📊 GŁOSOWANIA (1):")
+                .contains("Temat jsonb");
+            }
 
     @Test
     void givenLiquibaseConfiguration_whenContextStarts_thenPublishLogColumnsMatchPhaseTwoSchema() {
@@ -272,6 +364,23 @@ class LiquibaseSchemaIntegrationTest {
             String defaultValue) {
     }
 
+    private DefaultSejmDailyDigestPersistence createPersistence() {
+        return new DefaultSejmDailyDigestPersistence(this.jdbcTemplate);
+    }
+
+    private static String extractJsonValue(final Object dbValue) {
+        if (dbValue instanceof CharSequence sequence) {
+            return sequence.toString();
+        }
+        try {
+            var getValueMethod = dbValue.getClass().getMethod("getValue");
+            var extracted = getValueMethod.invoke(dbValue);
+            return extracted == null ? "" : String.valueOf(extracted);
+        } catch (ReflectiveOperationException exception) {
+            return String.valueOf(dbValue);
+        }
+    }
+
     private static synchronized void ensurePostgresStarted() {
         if (jdbcUrl != null && !jdbcUrl.isBlank()) {
             return;
@@ -313,7 +422,8 @@ class LiquibaseSchemaIntegrationTest {
     private static void waitForDatabaseReady() {
         long deadline = System.nanoTime() + STARTUP_TIMEOUT.toNanos();
         while (System.nanoTime() < deadline) {
-            try (var ignored = DriverManager.getConnection(jdbcUrl, DB_USERNAME, DB_PASSWORD)) {
+            try (var connection = DriverManager.getConnection(jdbcUrl, DB_USERNAME, DB_PASSWORD)) {
+                connection.isValid(1);
                 return;
             } catch (Exception ignored) {
                 sleepMillis(1000);

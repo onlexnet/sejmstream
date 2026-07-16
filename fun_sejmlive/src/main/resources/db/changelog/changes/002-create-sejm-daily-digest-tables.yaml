@@ -30,10 +30,10 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: item_title
-                  type: VARCHAR(1000)
+                  type: TEXT
               - column:
                   name: item_json
-                  type: TEXT
+                  type: JSONB
               - column:
                   name: collected_at
                   type: TIMESTAMP

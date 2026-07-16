@@ -270,7 +270,7 @@ public class SejmDigestService {
     }
 
     private <T> Optional<T> readJson(final Map<String, Object> row, final Class<T> type) {
-        var json = tryGetStringValue(row, ITEM_JSON_COLUMN).orElse(null);
+        var json = tryGetJsonValue(row, ITEM_JSON_COLUMN).orElse(null);
         if (json == null || json.isBlank()) {
             LOGGER.warn("Skipping digest row due to missing item_json for type {}", type.getSimpleName());
             return Optional.empty();
@@ -308,7 +308,15 @@ public class SejmDigestService {
         return value.trim();
     }
 
+    private Optional<String> tryGetJsonValue(final Map<String, Object> row, final String key) {
+        return tryGetColumnValue(row, key).map(this::extractJsonValue);
+    }
+
     private Optional<String> tryGetStringValue(final Map<String, Object> row, final String key) {
+        return tryGetColumnValue(row, key).map(String::valueOf);
+    }
+
+    private Optional<Object> tryGetColumnValue(final Map<String, Object> row, final String key) {
         var value = row.get(key);
         if (value == null) {
             value = row.get(key.toUpperCase());
@@ -317,6 +325,25 @@ public class SejmDigestService {
             LOGGER.warn("Skipping digest row due to missing column {}", key);
             return Optional.empty();
         }
-        return Optional.of(String.valueOf(value));
+        return Optional.of(value);
+    }
+
+    private String extractJsonValue(final Object value) {
+        if (value instanceof CharSequence sequence) {
+            return sequence.toString();
+        }
+        if (!"org.postgresql.util.PGobject".equals(value.getClass().getName())) {
+            return String.valueOf(value);
+        }
+        try {
+            var getValueMethod = value.getClass().getMethod("getValue");
+            var extracted = getValueMethod.invoke(value);
+            return extracted == null ? "" : String.valueOf(extracted);
+        } catch (ReflectiveOperationException exception) {
+            LOGGER.warn("Failed to extract JSON value from {}: {}",
+                    value.getClass().getName(),
+                    exception.getMessage());
+            return String.valueOf(value);
+        }
     }
 }

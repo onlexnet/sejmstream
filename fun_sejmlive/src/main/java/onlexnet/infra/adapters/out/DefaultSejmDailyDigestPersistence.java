@@ -34,7 +34,7 @@ public class DefaultSejmDailyDigestPersistence
         var sql = """
                 INSERT INTO sejm_daily_digest_item (
                     collection_date, data_type, item_key, item_title, item_json, collected_at
-                ) VALUES (?, ?, ?, ?, ?, NOW())
+                ) VALUES (?, ?, ?, ?, CAST(? AS JSONB), NOW())
                 ON CONFLICT (collection_date, data_type, item_key)
                 DO UPDATE SET
                     item_title = EXCLUDED.item_title,

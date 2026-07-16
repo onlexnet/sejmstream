@@ -58,8 +58,8 @@ New file: `fun_sejmlive/src/main/resources/db/changelog/changes/002-create-sejm-
 | `collection_date` | DATE | NOT NULL |
 | `data_type` | VARCHAR(50) | NOT NULL — `VOTING\|COMMITTEE_SITTING\|PRINT\|INTERPELLATION\|WRITTEN_QUESTION\|BILL` |
 | `item_key` | VARCHAR(255) | NOT NULL — unique per type |
-| `item_title` | VARCHAR(1000) | nullable |
-| `item_json` | TEXT | full serialized JSON |
+| `item_title` | TEXT | nullable |
+| `item_json` | JSONB | full serialized JSON |
 | `collected_at` | TIMESTAMP | NOT NULL DEFAULT NOW() |
 
 - UNIQUE constraint on `(collection_date, data_type, item_key)`
