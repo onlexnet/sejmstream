@@ -3,6 +3,7 @@ RUN apt update && apt upgrade -y && apt install -y \
     openssh-client \
     sudo \
     git \
+    ripgrep \
     zip \
     unzip \
     # require graphviz to run PlantUML vscode plugin

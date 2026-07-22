@@ -1,6 +1,14 @@
 # SejmStream Projekt
 Facebook: [facebook.com/SejmAktualnosci](https://www.facebook.com/SejmAktualnosci)
 
+## Operational notes
+
+- Hourly collection runs through a durable orchestrator.
+- `BILL` collection is non-critical: if Sejm bills API times out, collection continues
+	and the bills count for that run is `0` (partial result).
+- Interpellation publishing is queue-driven with retry + dead-letter handling.
+- Monitoring and alert recommendations are documented in [docs/runbook.md](docs/runbook.md).
+
 
 ## Key Vault configuration
 

@@ -172,7 +172,56 @@ traces
 | where message contains "DeadLetter" or message contains "RetryScheduled"
 | where timestamp > ago(24h)
 | project timestamp, message, severityLevel
+
+// Bills soft-fail events (collection continues with partial result)
+traces
+| where message contains "Activity collectBills failed, continuing with count=0"
+| where timestamp > ago(24h)
+| project timestamp, message, operation_Name
+| order by timestamp desc
+
+// Interpellation publish throughput (successes per hour)
+traces
+| where message contains "Published interpellation"
+| where timestamp > ago(48h)
+| summarize published=count() by bin(timestamp, 1h)
+| render timechart
+
+// Interpellation publish failures (retry + dead-letter)
+traces
+| where timestamp > ago(48h)
+| where message contains "Retry scheduled for interpellation"
+  or message contains "Dead-lettered interpellation"
+| project timestamp, message, severityLevel
+| order by timestamp desc
+
+// Guardrail: no successful interpellation publish in the last 24h
+traces
+| where timestamp > ago(24h)
+| where message contains "Published interpellation"
+| summarize published=count()
 ```
+
+### Recommended Alerts (Interpellation Pipeline)
+Configure these alert rules in Azure Monitor using the KQL above.
+
+1. No interpellation published in 24h
+- Scope: Log Analytics workspace linked to Application Insights
+- Query: `Guardrail: no successful interpellation publish in the last 24h`
+- Trigger: when `published < 1`
+- Severity: Sev2
+
+2. Dead-letter activity detected
+- Scope: same workspace
+- Query: `Interpellation publish failures (retry + dead-letter)` filtered to `Dead-lettered interpellation`
+- Trigger: any result in 15m window
+- Severity: Sev2
+
+3. Sustained retry pressure
+- Scope: same workspace
+- Query: `Interpellation publish failures (retry + dead-letter)` filtered to `Retry scheduled for interpellation`
+- Trigger: >10 results in 30m window
+- Severity: Sev3
 
 ### Key Metrics to Watch
 | Metric | Healthy | Alert |
@@ -365,6 +414,14 @@ az functionapp restart --name <app-name> --resource-group <rg>
 2. Verify function app is running: `az functionapp show --name <app> --query "state"`
 3. Check if Sejm API is accessible from Azure network
 4. Manual trigger: `curl https://<app>.azurewebsites.net/api/collect`
+
+### Bills API Timeout But Collect Should Continue
+**Symptom**: Log contains `Activity collectBills failed, continuing with count=0` and orchestration still completes.
+**Interpretation**: Non-critical bills sub-step failed; other data types can still be collected and published.
+**Check**:
+1. Confirm collect orchestration completion status is `Completed` for the same run.
+2. Inspect interpellation queue processing logs for `Published interpellation` events.
+3. Track repeated bills failures with the dedicated KQL query and escalate if persistent.
 
 ### Daily Digest Not Published
 1. Check `sejm_publish_log` for today's date

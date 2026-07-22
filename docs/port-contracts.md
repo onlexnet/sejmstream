@@ -105,6 +105,12 @@ public interface SejmCollectOperations {
 ```
 **Adapter**: `SejmCollectService` (coordinates SejmApiClient → SejmDailyDigestPersistence → Queue for each data type)
 
+**Runtime behavior note (Fun_CollectOrchestrator):**
+- Collection activities are executed sequentially with durable retry.
+- `Intern_CollectBills` is treated as non-critical at function level: on transient failure
+    the activity logs the error and returns `0`, allowing orchestration to complete with
+    partial counts for other data types.
+
 ---
 
 ### FacebookPublisher

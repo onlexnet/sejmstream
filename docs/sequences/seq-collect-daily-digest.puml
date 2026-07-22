@@ -65,8 +65,17 @@ deactivate ops
 orch -> ops: callActivityWithRetry("Intern_CollectBills")
 activate ops
 ops -> api: fetchBillsReceivedSince(termNum, today)
-ops -> db: upsertItem(date, BILL, key, json)
-ops --> orch: count
+alt Bills fetch succeeds
+  ops -> db: upsertItem(date, BILL, key, json)
+  ops --> orch: count
+else Bills fetch fails (timeout/transient API error)
+  note right of ops
+    Bills step is non-critical.
+    Function logs warning and returns count=0
+    so orchestration can finish with partial result.
+  end note
+  ops --> orch: 0
+end
 deactivate ops
 
 orch --> fn: CollectResult(countsByType)

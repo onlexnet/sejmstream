@@ -282,6 +282,24 @@ class SejmCollectFunctionsTest {
     }
 
     @Test
+    void givenServiceThrows_whenCollectBills_thenReturnsZeroInsteadOfFailingOrchestration() {
+        var collectService = mock(SejmCollectOperations.class);
+        when(collectService.collectBills(eq(10), any(LocalDate.class)))
+            .thenThrow(new RuntimeException("sejm api timeout"));
+        var sejmApiClient = mock(SejmApiClient.class);
+        when(sejmApiClient.fetchTerms()).thenReturn(List.of(
+                new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
+                        new SejmPrints(10, null, "/term10/prints"),
+                        null)));
+        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+
+        var result = functions.collectBills(null, new FakeExecutionContext());
+
+        assertThat(result).isEqualTo(0);
+        verify(collectService, times(1)).collectBills(eq(10), any(LocalDate.class));
+    }
+
+    @Test
     void givenOrchestrator_whenInvoked_thenCallsActivitiesWithRetryAndAggregatesCounts() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);

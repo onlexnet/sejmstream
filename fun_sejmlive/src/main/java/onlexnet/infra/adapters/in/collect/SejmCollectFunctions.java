@@ -377,12 +377,13 @@ public final class SejmCollectFunctions {
             log.debug("Activity collectBills completed: {} items", count);
             return count;
         } catch (Exception e) {
-            log.error("Activity collectBills failed", e);
-            executionContext.getLogger().severe(
-                "Activity collectBills failed: " + buildFailureMessage(e));
-            throw new IllegalStateException(
-                    "Failed to collect bills: " + buildFailureMessage(e),
-                    e);
+            var failure = buildFailureMessage(e);
+            // Bills are non-critical for the rest of the collection workflow.
+            // Returning 0 keeps the orchestrator successful while preserving diagnostics.
+            log.warn("Activity collectBills failed, continuing with partial result: {}", failure, e);
+            executionContext.getLogger().warning(
+                "Activity collectBills failed, continuing with count=0: " + failure);
+            return 0;
         }
     }
 
