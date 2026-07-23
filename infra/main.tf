@@ -133,7 +133,7 @@ resource "azurerm_storage_container" "function_app_deployment" {
 # from the Functions runtime/host storage account (azurerm_storage_account.function_app) which
 # is required solely to create and run the Azure Function App (AzureWebJobsStorage, deployment
 # container, Durable Functions task hub state).
-resource "azurerm_storage_account" "domain" {
+resource "azurerm_storage_account" "domain_storage" {
   name                     = local.domain_storage_account_name
   resource_group_name      = azurerm_resource_group.main.name
   location                 = azurerm_resource_group.main.location
@@ -143,14 +143,19 @@ resource "azurerm_storage_account" "domain" {
   tags                     = local.common_tags
 }
 
+moved {
+  from = azurerm_storage_account.domain
+  to   = azurerm_storage_account.domain_storage
+}
+
 resource "azurerm_storage_queue" "interpellation_publish" {
   name               = var.interpellation_publish_queue_name
-  storage_account_id = azurerm_storage_account.domain.id
+  storage_account_id = azurerm_storage_account.domain_storage.id
 }
 
 resource "azurerm_storage_queue" "interpellation_publish_dead_letter" {
   name               = var.interpellation_publish_dead_letter_queue_name
-  storage_account_id = azurerm_storage_account.domain.id
+  storage_account_id = azurerm_storage_account.domain_storage.id
 }
 
 resource "azurerm_function_app_flex_consumption" "main" {
@@ -192,7 +197,7 @@ resource "azurerm_function_app_flex_consumption" "main" {
       AzureWebJobsStorage = azurerm_storage_account.function_app.primary_connection_string
       # Domain-logic storage (interpellation publish queues), separate from the function
       # runtime storage above. Consumed by domain adapters and the queue trigger binding.
-      Storage                                        = azurerm_storage_account.domain.primary_connection_string
+      DomainStorage                                  = azurerm_storage_account.domain_storage.primary_connection_string
       APPLICATIONINSIGHTS_CONNECTION_STRING          = azurerm_application_insights.main[0].connection_string
       APPINSIGHTS_INSTRUMENTATIONKEY                 = azurerm_application_insights.main[0].instrumentation_key
       FB_TOKEN                                       = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.facebook_token[0].versionless_id})"
@@ -244,13 +249,13 @@ resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
 # Domain storage account access: function app identity needs queue read/write for the
 # interpellation publish queue trigger and the outbound queue adapter.
 resource "azurerm_role_assignment" "domain_storage_queue_data_contributor" {
-  scope                = azurerm_storage_account.domain.id
+  scope                = azurerm_storage_account.domain_storage.id
   role_definition_name = "Storage Queue Data Contributor"
   principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
 resource "azurerm_role_assignment" "deployment_domain_storage_queue_data_contributor" {
-  scope                = azurerm_storage_account.domain.id
+  scope                = azurerm_storage_account.domain_storage.id
   role_definition_name = "Storage Queue Data Contributor"
   principal_id         = data.azurerm_client_config.current.object_id
 }

@@ -24,11 +24,13 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
     private final QueueClient publishQueueClient;
     private final QueueClient deadLetterQueueClient;
     private final ObjectMapper objectMapper;
+    private final Object queueInitLock = new Object();
+    private volatile boolean queuesInitialized;
 
     public AzureStorageInterpellationPublishQueue(
-            // "Storage" is dedicated to domain-logic storage (queues), kept separate from
+            // "DomainStorage" is dedicated to domain-logic storage (queues), kept separate from
             // "AzureWebJobsStorage" which is reserved for the Azure Functions host/runtime.
-            @Value("${Storage}") final String storageConnectionString,
+            @Value("${DomainStorage}") final String storageConnectionString,
             @Value("${interpellation.publish.queue.name:sejm-interpellations-publish}")
             final String publishQueueName,
             @Value("${interpellation.publish.queue.dead-letter-name:sejm-interpellations-publish-deadletter}")
@@ -48,12 +50,11 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
             .connectionString(normalizedConnectionString)
             .queueName(deadLetterQueueName)
             .buildClient();
-        this.publishQueueClient.createIfNotExists();
-        this.deadLetterQueueClient.createIfNotExists();
     }
 
     @Override
     public void enqueue(final InterpellationPublishQueueMessage message, final Duration visibilityDelay) {
+        this.ensureQueuesInitialized();
         // Producer sends raw JSON text. The Functions host queue trigger must use host.json queues.messageEncoding="none".
         var payload = this.serialize(message);
         if (visibilityDelay == null || visibilityDelay.isZero() || visibilityDelay.isNegative()) {
@@ -65,9 +66,25 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
 
     @Override
     public void enqueueDeadLetter(final InterpellationPublishQueueMessage message) {
+        this.ensureQueuesInitialized();
         // Keep dead-letter payload in the same raw JSON format as the primary queue.
         var payload = this.serialize(message);
         this.deadLetterQueueClient.sendMessage(payload);
+    }
+
+    private void ensureQueuesInitialized() {
+        if (this.queuesInitialized) {
+            return;
+        }
+
+        synchronized (this.queueInitLock) {
+            if (this.queuesInitialized) {
+                return;
+            }
+            this.publishQueueClient.createIfNotExists();
+            this.deadLetterQueueClient.createIfNotExists();
+            this.queuesInitialized = true;
+        }
     }
 
     private String serialize(final InterpellationPublishQueueMessage message) {
