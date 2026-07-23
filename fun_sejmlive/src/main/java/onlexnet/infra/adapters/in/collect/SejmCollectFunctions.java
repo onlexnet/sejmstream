@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.app.usecases.CollectCoordinatorDecider;
 
 /**
  * Azure Durable Functions workflow that collects daily Sejm activity into the database.
@@ -495,6 +496,8 @@ public final class SejmCollectFunctions {
     @SuppressWarnings("unused")
     private static final class CollectCoordinatorEntity extends AbstractTaskEntity<CollectCoordinatorState> {
 
+        private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
+
         @Override
         protected Class<CollectCoordinatorState> getStateType() {
             return CollectCoordinatorState.class;
@@ -506,30 +509,33 @@ public final class SejmCollectFunctions {
         }
 
         public void requestCollect(final String source) {
-            if (this.state.running()) {
-                this.state.incrementPendingRequests();
-                return;
-            }
-
-            startNextRun(source);
+            var decision = DECIDER.decide(
+                    this.state.toDeciderState(),
+                    new CollectCoordinatorDecider.RequestCollect(source));
+            applyDecision(decision);
         }
 
         public void collectCompleted(final CollectCompletion completion) {
-            resumeOrIdle();
+            var decision = DECIDER.decide(
+                    this.state.toDeciderState(),
+                    new CollectCoordinatorDecider.CollectCompleted(completion.orchestrationInstanceId()));
+            applyDecision(decision);
         }
 
         public void collectFailed(final CollectFailure failure) {
-            resumeOrIdle();
+            var decision = DECIDER.decide(
+                    this.state.toDeciderState(),
+                    new CollectCoordinatorDecider.CollectFailed(
+                            failure.orchestrationInstanceId(),
+                            failure.message()));
+            applyDecision(decision);
         }
 
-        private void resumeOrIdle() {
-            if (this.state.pendingRequests() > 0) {
-                this.state.decrementPendingRequests();
-                startNextRun("queued");
-                return;
+        private void applyDecision(final CollectCoordinatorDecider.Decision decision) {
+            this.state.apply(decision.state());
+            if (decision.effect() instanceof CollectCoordinatorDecider.Effect.StartCollectRun startCollectRun) {
+                startNextRun(startCollectRun.source());
             }
-
-            this.state.setRunning(false);
         }
 
         private void startNextRun(final String source) {
@@ -538,7 +544,6 @@ public final class SejmCollectFunctions {
                     ORCHESTRATOR_FUNCTION_NAME,
                     new CollectOrchestrationInput(this.context.getId().toString(), source),
                     options);
-            this.state.setRunning(true);
         }
     }
 
@@ -546,26 +551,13 @@ public final class SejmCollectFunctions {
         private boolean running;
         private int pendingRequests;
 
-        public boolean running() {
-            return this.running;
+        private CollectCoordinatorDecider.State toDeciderState() {
+            return new CollectCoordinatorDecider.State(this.running, this.pendingRequests);
         }
 
-        public void setRunning(final boolean running) {
-            this.running = running;
-        }
-
-        public int pendingRequests() {
-            return this.pendingRequests;
-        }
-
-        public void incrementPendingRequests() {
-            this.pendingRequests++;
-        }
-
-        public void decrementPendingRequests() {
-            if (this.pendingRequests > 0) {
-                this.pendingRequests--;
-            }
+        private void apply(final CollectCoordinatorDecider.State state) {
+            this.running = state.running();
+            this.pendingRequests = state.pendingRequests();
         }
 
     }
