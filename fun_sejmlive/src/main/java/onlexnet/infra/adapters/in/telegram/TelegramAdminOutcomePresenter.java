@@ -20,7 +20,7 @@ public final class TelegramAdminOutcomePresenter {
      */
     public List<String> present(AdminOutcome outcome) {
         return switch (outcome) {
-            case AdminOutcome.NoReply ignored -> List.of();
+            case AdminOutcome.NoReply _ -> List.of();
             case AdminOutcome.ImmediateReply immediate -> this.chunk(this.renderImmediate(immediate));
             case AdminOutcome.DeferredReply deferred -> this.chunk(this.renderDeferred(deferred));
         };
@@ -28,11 +28,11 @@ public final class TelegramAdminOutcomePresenter {
 
     private String renderImmediate(AdminOutcome.ImmediateReply outcome) {
         return switch (outcome) {
-            case AdminOutcome.Unauthorized ignored -> "Brak uprawnień do wykonania poleceń administracyjnych.";
-            case AdminOutcome.HelpOverview ignored -> this.helpText();
-            case AdminOutcome.DataEmpty ignored -> "Brak danych o kadencjach Sejmu.";
+            case AdminOutcome.Unauthorized _ -> "Brak uprawnień do wykonania poleceń administracyjnych.";
+            case AdminOutcome.HelpOverview _ -> this.helpText();
+            case AdminOutcome.DataEmpty _ -> "Brak danych o kadencjach Sejmu.";
             case AdminOutcome.DataSummary dataSummary -> this.renderDataSummary(dataSummary);
-            case AdminOutcome.CollectTermMissing ignored -> "Nie udało się ustalić aktualnej kadencji Sejmu.";
+            case AdminOutcome.CollectTermMissing _ -> "Nie udało się ustalić aktualnej kadencji Sejmu.";
             case AdminOutcome.CollectSuccess collectSuccess -> this.renderCollectSummary(collectSuccess);
             case AdminOutcome.CollectFailure collectFailure -> "Polecenie /collect nie powiodło się: " + collectFailure.reason();
             case AdminOutcome.PublishAlreadyDone publishAlreadyDone -> "Digest dla dnia "

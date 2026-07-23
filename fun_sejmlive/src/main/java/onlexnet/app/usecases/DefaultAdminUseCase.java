@@ -84,7 +84,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
                 .collect(new CollectDailyDigestCommand(LocalDate.now()));
 
         return switch (outcome) {
-            case CollectDailyDigestOutcome.TermMissing ignored -> new AdminOutcome.CollectTermMissing();
+            case CollectDailyDigestOutcome.TermMissing _ -> new AdminOutcome.CollectTermMissing();
             case CollectDailyDigestOutcome.Collected collected -> {
                 var votings = this.countFor(collected, CollectDailyDigestOutcome.TYPE_VOTING);
                 var committeeSittings = this.countFor(collected,

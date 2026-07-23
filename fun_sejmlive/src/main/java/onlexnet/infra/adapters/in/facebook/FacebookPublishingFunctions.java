@@ -67,18 +67,18 @@ public final class FacebookPublishingFunctions {
                     .publish(new PublishDailyDigestCommand(LocalDate.now()));
             this.logOutcome(outcome, "http", executionContext);
             return switch (outcome) {
-                case PublishDailyDigestOutcome.Published ignored -> request.createResponseBuilder(HttpStatus.OK)
+                case PublishDailyDigestOutcome.Published _ -> request.createResponseBuilder(HttpStatus.OK)
                         .body(Map.of(
                                 "status", "PUBLISHED",
                                 "message", "Published daily digest to Facebook."))
                         .build();
-                case PublishDailyDigestOutcome.SkippedAlreadyPublished ignored ->
+                case PublishDailyDigestOutcome.SkippedAlreadyPublished _ ->
                     request.createResponseBuilder(HttpStatus.OK)
                         .body(Map.of(
                                 "status", "SKIPPED_ALREADY_PUBLISHED",
                                 "message", "Digest for today was already published."))
                         .build();
-                case PublishDailyDigestOutcome.SkippedNoDigest ignored -> request.createResponseBuilder(HttpStatus.OK)
+                case PublishDailyDigestOutcome.SkippedNoDigest _ -> request.createResponseBuilder(HttpStatus.OK)
                         .body(Map.of(
                                 "status", "SKIPPED_NO_DIGEST",
                                 "message", "No digest data available for today."))

@@ -13,9 +13,9 @@ public sealed interface AdminOutcome permits AdminOutcome.ImmediateReply, AdminO
 
     default DeliveryPolicy deliveryPolicy() {
         return switch (this) {
-            case NoReply ignored -> DeliveryPolicy.NO_REPLY;
-            case ImmediateReply ignored -> DeliveryPolicy.IMMEDIATE_REPLY;
-            case DeferredReply ignored -> DeliveryPolicy.DEFERRED_REPLY;
+            case NoReply _ -> DeliveryPolicy.NO_REPLY;
+            case ImmediateReply _ -> DeliveryPolicy.IMMEDIATE_REPLY;
+            case DeferredReply _ -> DeliveryPolicy.DEFERRED_REPLY;
         };
     }
 

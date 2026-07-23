@@ -8,15 +8,22 @@ import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.converter.StringHttpMessageConverter;
+import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.web.client.RestClientException;
 
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.infra.adapters.out.sejm.generated.api.InterpellationsApi;
+import onlexnet.infra.adapters.out.sejm.generated.core.ApiClient;
 import onlexnet.testsupport.AppTest;
 
-@AppTest(properties = "FB_TOKEN=test-placeholder-token-for-sejm-client-test")
+@AppTest
 class SejmApiClientSpringBootTest {
 
     private static final int MAX_ATTEMPTS = 3;
+    private static final int TERM_9 = 9;
+    private static final String INTERPELLATION_NUM = "32472";
+    private static final String REPLY_KEY = "CDUH9D";
 
     @Autowired
     private SejmApiClient sejmApiClient;
@@ -46,13 +53,41 @@ class SejmApiClientSpringBootTest {
         assertListCallReachable(() -> this.sejmApiClient.fetchBillsReceivedSince(activeTermNum, referenceDate));
     }
 
+    @Test
+    void givenKnownInterpellationReplyBodyEndpoint_whenFetching_thenDownloadAndDeserializeHtmlBody() {
+        var interpellationsApi = new InterpellationsApi(createApiClientForHtmlStringResponses());
+
+        var htmlBody = assertCallReachable(
+                () -> interpellationsApi.sejmTermtermInterpellationsNumReplyKeyBodyGet(
+                        REPLY_KEY,
+                        INTERPELLATION_NUM,
+                        TERM_9));
+
+        assertThat(htmlBody).isNotBlank();
+        assertThat(htmlBody).contains("<");
+    }
+
+    private static ApiClient createApiClientForHtmlStringResponses() {
+        var mapper = ApiClient.createDefaultMapper(ApiClient.createDefaultDateFormat());
+        var restClient = ApiClient.buildRestClientBuilder(mapper)
+                .configureMessageConverters(builder -> {
+                    builder.addCustomConverter(new JacksonJsonHttpMessageConverter(mapper));
+                    builder.addCustomConverter(new StringHttpMessageConverter());
+                })
+                .build();
+        return new ApiClient(restClient, mapper, ApiClient.createDefaultDateFormat());
+    }
+
     private static void assertListCallReachable(final Supplier<?> apiCall) {
+        assertThat(assertCallReachable(apiCall)).isNotNull();
+    }
+
+    private static <T> T assertCallReachable(final Supplier<T> apiCall) {
         RuntimeException lastFailure = null;
 
         for (var attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                assertThat(apiCall.get()).isNotNull();
-                return;
+                return apiCall.get();
             } catch (RestClientException | IllegalStateException exception) {
                 lastFailure = exception;
             }
