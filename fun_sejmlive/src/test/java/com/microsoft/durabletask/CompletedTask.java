@@ -1,6 +1,8 @@
 package com.microsoft.durabletask;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * Completed task implementation for unit tests.
@@ -13,8 +15,22 @@ public final class CompletedTask<V> extends Task<V> {
         super(CompletableFuture.completedFuture(result));
     }
 
+    private CompletedTask(final CompletableFuture<V> future) {
+        super(future);
+    }
+
     @Override
     public V await() {
         return this.future.join();
+    }
+
+    @Override
+    public <U> Task<U> thenApply(final Function<V, U> transform) {
+        return new CompletedTask<>(this.future.thenApply(transform));
+    }
+
+    @Override
+    public Task<Void> thenAccept(final Consumer<V> action) {
+        return new CompletedTask<>(this.future.thenAccept(action));
     }
 }

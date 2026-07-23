@@ -14,15 +14,20 @@ import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
+import com.microsoft.durabletask.AbstractTaskEntity;
+import com.microsoft.durabletask.EntityInstanceId;
+import com.microsoft.durabletask.EntityRunner;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 import com.microsoft.durabletask.RetryPolicy;
 import com.microsoft.durabletask.TaskFailedException;
+import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
 import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableClientInput;
+import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
 import lombok.RequiredArgsConstructor;
@@ -47,6 +52,12 @@ public final class SejmCollectFunctions {
         public static final String HTTP_STARTER_FUNCTION_NAME = "Fun_CollectStart";
     /** Durable orchestrator function name. */
         public static final String ORCHESTRATOR_FUNCTION_NAME = "Fun_CollectOrchestrator";
+    /** Durable entity function name coordinating collect runs. */
+        public static final String COORDINATOR_ENTITY_FUNCTION_NAME = "Fun_CollectCoordinatorEntity";
+    /** Durable entity logical name used by the runtime. */
+        static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
+    /** Durable entity singleton key for collect coordination. */
+        static final String COORDINATOR_ENTITY_KEY = "singleton";
     /** Activity function name for collecting votings. */
         public static final String ACTIVITY_VOTINGS = "Intern_CollectVotings";
     /** Activity function name for collecting committee sittings. */
@@ -70,6 +81,12 @@ public final class SejmCollectFunctions {
     private final SejmCollectOperations collectService;
     private final SejmApiClient sejmApiClient;
     private CachedTerm cachedTermNum = CachedTerm.NONE;
+
+        private static final String ENTITY_OPERATION_REQUEST_COLLECT = "requestCollect";
+        private static final String ENTITY_OPERATION_COLLECT_COMPLETED = "collectCompleted";
+        private static final String ENTITY_OPERATION_COLLECT_FAILED = "collectFailed";
+        private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID =
+            new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY);
 
     /** Holds the cached current Sejm term number, or {@link None} if not yet resolved. */
     private sealed interface CachedTerm permits CachedTerm.None, CachedTerm.Resolved {
@@ -97,15 +114,14 @@ public final class SejmCollectFunctions {
             final ExecutionContext executionContext) {
 
         try {
-            var instanceId = durableContext.getClient()
-                .scheduleNewOrchestrationInstance(ORCHESTRATOR_FUNCTION_NAME, (Object) null);
+            var instanceId = enqueueCollectRequest(durableContext, "timer");
             executionContext.getLogger().info(
-                    "Successfully scheduled collect orchestration, instanceId=" + instanceId);
-            log.debug("Collect orchestrator triggered by timer: {}", instanceId);
+                    "Collect request accepted from timer, instanceId=" + instanceId);
+            log.debug("Collect request from timer accepted, instanceId={}", instanceId);
         } catch (Exception e) {
-            log.error("Failed to schedule collect orchestration", e);
-            executionContext.getLogger().severe("Error scheduling orchestration: " + e.getMessage());
-            throw new IllegalStateException("Failed to start collection orchestration", e);
+            log.error("Failed to enqueue collect request", e);
+            executionContext.getLogger().severe("Error enqueueing collect request: " + e.getMessage());
+            throw new IllegalStateException("Failed to enqueue collection request", e);
         }
     }
 
@@ -127,18 +143,22 @@ public final class SejmCollectFunctions {
             final ExecutionContext executionContext) {
 
         try {
-            var instanceId = durableContext.getClient()
-                    .scheduleNewOrchestrationInstance(ORCHESTRATOR_FUNCTION_NAME, (Object) null);
+            var instanceId = enqueueCollectRequest(durableContext, "http");
             executionContext.getLogger().info(
-                "Manually scheduled collect orchestration, instanceId=" + instanceId);
-            log.debug("Manual collect orchestrator triggered: {}", instanceId);
-            return durableContext.createCheckStatusResponse(request, instanceId);
+                "Manual collect request accepted, instanceId=" + instanceId);
+            log.debug("Manual collect request accepted, instanceId={}", instanceId);
+            return request.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.ACCEPTED)
+                    .body(Map.of(
+                            "accepted", true,
+                            "coordinatorEntityId", instanceId,
+                            "message", "Collect request was enqueued for serialized processing"))
+                    .build();
         } catch (Exception e) {
-            log.error("Failed to schedule collect orchestration via HTTP", e);
+            log.error("Failed to enqueue collect request via HTTP", e);
             executionContext.getLogger().severe(
-                "Failed to schedule collect orchestration via HTTP: " + e.getMessage());
+                "Failed to enqueue collect request via HTTP: " + e.getMessage());
             return request.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to start collection: " + e.getMessage())
+                    .body("Failed to enqueue collection request: " + e.getMessage())
                     .build();
         }
     }
@@ -154,20 +174,52 @@ public final class SejmCollectFunctions {
     public CollectResult runOrchestrator(
             @DurableOrchestrationTrigger(name = "orchestrationContext")
             final TaskOrchestrationContext orchestrationContext) {
+        var input = orchestrationContext.getInput(CollectOrchestrationInput.class);
+        var coordinatorEntityId = input == null
+                ? COLLECT_COORDINATOR_ENTITY_ID
+                : EntityInstanceId.fromString(input.coordinatorEntityId());
 
-        var counts = new HashMap<String, Integer>();
+        try {
+            var counts = new HashMap<String, Integer>();
 
-        counts.put("VOTING", callActivityWithRetry(orchestrationContext, ACTIVITY_VOTINGS));
-        counts.put("COMMITTEE_SITTING",
-            callActivityWithRetry(orchestrationContext, ACTIVITY_COMMITTEES));
-        counts.put("PRINT", callActivityWithRetry(orchestrationContext, ACTIVITY_PRINTS));
-        counts.put("INTERPELLATION",
-            callActivityWithRetry(orchestrationContext, ACTIVITY_INTERPELLATIONS));
-        counts.put("WRITTEN_QUESTION",
-            callActivityWithRetry(orchestrationContext, ACTIVITY_QUESTIONS));
-        counts.put("BILL", callActivityWithRetry(orchestrationContext, ACTIVITY_BILLS));
+            counts.put("VOTING", callActivityWithRetry(orchestrationContext, ACTIVITY_VOTINGS));
+            counts.put("COMMITTEE_SITTING",
+                callActivityWithRetry(orchestrationContext, ACTIVITY_COMMITTEES));
+            counts.put("PRINT", callActivityWithRetry(orchestrationContext, ACTIVITY_PRINTS));
+            counts.put("INTERPELLATION",
+                callActivityWithRetry(orchestrationContext, ACTIVITY_INTERPELLATIONS));
+            counts.put("WRITTEN_QUESTION",
+                callActivityWithRetry(orchestrationContext, ACTIVITY_QUESTIONS));
+            counts.put("BILL", callActivityWithRetry(orchestrationContext, ACTIVITY_BILLS));
 
-        return new CollectResult(Map.copyOf(counts));
+            var result = new CollectResult(Map.copyOf(counts));
+            orchestrationContext.signalEntity(
+                    coordinatorEntityId,
+                    ENTITY_OPERATION_COLLECT_COMPLETED,
+                    new CollectCompletion(orchestrationContext.getInstanceId()));
+            return result;
+        } catch (RuntimeException e) {
+            orchestrationContext.signalEntity(
+                    coordinatorEntityId,
+                    ENTITY_OPERATION_COLLECT_FAILED,
+                    new CollectFailure(orchestrationContext.getInstanceId(), e.getMessage()));
+            throw e;
+        }
+    }
+
+    @FunctionName(COORDINATOR_ENTITY_FUNCTION_NAME)
+    public String runCollectCoordinatorEntity(
+            @DurableEntityTrigger(name = "entityRequest", entityName = COORDINATOR_ENTITY_NAME)
+            final String entityRequest,
+            final ExecutionContext executionContext) {
+        executionContext.getLogger().info("Processing collect coordinator entity batch");
+        return EntityRunner.loadAndRun(entityRequest, CollectCoordinatorEntity::new);
+    }
+
+    private static String enqueueCollectRequest(final DurableClientContext durableContext, final String source) {
+        var client = durableContext.getClient().getEntities();
+        client.signalEntity(COLLECT_COORDINATOR_ENTITY_ID, ENTITY_OPERATION_REQUEST_COLLECT, source);
+        return COLLECT_COORDINATOR_ENTITY_ID.toString();
     }
 
     private int callActivityWithRetry(final TaskOrchestrationContext orchestrationContext,
@@ -429,5 +481,92 @@ public final class SejmCollectFunctions {
      * @param countsByType map of data type to count of upserted items
      */
     public record CollectResult(Map<String, Integer> countsByType) {
+    }
+
+    private record CollectOrchestrationInput(String coordinatorEntityId, String source) {
+    }
+
+    private record CollectCompletion(String orchestrationInstanceId) {
+    }
+
+    private record CollectFailure(String orchestrationInstanceId, String message) {
+    }
+
+    @SuppressWarnings("unused")
+    private static final class CollectCoordinatorEntity extends AbstractTaskEntity<CollectCoordinatorState> {
+
+        @Override
+        protected Class<CollectCoordinatorState> getStateType() {
+            return CollectCoordinatorState.class;
+        }
+
+        @Override
+        protected CollectCoordinatorState initializeState(final com.microsoft.durabletask.TaskEntityOperation operation) {
+            return new CollectCoordinatorState();
+        }
+
+        public void requestCollect(final String source) {
+            if (this.state.running()) {
+                this.state.incrementPendingRequests();
+                return;
+            }
+
+            startNextRun(source);
+        }
+
+        public void collectCompleted(final CollectCompletion completion) {
+            resumeOrIdle();
+        }
+
+        public void collectFailed(final CollectFailure failure) {
+            resumeOrIdle();
+        }
+
+        private void resumeOrIdle() {
+            if (this.state.pendingRequests() > 0) {
+                this.state.decrementPendingRequests();
+                startNextRun("queued");
+                return;
+            }
+
+            this.state.setRunning(false);
+        }
+
+        private void startNextRun(final String source) {
+            var options = new NewOrchestrationInstanceOptions();
+            this.context.startNewOrchestration(
+                    ORCHESTRATOR_FUNCTION_NAME,
+                    new CollectOrchestrationInput(this.context.getId().toString(), source),
+                    options);
+            this.state.setRunning(true);
+        }
+    }
+
+    private static final class CollectCoordinatorState {
+        private boolean running;
+        private int pendingRequests;
+
+        public boolean running() {
+            return this.running;
+        }
+
+        public void setRunning(final boolean running) {
+            this.running = running;
+        }
+
+        public int pendingRequests() {
+            return this.pendingRequests;
+        }
+
+        public void incrementPendingRequests() {
+            this.pendingRequests++;
+        }
+
+        public void decrementPendingRequests() {
+            if (this.pendingRequests > 0) {
+                this.pendingRequests--;
+            }
+        }
+
     }
 }

@@ -31,7 +31,14 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
+import com.microsoft.durabletask.CleanEntityStorageRequest;
+import com.microsoft.durabletask.CleanEntityStorageResult;
 import com.microsoft.durabletask.DurableTaskClient;
+import com.microsoft.durabletask.DurableEntityClient;
+import com.microsoft.durabletask.EntityInstanceId;
+import com.microsoft.durabletask.EntityMetadata;
+import com.microsoft.durabletask.EntityQuery;
+import com.microsoft.durabletask.EntityQueryResult;
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
 import com.microsoft.durabletask.OrchestrationMetadata;
 import com.microsoft.durabletask.OrchestrationStatusQuery;
@@ -43,6 +50,7 @@ import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
+import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
 import onlexnet.app.ports.out.SejmApiClient;
@@ -138,6 +146,24 @@ class SejmCollectFunctionsTest {
         }
 
         @Test
+        void givenCoordinatorEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
+                throws NoSuchMethodException {
+            var method = SejmCollectFunctions.class.getDeclaredMethod(
+                    "runCollectCoordinatorEntity",
+                    String.class,
+                    ExecutionContext.class);
+
+            var functionName = method.getAnnotation(FunctionName.class);
+            var trigger = method.getParameters()[0].getAnnotation(DurableEntityTrigger.class);
+
+            assertThat(functionName).isNotNull();
+            assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME);
+            assertThat(trigger).isNotNull();
+            assertThat(trigger.name()).isEqualTo("entityRequest");
+            assertThat(trigger.entityName()).isEqualTo(SejmCollectFunctions.COORDINATOR_ENTITY_NAME);
+        }
+
+        @Test
         void givenActivities_whenCheckingTriggerContract_thenFunctionAndActivityTriggersAreConfigured()
             throws NoSuchMethodException {
         assertActivityContract("collectVotings", SejmCollectFunctions.ACTIVITY_VOTINGS);
@@ -150,17 +176,21 @@ class SejmCollectFunctionsTest {
         }
 
         @Test
-    void givenTimerTrigger_whenInvoked_thenSchedulesCollectOrchestrator() {
-            var collectService = mock(SejmCollectOperations.class);
+    void givenTimerTrigger_whenInvoked_thenSignalsCollectCoordinatorEntity() {
+        var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
         var durableContext = new TestDurableClientContext(false);
 
         functions.runTimer("timer", durableContext, new FakeExecutionContext());
 
-        assertThat(durableContext.capturedFunctionName)
-                .isEqualTo(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME);
-        assertThat(durableContext.capturedInput).isNull();
+        assertThat(durableContext.lastSignaledEntityId)
+                .isEqualTo(new EntityInstanceId(
+                        SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
+                        SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
+        assertThat(durableContext.lastEntityOperationName)
+                .isEqualTo("requestCollect");
+        assertThat(durableContext.lastEntityPayload).isEqualTo("timer");
     }
 
     @Test
@@ -173,12 +203,12 @@ class SejmCollectFunctionsTest {
         assertThatThrownBy(
                 () -> functions.runTimer("timer", durableContext, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Failed to start collection orchestration")
+                .hasMessage("Failed to enqueue collection request")
                 .hasCauseInstanceOf(RuntimeException.class);
     }
 
     @Test
-    void givenHttpStart_whenInvoked_thenReturnsAcceptedStatusEndpointsResponse() {
+    void givenHttpStart_whenInvoked_thenReturnsAcceptedQueuedResponse() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
@@ -187,12 +217,14 @@ class SejmCollectFunctionsTest {
 
         var response = functions.httpStart(request, durableContext, new FakeExecutionContext());
 
-        assertThat(durableContext.capturedFunctionName)
-                .isEqualTo(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME);
         assertThat(response.getStatus()).isEqualTo(HttpStatus.ACCEPTED);
-        assertThat(response.getHeader("Location"))
-                .isEqualTo("https://localhost/runtime/status/collect-instance-1");
-        assertThat(response.getBody()).isEqualTo(Map.of("instanceId", "collect-instance-1"));
+        assertThat(response.getHeader("Location")).isNull();
+        assertThat(response.getBody()).isEqualTo(Map.of(
+            "accepted", true,
+            "coordinatorEntityId", new EntityInstanceId(
+                SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
+                SejmCollectFunctions.COORDINATOR_ENTITY_KEY).toString(),
+            "message", "Collect request was enqueued for serialized processing"));
     }
 
     @Test
@@ -206,7 +238,26 @@ class SejmCollectFunctionsTest {
         var response = functions.httpStart(request, durableContext, new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
-        assertThat(response.getBody().toString()).contains("Failed to start collection");
+        assertThat(response.getBody().toString()).contains("Failed to enqueue collection request");
+    }
+
+    @Test
+    void givenMultipleTimerTriggers_whenInvoked_thenEachSignalsCoordinatorEntity() {
+        var collectService = mock(SejmCollectOperations.class);
+        var sejmApiClient = mock(SejmApiClient.class);
+        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var durableContext = new TestDurableClientContext(false);
+
+        functions.runTimer("timer-1", durableContext, new FakeExecutionContext());
+        durableContext.resetCapturedSignals();
+        functions.runTimer("timer-2", durableContext, new FakeExecutionContext());
+
+        assertThat(durableContext.lastSignaledEntityId)
+                .isEqualTo(new EntityInstanceId(
+                        SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
+                        SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
+        assertThat(durableContext.lastEntityOperationName).isEqualTo("requestCollect");
+        assertThat(durableContext.lastEntityPayload).isEqualTo("timer");
     }
 
     @Test
@@ -311,6 +362,7 @@ class SejmCollectFunctionsTest {
         var interpellationsTask = completedTask(4);
         var questionsTask = completedTask(5);
         var billsTask = completedTask(6);
+        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-1");
 
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
@@ -357,6 +409,12 @@ class SejmCollectFunctionsTest {
                 eq(null),
                 any(TaskOptions.class),
                 eq(Integer.class));
+        verify(orchestrationContext).signalEntity(
+            eq(new EntityInstanceId(
+                SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
+                SejmCollectFunctions.COORDINATOR_ENTITY_KEY)),
+            eq("collectCompleted"),
+            any());
     }
 
     @SuppressWarnings("unchecked")
@@ -369,8 +427,9 @@ class SejmCollectFunctionsTest {
     private static final class TestDurableClientContext extends DurableClientContext {
 
         private final DurableTaskClient client;
-        private String capturedFunctionName;
-        private Object capturedInput;
+        private EntityInstanceId lastSignaledEntityId;
+        private String lastEntityOperationName;
+        private Object lastEntityPayload;
 
         private TestDurableClientContext(final boolean shouldFailSchedule) {
             this.client = new TestDurableTaskClient(shouldFailSchedule);
@@ -391,12 +450,24 @@ class SejmCollectFunctionsTest {
                     .build();
         }
 
+        private void resetCapturedSignals() {
+            this.lastSignaledEntityId = null;
+            this.lastEntityOperationName = null;
+            this.lastEntityPayload = null;
+        }
+
         private final class TestDurableTaskClient extends DurableTaskClient {
 
             private final boolean shouldFailSchedule;
+            private final DurableEntityClient entityClient = new TestDurableEntityClient();
 
             private TestDurableTaskClient(final boolean shouldFailSchedule) {
                 this.shouldFailSchedule = shouldFailSchedule;
+            }
+
+            @Override
+            public DurableEntityClient getEntities() {
+                return this.entityClient;
             }
 
             @Override
@@ -417,14 +488,15 @@ class SejmCollectFunctionsTest {
                 if (this.shouldFailSchedule) {
                     throw new RuntimeException("durable client failure");
                 }
-                capturedFunctionName = orchestratorName;
-                capturedInput = input;
                 return "collect-instance-1";
             }
 
             @Override
             public void raiseEvent(final String instanceId, final String eventName,
                     final Object eventPayload) {
+                if (this.shouldFailSchedule) {
+                    throw new RuntimeException("durable client failure");
+                }
                 throw new UnsupportedOperationException("Not used by this unit test");
             }
 
@@ -476,6 +548,61 @@ class SejmCollectFunctionsTest {
             @Override
             public PurgeResult purgeInstances(final PurgeInstanceCriteria criteria) {
                 throw new UnsupportedOperationException("Not used by this unit test");
+            }
+
+            @Override
+            public String restartInstance(final String instanceId, final boolean restartWithNewId) {
+                throw new UnsupportedOperationException("Not used by this unit test");
+            }
+
+            @Override
+            public void rewindInstance(final String instanceId, final String reason) {
+                throw new UnsupportedOperationException("Not used by this unit test");
+            }
+
+            @Override
+            public void suspendInstance(final String instanceId, final String reason) {
+                throw new UnsupportedOperationException("Not used by this unit test");
+            }
+
+            @Override
+            public void resumeInstance(final String instanceId, final String reason) {
+                throw new UnsupportedOperationException("Not used by this unit test");
+            }
+
+            private final class TestDurableEntityClient extends DurableEntityClient {
+
+                private TestDurableEntityClient() {
+                    super("test-entities");
+                }
+
+                @Override
+                public void signalEntity(final EntityInstanceId entityId, final String operationName,
+                        final Object input,
+                        final com.microsoft.durabletask.SignalEntityOptions options) {
+                    if (shouldFailSchedule) {
+                        throw new RuntimeException("durable client failure");
+                    }
+                    lastSignaledEntityId = entityId;
+                    lastEntityOperationName = operationName;
+                    lastEntityPayload = input;
+                }
+
+                @Override
+                public EntityMetadata getEntityMetadata(final EntityInstanceId entityId,
+                        final boolean includeState) {
+                    throw new UnsupportedOperationException("Not used by this unit test");
+                }
+
+                @Override
+                public EntityQueryResult queryEntities(final EntityQuery query) {
+                    throw new UnsupportedOperationException("Not used by this unit test");
+                }
+
+                @Override
+                public CleanEntityStorageResult cleanEntityStorage(final CleanEntityStorageRequest request) {
+                    throw new UnsupportedOperationException("Not used by this unit test");
+                }
             }
         }
     }

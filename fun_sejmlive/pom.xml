@@ -11,14 +11,14 @@
 		<java.version>25</java.version>
 		<maven.compiler.release>${java.version}</maven.compiler.release>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<azure.functions.maven.plugin.version>1.39.0</azure.functions.maven.plugin.version>
-		<azure.functions.java.library.version>3.2.1</azure.functions.java.library.version>
-		<azure.functions.java.spi.version>1.0.0</azure.functions.java.spi.version>
-		<durable.task.azure.functions.version>1.0.0</durable.task.azure.functions.version>
+		<azure.functions.maven.plugin.version>1.42.0</azure.functions.maven.plugin.version>
+		<azure.functions.java.library.version>3.3.0</azure.functions.java.library.version>
+		<azure.functions.java.spi.version>1.1.0</azure.functions.java.spi.version>
+		<durable.task.azure.functions.version>1.9.0</durable.task.azure.functions.version>
 		<restfb.version>2026.8.0</restfb.version>
-		<azure.keyvault.version>4.10.7</azure.keyvault.version>
-		<azure.identity.version>1.16.1</azure.identity.version>
-		<azure.storage.queue.version>12.24.1</azure.storage.queue.version>
+		<azure.keyvault.version>4.11.1</azure.keyvault.version>
+		<azure.identity.version>1.18.4</azure.identity.version>
+		<azure.storage.queue.version>12.30.0</azure.storage.queue.version>
 		<build.version>local</build.version>
 		<lombok.version>1.18.38</lombok.version>
 		<jspecify.version>1.0.0</jspecify.version>
