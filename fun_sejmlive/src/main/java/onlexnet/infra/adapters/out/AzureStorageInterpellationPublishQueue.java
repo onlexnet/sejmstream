@@ -1,6 +1,7 @@
 package onlexnet.infra.adapters.out;
 
 import java.time.Duration;
+import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -27,64 +28,46 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
     public AzureStorageInterpellationPublishQueue(
             // "Storage" is dedicated to domain-logic storage (queues), kept separate from
             // "AzureWebJobsStorage" which is reserved for the Azure Functions host/runtime.
-            @Value("${Storage:}") final String storageConnectionString,
+            @Value("${Storage}") final String storageConnectionString,
             @Value("${interpellation.publish.queue.name:sejm-interpellations-publish}")
             final String publishQueueName,
             @Value("${interpellation.publish.queue.dead-letter-name:sejm-interpellations-publish-deadletter}")
             final String deadLetterQueueName,
             final ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+        var normalizedConnectionString = Objects.requireNonNull(storageConnectionString, "Storage connection string must be configured").trim();
+        if (normalizedConnectionString.isEmpty()) {
+            throw new IllegalStateException("Storage connection string must be configured");
+        }
 
-            if (storageConnectionString == null || storageConnectionString.isBlank()) {
-                this.publishQueueClient = null;
-                this.deadLetterQueueClient = null;
-                return;
-            }
-
-            this.publishQueueClient = new QueueClientBuilder()
-                .connectionString(storageConnectionString)
-                .queueName(publishQueueName)
-                .buildClient();
-            this.deadLetterQueueClient = new QueueClientBuilder()
-                .connectionString(storageConnectionString)
-                .queueName(deadLetterQueueName)
-                .buildClient();
-            this.publishQueueClient.createIfNotExists();
-            this.deadLetterQueueClient.createIfNotExists();
+        this.publishQueueClient = new QueueClientBuilder()
+            .connectionString(normalizedConnectionString)
+            .queueName(publishQueueName)
+            .buildClient();
+        this.deadLetterQueueClient = new QueueClientBuilder()
+            .connectionString(normalizedConnectionString)
+            .queueName(deadLetterQueueName)
+            .buildClient();
+        this.publishQueueClient.createIfNotExists();
+        this.deadLetterQueueClient.createIfNotExists();
     }
 
     @Override
     public void enqueue(final InterpellationPublishQueueMessage message, final Duration visibilityDelay) {
-        var queueClient = this.requirePublishQueueClient();
         // Producer sends raw JSON text. The Functions host queue trigger must use host.json queues.messageEncoding="none".
         var payload = this.serialize(message);
         if (visibilityDelay == null || visibilityDelay.isZero() || visibilityDelay.isNegative()) {
-            queueClient.sendMessage(payload);
+            this.publishQueueClient.sendMessage(payload);
             return;
         }
-        queueClient.sendMessageWithResponse(payload, visibilityDelay, null, null, Context.NONE);
+        this.publishQueueClient.sendMessageWithResponse(payload, visibilityDelay, null, null, Context.NONE);
     }
 
     @Override
     public void enqueueDeadLetter(final InterpellationPublishQueueMessage message) {
-        var queueClient = this.requireDeadLetterQueueClient();
         // Keep dead-letter payload in the same raw JSON format as the primary queue.
         var payload = this.serialize(message);
-        queueClient.sendMessage(payload);
-    }
-
-    private QueueClient requirePublishQueueClient() {
-        if (this.publishQueueClient == null) {
-            throw new IllegalStateException("Storage connection string is required for queue operations");
-        }
-        return this.publishQueueClient;
-    }
-
-    private QueueClient requireDeadLetterQueueClient() {
-        if (this.deadLetterQueueClient == null) {
-            throw new IllegalStateException("Storage connection string is required for queue operations");
-        }
-        return this.deadLetterQueueClient;
+        this.deadLetterQueueClient.sendMessage(payload);
     }
 
     private String serialize(final InterpellationPublishQueueMessage message) {
