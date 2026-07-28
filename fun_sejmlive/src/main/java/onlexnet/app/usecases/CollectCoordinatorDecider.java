@@ -5,7 +5,7 @@ package onlexnet.app.usecases;
  */
 public final class CollectCoordinatorDecider {
 
-    public Decision decide(final State state, final Command command) {
+    public Decision decide(State state, Command command) {
         return switch (command) {
             case RequestCollect requestCollect -> onRequestCollect(state, requestCollect);
             case CollectCompleted _ -> onCollectFinished(state);

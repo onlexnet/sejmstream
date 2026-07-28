@@ -494,7 +494,7 @@ public final class SejmCollectFunctions {
     }
 
     @SuppressWarnings("unused")
-    private static final class CollectCoordinatorEntity extends AbstractTaskEntity<CollectCoordinatorState> {
+    public static final class CollectCoordinatorEntity extends AbstractTaskEntity<CollectCoordinatorState> {
 
         private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
 

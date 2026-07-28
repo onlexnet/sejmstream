@@ -26,7 +26,7 @@ class SejmApiClientSpringBootTest {
     private static final String REPLY_KEY = "CDUH9D";
 
     @Autowired
-    private SejmApiClient sejmApiClient;
+    private DefaultSejmApiClient sejmApiClient;
 
     @Test
     void givenSpringContext_whenResolvingAndCallingSejmApiClient_thenBeanIsCreatedAndApiIsReachable() {
