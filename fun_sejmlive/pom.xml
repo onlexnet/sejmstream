@@ -30,7 +30,7 @@
 		<testcontainers.version>1.21.4</testcontainers.version>
 	    <mapstruct.version>1.6.3</mapstruct.version>
 	    <mapstruct-spi-protobuf.version>1.1.0</mapstruct-spi-protobuf.version>
-	    <nullaway.version>0.13.7</nullaway.version>
+	    <nullaway.version>0.13.8</nullaway.version>
 		<errorprone.version>2.50.0</errorprone.version>
 		<archunit-junit5.version>1.4.2</archunit-junit5.version>
 		<liquibase-core.version>5.0.3</liquibase-core.version>
