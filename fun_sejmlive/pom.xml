@@ -20,7 +20,7 @@
 		<azure.identity.version>1.18.4</azure.identity.version>
 		<azure.storage.queue.version>12.30.0</azure.storage.queue.version>
 		<build.version>local</build.version>
-		<lombok.version>1.18.38</lombok.version>
+		<lombok.version>1.18.46</lombok.version>
 		<jspecify.version>1.0.0</jspecify.version>
 		<maven-compiler-plugin.version>3.15.0</maven-compiler-plugin.version>
 		<maven.surefire.plugin.version>3.5.2</maven.surefire.plugin.version>
