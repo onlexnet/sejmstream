@@ -86,7 +86,7 @@ public final class SejmCollectFunctions {
         private static final String ENTITY_OPERATION_REQUEST_COLLECT = "requestCollect";
         private static final String ENTITY_OPERATION_COLLECT_COMPLETED = "collectCompleted";
         private static final String ENTITY_OPERATION_COLLECT_FAILED = "collectFailed";
-        private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID =
+        private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID = 
             new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY);
 
     /** Holds the cached current Sejm term number, or {@link None} if not yet resolved. */
@@ -108,11 +108,9 @@ public final class SejmCollectFunctions {
      */
     @FunctionName(TIMER_FUNCTION_NAME)
     public void runTimer(
-            @TimerTrigger(name = "timer", schedule = "0 0 * * * *")
-            final String timerInfo,
-            @DurableClientInput(name = "durableContext")
-            final DurableClientContext durableContext,
-            final ExecutionContext executionContext) {
+            @TimerTrigger(name = "timer", schedule = "0 0 * * * *") String timerInfo,
+            @DurableClientInput(name = "durableContext") DurableClientContext durableContext,
+            ExecutionContext executionContext) {
 
         try {
             var instanceId = enqueueCollectRequest(durableContext, "timer");
