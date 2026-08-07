@@ -87,6 +87,30 @@ output "function_storage_table_service_endpoint" {
   value = azurerm_storage_account.function_app.primary_table_endpoint
 }
 
+output "durable_task_scheduler_id" {
+  value = azapi_resource.durable_task_scheduler.id
+}
+
+output "durable_task_scheduler_name" {
+  value = azapi_resource.durable_task_scheduler.name
+}
+
+output "durable_task_scheduler_endpoint" {
+  value = try(
+    azapi_resource.durable_task_scheduler.output.properties.endpoint,
+    azapi_resource.durable_task_scheduler.output["properties.endpoint"],
+    jsondecode(azapi_resource.durable_task_scheduler.output).properties.endpoint
+  )
+}
+
+output "durable_task_hub_id" {
+  value = azapi_resource.durable_task_scheduler_task_hub.id
+}
+
+output "durable_task_hub_name" {
+  value = azapi_resource.durable_task_scheduler_task_hub.name
+}
+
 output "domain_storage_account_id" {
   value = azurerm_storage_account.domain_storage.id
 }

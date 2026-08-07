@@ -73,7 +73,8 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
 `infra/main.tf` now provisions the Azure resources required by the demo `fun_sejmlive` Durable Functions module:
 
 - Flex Consumption Function service plan (`azurerm_service_plan`, SKU `FC1`)
-- Dedicated storage account for Function host and Durable state (`azurerm_storage_account`)
+- Dedicated storage account for Function host bookkeeping and deployment artifacts (`azurerm_storage_account`)
+- Durable Task Scheduler backend (`azapi_resource.durable_task_scheduler`) with task hub (`azapi_resource.durable_task_scheduler_task_hub`)
 - Linux Function App Flex Consumption on Java 21 (`azurerm_function_app_flex_consumption`)
 - System-assigned managed identity on the Function App
 - Azure Storage Queue resources for interpellation publish flow:
@@ -83,12 +84,18 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
    - `Storage Blob Data Contributor`
    - `Storage Queue Data Contributor`
    - `Storage Table Data Contributor`
+- Durable Task Scheduler RBAC assignment for Function App identity:
+   - `Durable Task Data Contributor` (task hub scope)
 - Storage blob data-plane role assignment for the deployment principal (`data.azurerm_client_config.current.object_id`) used by the GitHub OIDC deploy job
 - Key Vault secret read access for the Function App managed identity via `Key Vault Secrets User`
 - Application Insights telemetry enabled by default for the Function App runtime
 - Diagnostic settings routing Function logs and metrics to Log Analytics
 
-The Function App runtime settings include durable host storage via `AzureWebJobsStorage` (connection string) and a configurable task hub name (`function_durable_hub_name`).
+The Function App runtime settings include:
+
+- host storage via `AzureWebJobsStorage` (connection string)
+- scheduler connection via `DURABLE_TASK_SCHEDULER_CONNECTION_STRING`
+- task hub selection via `TASKHUB_NAME` (`function_durable_hub_name`)
 
 For interpellation queue processing, the Function App app settings are also set from Terraform variables:
 
@@ -112,7 +119,8 @@ The current hosting baseline has been verified against the repo state and matche
 - Durable host app settings in `infra/main.tf`:
   - `FUNCTIONS_WORKER_RUNTIME=java`
    - `AzureWebJobsStorage = azurerm_storage_account.function_app.primary_connection_string`
-  - `AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name` (default `SejmApiDemoHub`)
+   - `DURABLE_TASK_SCHEDULER_CONNECTION_STRING = Endpoint=<scheduler-endpoint>;Authentication=ManagedIdentity`
+   - `TASKHUB_NAME = var.function_durable_hub_name` (default `SejmApiDemoHub`)
 - Diagnostic settings routed to the shared Log Analytics workspace.
 
 Verified commands from this baseline review:
@@ -139,6 +147,9 @@ Use these outputs to discover the deployed Function infrastructure without expos
 - `function_storage_blob_service_endpoint`
 - `function_storage_queue_service_endpoint`
 - `function_storage_table_service_endpoint`
+- `durable_task_scheduler_name`
+- `durable_task_scheduler_endpoint`
+- `durable_task_hub_name`
 - `interpellation_publish_queue_name`
 - `interpellation_publish_queue_url`
 - `interpellation_publish_dead_letter_queue_name`

@@ -15,4 +15,9 @@ if ! command -v mvn >/dev/null 2>&1; then
   sudo apt-get install -y maven
 fi
 
+if ! command -v rg >/dev/null 2>&1; then
+  sudo apt-get update
+  sudo apt-get install -y ripgrep
+fi
+
 bash /sejmstream/.devcontainer/scripts/azure-init.sh

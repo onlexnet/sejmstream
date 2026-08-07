@@ -77,3 +77,17 @@ renamed from `azurerm_storage_account.domain` to `azurerm_storage_account.domain
 migrated in-place via a `moved` block (no destroy/recreate of the underlying Azure
 resource). This is a naming-only change; the decision and consequences above remain
 unchanged.
+
+## Update (2026-07-29)
+
+Durable orchestration state is now migrated from the Azure Storage provider to the
+Durable Task Scheduler backend. Consequences for this ADR:
+
+- `azurerm_storage_account.function_app` remains required for Function host runtime
+  bookkeeping and deployment container.
+- Durable task hub state is no longer stored in the function storage account.
+- Durable backend resources are now provisioned separately as
+  `Microsoft.DurableTask/schedulers` + `taskHubs` (via Terraform AzAPI), and the
+  Function App connects using `DURABLE_TASK_SCHEDULER_CONNECTION_STRING` and `TASKHUB_NAME`.
+
+The domain storage separation decision in this ADR still stands and is unaffected.

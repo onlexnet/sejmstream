@@ -26,6 +26,50 @@ variable "function_durable_hub_name" {
   }
 }
 
+variable "function_durable_scheduler_sku_name" {
+  description = "SKU name for the Durable Task Scheduler backend (Consumption only)."
+  type        = string
+  default     = "Consumption"
+
+  validation {
+    condition     = var.function_durable_scheduler_sku_name == "Consumption"
+    error_message = "function_durable_scheduler_sku_name must be Consumption."
+  }
+}
+
+variable "function_durable_scheduler_sku_capacity" {
+  description = "Capacity for the Durable Task Scheduler SKU (ignored for Consumption)."
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.function_durable_scheduler_sku_capacity >= 1
+    error_message = "function_durable_scheduler_sku_capacity must be at least 1."
+  }
+}
+
+variable "function_durable_scheduler_public_network_access" {
+  description = "Public network access mode for Durable Task Scheduler."
+  type        = string
+  default     = "Disabled"
+
+  validation {
+    condition     = contains(["Enabled", "Disabled"], var.function_durable_scheduler_public_network_access)
+    error_message = "function_durable_scheduler_public_network_access must be Enabled or Disabled."
+  }
+}
+
+variable "function_durable_scheduler_ip_allowlist" {
+  description = "IP allowlist entries for Durable Task Scheduler public endpoint (IPv4/IPv6/CIDR)."
+  type        = list(string)
+  default     = ["127.0.0.1/32"]
+
+  validation {
+    condition     = length(var.function_durable_scheduler_ip_allowlist) > 0
+    error_message = "function_durable_scheduler_ip_allowlist must contain at least one IP/CIDR entry."
+  }
+}
+
 variable "interpellation_publish_queue_name" {
   description = "Main Azure Storage Queue name for interpellation publish jobs."
   type        = string

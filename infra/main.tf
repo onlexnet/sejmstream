@@ -49,12 +49,43 @@ locals {
   function_storage_account_name = "${local.name_prefix}${local.environment}fn${local.global_suffix}"
   domain_storage_account_name   = "${local.name_prefix}${local.environment}dom${local.global_suffix}"
   function_app_name             = "${local.resource_prefix}-func-flex-${local.global_suffix}"
+  durable_task_scheduler_name   = "${local.resource_prefix}-dts-${local.global_suffix}"
 }
 
 resource "azurerm_resource_group" "main" {
   name     = "${local.resource_prefix}-rg"
   location = local.location
   tags     = local.common_tags
+}
+
+resource "azapi_resource" "durable_task_scheduler" {
+  type      = "Microsoft.DurableTask/schedulers@2026-02-01"
+  name      = local.durable_task_scheduler_name
+  parent_id = azurerm_resource_group.main.id
+  location  = azurerm_resource_group.main.location
+  tags      = local.common_tags
+
+  body = {
+    properties = {
+      ipAllowlist         = var.function_durable_scheduler_ip_allowlist
+      publicNetworkAccess = var.function_durable_scheduler_public_network_access
+      sku = {
+        name = "Consumption"
+      }
+    }
+  }
+
+  response_export_values = ["properties.endpoint"]
+}
+
+resource "azapi_resource" "durable_task_scheduler_task_hub" {
+  type      = "Microsoft.DurableTask/schedulers/taskHubs@2026-02-01"
+  name      = var.function_durable_hub_name
+  parent_id = azapi_resource.durable_task_scheduler.id
+
+  body = {
+    properties = {}
+  }
 }
 
 # resource "azurerm_role_assignment" "sejmstream_support_contributor" {
@@ -132,7 +163,7 @@ resource "azurerm_storage_container" "function_app_deployment" {
 # Dedicated storage account for domain logic (interpellation publish queues), kept separate
 # from the Functions runtime/host storage account (azurerm_storage_account.function_app) which
 # is required solely to create and run the Azure Function App (AzureWebJobsStorage, deployment
-# container, Durable Functions task hub state).
+# container).
 resource "azurerm_storage_account" "domain_storage" {
   name                     = local.domain_storage_account_name
   resource_group_name      = azurerm_resource_group.main.name
@@ -190,11 +221,12 @@ resource "azurerm_function_app_flex_consumption" "main" {
 
   app_settings = merge(
     {
-      AzureFunctionsJobHost__extensions__durableTask__hubName = var.function_durable_hub_name
       # Required for Flex Consumption when using connection-string storage auth.
       # Remove together with storage_access_key above once MSI is fully supported.
-      # Function/runtime storage only (host bookkeeping, deployment, Durable Functions state).
-      AzureWebJobsStorage = azurerm_storage_account.function_app.primary_connection_string
+      # Function/runtime storage only (host bookkeeping and deployment artifacts).
+      AzureWebJobsStorage                      = azurerm_storage_account.function_app.primary_connection_string
+      DURABLE_TASK_SCHEDULER_CONNECTION_STRING = "Endpoint=${try(azapi_resource.durable_task_scheduler.output.properties.endpoint, azapi_resource.durable_task_scheduler.output["properties.endpoint"], jsondecode(azapi_resource.durable_task_scheduler.output).properties.endpoint)};Authentication=ManagedIdentity"
+      TASKHUB_NAME                             = var.function_durable_hub_name
       # Domain-logic storage (interpellation publish queues), separate from the function
       # runtime storage above. Consumed by domain adapters and the queue trigger binding.
       DomainStorage                                  = azurerm_storage_account.domain_storage.primary_connection_string
@@ -243,6 +275,12 @@ resource "azurerm_role_assignment" "function_storage_queue_data_contributor" {
 resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
   scope                = azurerm_storage_account.function_app.id
   role_definition_name = "Storage Table Data Contributor"
+  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "function_durable_task_data_contributor" {
+  scope                = azapi_resource.durable_task_scheduler_task_hub.id
+  role_definition_name = "Durable Task Data Contributor"
   principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 

@@ -3,6 +3,8 @@
   "Values": {
     "FUNCTIONS_WORKER_RUNTIME": "<FUNCTIONS_WORKER_RUNTIME>",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=http://localhost:8080;TaskHub=SejmApiDemoHub;Authentication=None",
+    "TASKHUB_NAME": "SejmApiDemoHub",
     "DomainStorage": "UseDevelopmentStorage=true",
     "APPLICATIONINSIGHTS_CONNECTION_STRING": "<APPLICATIONINSIGHTS_CONNECTION_STRING>",
     "APPINSIGHTS_INSTRUMENTATIONKEY": "<APPINSIGHTS_INSTRUMENTATIONKEY_OPTIONAL>",

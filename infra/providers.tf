@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 4.76"
     }
+    azapi = {
+      source  = "azure/azapi"
+      version = "~> 2.3"
+    }
     github = {
       source  = "integrations/github"
       version = "~> 6.0"
@@ -42,6 +46,11 @@ provider "azurerm" {
   # Avoid RP auto-registration when the identity lacks subscription-level permissions.
   resource_provider_registrations = "none"
 
+  use_cli  = false
+  use_oidc = true
+}
+
+provider "azapi" {
   use_cli  = false
   use_oidc = true
 }
