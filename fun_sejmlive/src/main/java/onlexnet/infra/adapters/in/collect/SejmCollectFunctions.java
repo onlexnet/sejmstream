@@ -545,9 +545,28 @@ public final class SejmCollectFunctions {
         }
     }
 
-    private static final class CollectCoordinatorState {
+    static final class CollectCoordinatorState {
         private boolean running;
         private int pendingRequests;
+
+        public CollectCoordinatorState() {
+        }
+
+        public boolean isRunning() {
+            return this.running;
+        }
+
+        public void setRunning(final boolean running) {
+            this.running = running;
+        }
+
+        public int getPendingRequests() {
+            return this.pendingRequests;
+        }
+
+        public void setPendingRequests(final int pendingRequests) {
+            this.pendingRequests = pendingRequests;
+        }
 
         private CollectCoordinatorDecider.State toDeciderState() {
             return new CollectCoordinatorDecider.State(this.running, this.pendingRequests);

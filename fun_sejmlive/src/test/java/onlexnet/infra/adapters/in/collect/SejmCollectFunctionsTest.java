@@ -31,6 +31,7 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.durabletask.CleanEntityStorageRequest;
 import com.microsoft.durabletask.CleanEntityStorageResult;
 import com.microsoft.durabletask.DurableTaskClient;
@@ -415,6 +416,20 @@ class SejmCollectFunctionsTest {
                 SejmCollectFunctions.COORDINATOR_ENTITY_KEY)),
             eq("collectCompleted"),
             any());
+    }
+
+    @Test
+    void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
+        var objectMapper = new ObjectMapper();
+        var state = new SejmCollectFunctions.CollectCoordinatorState();
+        state.setRunning(true);
+        state.setPendingRequests(2);
+
+        var json = objectMapper.writeValueAsString(state);
+        var restored = objectMapper.readValue(json, SejmCollectFunctions.CollectCoordinatorState.class);
+
+        assertThat(restored.isRunning()).isTrue();
+        assertThat(restored.getPendingRequests()).isEqualTo(2);
     }
 
     @SuppressWarnings("unchecked")
