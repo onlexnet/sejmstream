@@ -51,7 +51,7 @@ variable "function_durable_scheduler_sku_capacity" {
 variable "function_durable_scheduler_public_network_access" {
   description = "Public network access mode for Durable Task Scheduler."
   type        = string
-  default     = "Disabled"
+  default     = "Enabled"
 
   validation {
     condition     = contains(["Enabled", "Disabled"], var.function_durable_scheduler_public_network_access)
@@ -62,7 +62,7 @@ variable "function_durable_scheduler_public_network_access" {
 variable "function_durable_scheduler_ip_allowlist" {
   description = "IP allowlist entries for Durable Task Scheduler public endpoint (IPv4/IPv6/CIDR)."
   type        = list(string)
-  default     = ["127.0.0.1/32"]
+  default     = ["0.0.0.0/0"]
 
   validation {
     condition     = length(var.function_durable_scheduler_ip_allowlist) > 0
