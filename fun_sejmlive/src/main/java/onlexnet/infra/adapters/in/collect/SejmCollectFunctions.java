@@ -2,6 +2,7 @@ package onlexnet.infra.adapters.in.collect;
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -20,6 +21,7 @@ import com.microsoft.durabletask.EntityRunner;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 import com.microsoft.durabletask.RetryPolicy;
+import com.microsoft.durabletask.Task;
 import com.microsoft.durabletask.TaskFailedException;
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
 import com.microsoft.durabletask.TaskOptions;
@@ -163,33 +165,43 @@ public final class SejmCollectFunctions {
     }
 
     /**
-     * Durable orchestrator that calls all 6 collection activities sequentially and aggregates results.
-     * Activities are executed in order: votings, committees, prints, interpellations, questions, bills.
+     * Durable orchestrator that fans out all 6 collection activities and then fans in results.
+     * Activities are scheduled together and results are aggregated by data type.
      *
      * @param orchestrationContext durable orchestration context
      * @return result with counts by data type
      */
     @FunctionName(ORCHESTRATOR_FUNCTION_NAME)
     public CollectResult runOrchestrator(
-            @DurableOrchestrationTrigger(name = "orchestrationContext")
-            final TaskOrchestrationContext orchestrationContext) {
+            @DurableOrchestrationTrigger(name = "orchestrationContext") TaskOrchestrationContext orchestrationContext) {
         var input = orchestrationContext.getInput(CollectOrchestrationInput.class);
         var coordinatorEntityId = input == null
                 ? COLLECT_COORDINATOR_ENTITY_ID
                 : EntityInstanceId.fromString(input.coordinatorEntityId());
 
         try {
-            var counts = new HashMap<String, Integer>();
+            var votingTask = startActivityWithRetry(orchestrationContext, ACTIVITY_VOTINGS);
+            var committeesTask = startActivityWithRetry(orchestrationContext, ACTIVITY_COMMITTEES);
+            var printsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_PRINTS);
+            var interpellationsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_INTERPELLATIONS);
+            var questionsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_QUESTIONS);
+            var billsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_BILLS);
 
-            counts.put("VOTING", callActivityWithRetry(orchestrationContext, ACTIVITY_VOTINGS));
-            counts.put("COMMITTEE_SITTING",
-                callActivityWithRetry(orchestrationContext, ACTIVITY_COMMITTEES));
-            counts.put("PRINT", callActivityWithRetry(orchestrationContext, ACTIVITY_PRINTS));
-            counts.put("INTERPELLATION",
-                callActivityWithRetry(orchestrationContext, ACTIVITY_INTERPELLATIONS));
-            counts.put("WRITTEN_QUESTION",
-                callActivityWithRetry(orchestrationContext, ACTIVITY_QUESTIONS));
-            counts.put("BILL", callActivityWithRetry(orchestrationContext, ACTIVITY_BILLS));
+                orchestrationContext.allOf(List.of(
+                    votingTask,
+                    committeesTask,
+                    printsTask,
+                    interpellationsTask,
+                    questionsTask,
+                    billsTask)).await();
+
+            var counts = new HashMap<String, Integer>();
+            counts.put("VOTING", awaitActivityWithFailureContext(votingTask, ACTIVITY_VOTINGS));
+            counts.put("COMMITTEE_SITTING", awaitActivityWithFailureContext(committeesTask, ACTIVITY_COMMITTEES));
+            counts.put("PRINT", awaitActivityWithFailureContext(printsTask, ACTIVITY_PRINTS));
+            counts.put("INTERPELLATION", awaitActivityWithFailureContext(interpellationsTask, ACTIVITY_INTERPELLATIONS));
+            counts.put("WRITTEN_QUESTION", awaitActivityWithFailureContext(questionsTask, ACTIVITY_QUESTIONS));
+            counts.put("BILL", awaitActivityWithFailureContext(billsTask, ACTIVITY_BILLS));
 
             var result = new CollectResult(Map.copyOf(counts));
             orchestrationContext.signalEntity(
@@ -221,12 +233,15 @@ public final class SejmCollectFunctions {
         return COLLECT_COORDINATOR_ENTITY_ID.toString();
     }
 
-    private int callActivityWithRetry(final TaskOrchestrationContext orchestrationContext,
+    private Task<Integer> startActivityWithRetry(
+            final TaskOrchestrationContext orchestrationContext,
             final String activityName) {
+        return orchestrationContext.callActivity(activityName, null, ACTIVITY_RETRY_OPTIONS, Integer.class);
+    }
+
+    private int awaitActivityWithFailureContext(Task<Integer> task, String activityName) {
         try {
-            return orchestrationContext
-                    .callActivity(activityName, null, ACTIVITY_RETRY_OPTIONS, Integer.class)
-                    .await();
+            return task.await();
         } catch (TaskFailedException e) {
             // Surface inner activity failure details in orchestration history/logs for easier Azure diagnostics.
             var details = e.getErrorDetails();
@@ -248,8 +263,8 @@ public final class SejmCollectFunctions {
      */
     @FunctionName(ACTIVITY_VOTINGS)
     public int collectVotings(
-            @DurableActivityTrigger(name = "ignored") final String ignored,
-            final ExecutionContext executionContext) {
+            @DurableActivityTrigger(name = "ignored") String ignored,
+            ExecutionContext executionContext) {
 
         try {
             var date = LocalDate.now();

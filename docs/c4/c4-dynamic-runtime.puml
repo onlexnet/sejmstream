@@ -1,0 +1,59 @@
+@startuml C4_Dynamic_Runtime
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Dynamic Diagram - SejmStream Runtime Flows
+
+Person(admin, "Admin", "Runs operational commands in Telegram")
+
+System_Ext(sejm_api, "Sejm API", "Parliamentary data source")
+System_Ext(facebook, "Facebook Graph API", "Publishing target")
+System_Ext(telegram_api, "Telegram Bot API", "Webhook + outbound messages")
+SystemDb_Ext(postgres, "PostgreSQL", "Digest items, publish state, audit")
+System_Ext(domain_storage, "Domain Storage Queue", "Interpellation publish queue + dead-letter")
+System_Ext(durable_scheduler, "Durable Task Scheduler", "Durable orchestration backend")
+
+Container_Boundary(func_app, "Azure Function App (Java)") {
+  Component(collect_in, "SejmCollectFunctions", "Timer/HTTP + Durable starter")
+  Component(collect_uc, "CollectDailyDigestUseCase", "Use case")
+  Component(collect_ops, "SejmCollectService", "Collection orchestrator")
+
+  Component(publish_in, "FacebookPublishingFunctions", "Timer/HTTP")
+  Component(publish_uc, "PublishDailyDigestUseCase", "Use case")
+
+  Component(queue_in, "InterpellationPublishQueueFunctions", "Queue trigger")
+  Component(queue_uc, "ProcessInterpellationPublishUseCase", "Use case")
+
+  Component(admin_in, "TelegramBotFunctions", "Telegram webhook adapter")
+  Component(admin_uc, "AdminUseCase", "Use case")
+}
+
+' A) Hourly collect flow
+Rel(collect_in, durable_scheduler, "A1 start/update orchestration")
+Rel(durable_scheduler, collect_uc, "A2 invokes collect activities")
+Rel(collect_uc, collect_ops, "A3 delegate collection")
+Rel(collect_ops, sejm_api, "A4 fetch terms + daily slices")
+Rel(collect_ops, postgres, "A5 upsert SejmDailyDigestItem")
+Rel(collect_ops, domain_storage, "A6 enqueue interpellation publish messages")
+
+' B) Daily publish flow
+Rel(publish_in, publish_uc, "B1 timer/manual publish command")
+Rel(publish_uc, postgres, "B2 load digest + write PublishLog")
+Rel(publish_uc, facebook, "B3 publish daily digest post")
+
+' C) Queue retry/dead-letter flow
+Rel(domain_storage, queue_in, "C1 dequeue publish message")
+Rel(queue_in, queue_uc, "C2 process command")
+Rel(queue_uc, postgres, "C3 claim/update InterpellationPublishState")
+Rel(queue_uc, facebook, "C4 publish interpellation post")
+Rel(queue_uc, domain_storage, "C5 retry with delay or send to dead-letter")
+
+' D) Admin Telegram flow
+Rel(admin, telegram_api, "D1 send /help /collect /publish")
+Rel(telegram_api, admin_in, "D2 webhook POST /api/telegram/webhook")
+Rel(admin_in, admin_uc, "D3 parse + dispatch action")
+Rel(admin_uc, collect_uc, "D4 optional: trigger collect")
+Rel(admin_uc, publish_uc, "D5 optional: trigger publish")
+Rel(admin_uc, telegram_api, "D6 send outcome message")
+
+SHOW_LEGEND()
+@enduml

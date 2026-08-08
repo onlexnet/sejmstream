@@ -395,6 +395,8 @@ class SejmCollectFunctionsTest {
                 eq(null),
                 any(TaskOptions.class),
                 eq(Integer.class))).thenReturn(billsTask);
+        when(orchestrationContext.allOf(any(List.class)))
+            .thenReturn(new com.microsoft.durabletask.CompletedTask<>(List.of(1, 2, 3, 4, 5, 6)));
 
         var result = functions.runOrchestrator(orchestrationContext);
 

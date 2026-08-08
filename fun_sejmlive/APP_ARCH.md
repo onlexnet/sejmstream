@@ -75,3 +75,10 @@ This application follows Hexagonal Architecture (Ports and Adapters).
 3. A use case executes business logic and orchestrates output dependencies.
 4. Output ports are fulfilled by output adapters.
 5. The input adapter maps the result back to channel-specific response behavior.
+
+## Dynamic C4 Runtime View
+
+For an end-to-end dynamic view of runtime behavior (collect orchestration, daily publish,
+interpellation retry/dead-letter, and Telegram admin flow), see:
+
+- `../docs/c4/c4-dynamic-runtime.puml`
