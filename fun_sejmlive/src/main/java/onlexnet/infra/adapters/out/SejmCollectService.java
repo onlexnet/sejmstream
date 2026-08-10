@@ -244,7 +244,8 @@ public class SejmCollectService implements SejmCollectOperations {
                 item.sentDate(),
                 1,
                 firstQueuedAt,
-                null);
+                null,
+                item.attachments() == null ? List.of() : item.attachments());
         var claimed = this.interpellationPublishStatePort.tryCreateQueuedRecord(message, collectionDate);
         if (!claimed) {
             return;

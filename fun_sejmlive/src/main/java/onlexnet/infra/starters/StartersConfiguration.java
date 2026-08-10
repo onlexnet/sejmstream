@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -24,7 +23,7 @@ import onlexnet.infra.config.DatabaseConfiguration;
 	AdaptersInModuleConfigurer.class,
 	AppModuleConfigurer.class
 })
-public class SpringBoot4Configuration {
+public class StartersConfiguration {
 
 	@Bean
 	public ObjectMapper objectMapper() {

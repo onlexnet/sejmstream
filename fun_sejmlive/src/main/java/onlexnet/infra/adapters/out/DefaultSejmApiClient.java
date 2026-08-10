@@ -1,28 +1,33 @@
 package onlexnet.infra.adapters.out;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.text.DateFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
-import tools.jackson.core.JacksonException;
-import tools.jackson.core.JsonParser;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.DeserializationContext;
-import tools.jackson.databind.ValueDeserializer;
-import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.module.SimpleModule;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import onlexnet.app.ports.out.AttachmentMetadata;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.infra.adapters.out.sejm.generated.api.BillsApi;
 import onlexnet.infra.adapters.out.sejm.generated.api.CommitteesApi;
@@ -41,6 +46,13 @@ import onlexnet.infra.adapters.out.sejm.generated.model.Reply;
 import onlexnet.infra.adapters.out.sejm.generated.model.Term;
 import onlexnet.infra.adapters.out.sejm.generated.model.Voting;
 import onlexnet.infra.adapters.out.sejm.generated.model.WrittenQuestion;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.DeserializationContext;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.ValueDeserializer;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.module.SimpleModule;
 
 @Component
 final class DefaultSejmApiClient implements SejmApiClient {
@@ -51,6 +63,8 @@ final class DefaultSejmApiClient implements SejmApiClient {
             .ofPattern("yyyy-MM-dd'T'HH:mm:ss");
 
     private final DefaultApi defaultApi;
+    private final HttpClient httpClient;
+    private final String basePath;
     private final VotingsApi votingsApi;
     private final CommitteesApi committeesApi;
     private final PrintsApi printsApi;
@@ -65,18 +79,23 @@ final class DefaultSejmApiClient implements SejmApiClient {
     public DefaultSejmApiClient(
             final RestClient.Builder restClientBuilder,
             @Value("${sejm.api.base-path:https://api.sejm.gov.pl}") final String basePath) {
-        this(buildApiClient(restClientBuilder, basePath));
+        this(buildApiClient(restClientBuilder, basePath), HttpClient.newHttpClient(), basePath);
     }
 
     DefaultSejmApiClient(ApiClient apiClient) {
-        var nonNullApiClient = Objects.requireNonNull(apiClient, "apiClient must not be null");
-        this.defaultApi = new DefaultApi(nonNullApiClient);
-        this.votingsApi = new VotingsApi(nonNullApiClient);
-        this.committeesApi = new CommitteesApi(nonNullApiClient);
-        this.printsApi = new PrintsApi(nonNullApiClient);
-        this.interpellationsApi = new InterpellationsApi(nonNullApiClient);
-        this.writtenQuestionsApi = new WrittenQuestionsApi(nonNullApiClient);
-        this.billsApi = new BillsApi(nonNullApiClient);
+        this(apiClient, HttpClient.newHttpClient(), DEFAULT_API_BASE_PATH);
+    }
+
+    private DefaultSejmApiClient(ApiClient apiClient, HttpClient httpClient, String basePath) {
+        this.defaultApi = new DefaultApi(apiClient);
+        this.votingsApi = new VotingsApi(apiClient);
+        this.committeesApi = new CommitteesApi(apiClient);
+        this.printsApi = new PrintsApi(apiClient);
+        this.interpellationsApi = new InterpellationsApi(apiClient);
+        this.writtenQuestionsApi = new WrittenQuestionsApi(apiClient);
+        this.billsApi = new BillsApi(apiClient);
+        this.httpClient = httpClient;
+        this.basePath = basePath;
     }
 
     @Override
@@ -159,6 +178,60 @@ final class DefaultSejmApiClient implements SejmApiClient {
         return nullSafe(writtenQuestions).stream().map(this::mapWrittenQuestion).toList();
     }
 
+    /**
+     * Fetches an interpellation attachment and returns a JSON payload containing either extracted text
+     * (for textual formats, including PDF) or Base64-encoded binary content.
+     *
+     * <p>Use this method when downstream processing needs normalized attachment content without
+     * handling file download, MIME detection, PDF parsing, and binary/text branching separately.
+     * The returned payload includes metadata (reply key, file name, MIME type, size) and content in
+     * a single structure suitable for persistence or publishing.</p>
+     *
+     * @param termNum Sejm term number used to build the attachment endpoint.
+     * @param replyKey reply identifier under which the attachment is exposed.
+     * @param fileName attachment file name from the Sejm API.
+     * @return serialized JSON payload with normalized attachment content, or {@code null} when the
+     *         attachment is unavailable or empty.
+     */
+    @Override
+    public AttachmentFetchResult fetchAttachmentText(int termNum, String replyKey, String fileName) {
+        var safeReplyKey = encodePathSegment(replyKey);
+        var safeFileName = encodePathSegment(fileName);
+        var uri = URI.create(this.basePath + "/sejm/term" + termNum + "/interpellations/attachment/"
+                + safeReplyKey + "/" + safeFileName);
+        var request = HttpRequest.newBuilder(uri).GET().build();
+        try {
+            var response = this.httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() >= 400) {
+                return new AttachmentFetchResult.Unavailable(replyKey, fileName, "http-status-" + response.statusCode());
+            }
+            var body = response.body();
+            if (body == null || body.length == 0) {
+                return new AttachmentFetchResult.Unavailable(replyKey, fileName, "empty-body");
+            }
+
+            var mimeType = contentType(response);
+            var extractedContent = extractTextContent(body, mimeType);
+            return switch (extractedContent) {
+                case PdfTextContent it -> new AttachmentFetchResult.PdfText(
+                        replyKey,
+                        fileName,
+                        it.mimeType(),
+                        it.text(),
+                        body.length);
+                case BinaryAttachmentContent it -> new AttachmentFetchResult.Unsupported(
+                        replyKey,
+                        fileName,
+                        it.mimeType(),
+                        body.length,
+                        "unsupported-attachment-type");
+            };
+        } catch (IOException | InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Failed to fetch attachment text", exception);
+        }
+    }
+
     @Override
     public List<BillItem> fetchBillsReceivedSince(final int termNum, final LocalDate since) {
         var bills = callSejmApi(
@@ -205,6 +278,37 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .addModule(customModule)
                 .build();
+    }
+
+    private static String contentType(HttpResponse<byte[]> response) {
+        var rawValue = response.headers().firstValue("Content-Type").orElse("");
+        var typeWithoutParams = rawValue.split(";", 2)[0].trim();
+        if (typeWithoutParams.isBlank()) {
+            return "application/octet-stream";
+        }
+        return typeWithoutParams.toLowerCase(Locale.ROOT);
+    }
+
+    private static AttachmentContent extractTextContent(byte[] body, String mimeType) {
+        if (mimeType.equals("application/pdf")) {
+            var extractedPdfText = extractPdfText(body);
+            if (extractedPdfText != null) {
+                return new PdfTextContent(mimeType, extractedPdfText);
+            }
+        }
+        return new BinaryAttachmentContent(mimeType, body);
+    }
+
+    private static String extractPdfText(final byte[] pdfBytes) {
+        try (var document = Loader.loadPDF(pdfBytes)) {
+            var text = new PDFTextStripper().getText(document);
+            if (text == null || text.isBlank()) {
+                return null;
+            }
+            return text;
+        } catch (IOException exception) {
+            throw new UncheckedIOException(exception);
+        }
     }
 
     private SejmTerm mapTerm(final Term term) {
@@ -259,24 +363,36 @@ final class DefaultSejmApiClient implements SejmApiClient {
     }
 
     private InterpellationItem mapInterpellation(final Interpellation interpellation) {
+        var replies = nullSafe(interpellation.getReplies());
+        var attachments = replies.stream()
+                .flatMap(reply -> nullSafe(reply.getAttachments()).stream())
+                .map(this::mapAttachment)
+                .toList();
         return new InterpellationItem(
                 intOrZero(interpellation.getNum()),
                 interpellation.getTitle(),
                 nullSafe(interpellation.getTo()),
                 interpellation.getSentDate() == null ? null : interpellation.getSentDate().toString(),
                 interpellation.getLastModified() == null ? null : interpellation.getLastModified().toString(),
-                nullSafe(interpellation.getReplies()).stream().map(this::mapReply).toList());
+                replies.stream().map(this::mapReply).toList(),
+                attachments);
+    }
+
+    private AttachmentMetadata mapAttachment(final onlexnet.infra.adapters.out.sejm.generated.model.Attachment attachment) {
+        var name = attachment.getName();
+        return new AttachmentMetadata(null, name, attachment.getURL(),
+                attachment.getLastModified() == null ? null : attachment.getLastModified().toString(), name);
     }
 
     private ReplyItem mapReply(final Reply reply) {
-                var from = Objects.requireNonNull(reply.getFrom(), "ReplyItem.from must not be null");
-                if (Boolean.TRUE.equals(reply.getProlongation())) {
-                        return new SejmApiClient.ReplyItem.Prolongation(from);
-                }
-                return new SejmApiClient.ReplyItem.ActualReply(
-                        Objects.requireNonNull(reply.getKey(), "ReplyItem.key must not be null"),
-                        from,
-                        Objects.requireNonNull(reply.getReceiptDate(), "ReplyItem.receiptDate must not be null"));
+        var from = Objects.requireNonNull(reply.getFrom(), "ReplyItem.from must not be null");
+        if (Boolean.TRUE.equals(reply.getProlongation())) {
+            return new SejmApiClient.ReplyItem.Prolongation(from);
+        }
+        return new SejmApiClient.ReplyItem.ActualReply(
+                Objects.requireNonNull(reply.getKey(), "ReplyItem.key must not be null"),
+                from,
+                Objects.requireNonNull(reply.getReceiptDate(), "ReplyItem.receiptDate must not be null"));
     }
 
     private WrittenQuestionItem mapWrittenQuestion(final WrittenQuestion question) {
@@ -295,6 +411,13 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 bill.getDateOfReceipt() == null ? null : bill.getDateOfReceipt().toString(),
                 bill.getSubmissionType() == null ? null : bill.getSubmissionType().toString(),
                 bill.getStatus() == null ? null : bill.getStatus().toString());
+    }
+
+    private static String encodePathSegment(final String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
     private static LocalDateTime toLocalDateTime(final OffsetDateTime value) {
@@ -329,6 +452,15 @@ final class DefaultSejmApiClient implements SejmApiClient {
     @FunctionalInterface
     private interface ApiCall<T> {
         T execute();
+    }
+
+    private sealed interface AttachmentContent permits PdfTextContent, BinaryAttachmentContent {
+    }
+
+    private record PdfTextContent(String mimeType, String text) implements AttachmentContent {
+    }
+
+    private record BinaryAttachmentContent(String mimeType, byte[] content) implements AttachmentContent {
     }
 
     private static final class LenientOffsetDateTimeDeserializer extends ValueDeserializer<OffsetDateTime> {

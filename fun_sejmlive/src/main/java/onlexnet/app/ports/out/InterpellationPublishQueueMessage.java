@@ -18,7 +18,8 @@ public record InterpellationPublishQueueMessage(
         @Nullable String sentDate,
         int attempt,
         Instant firstQueuedAt,
-        @Nullable String lastError) {
+        @Nullable String lastError,
+        List<AttachmentMetadata> attachments) {
 
     public InterpellationPublishQueueMessage {
         if (domainMessageId == null || domainMessageId.isBlank()) {
@@ -38,6 +39,20 @@ public record InterpellationPublishQueueMessage(
             throw new IllegalArgumentException("attempt must be >= 1");
         }
         firstQueuedAt = Objects.requireNonNull(firstQueuedAt, "firstQueuedAt must not be null");
+        attachments = attachments == null ? List.of() : List.copyOf(attachments);
+    }
+
+    public InterpellationPublishQueueMessage(
+            final String domainMessageId,
+            final int termNum,
+            final int interpellationNum,
+            final String title,
+            final List<String> recipients,
+            final @Nullable String sentDate,
+            final int attempt,
+            final Instant firstQueuedAt,
+            final @Nullable String lastError) {
+        this(domainMessageId, termNum, interpellationNum, title, recipients, sentDate, attempt, firstQueuedAt, lastError, List.of());
     }
 
     public InterpellationPublishQueueMessage withAttempt(final int nextAttempt) {
@@ -50,7 +65,8 @@ public record InterpellationPublishQueueMessage(
                 this.sentDate,
                 nextAttempt,
                 this.firstQueuedAt,
-                this.lastError);
+                this.lastError,
+                this.attachments);
     }
 
     public InterpellationPublishQueueMessage withLastError(final @Nullable String error) {
@@ -63,6 +79,21 @@ public record InterpellationPublishQueueMessage(
                 this.sentDate,
                 this.attempt,
                 this.firstQueuedAt,
-                error);
+                error,
+                this.attachments);
+    }
+
+    public InterpellationPublishQueueMessage withAttachments(final List<AttachmentMetadata> attachments) {
+        return new InterpellationPublishQueueMessage(
+                this.domainMessageId,
+                this.termNum,
+                this.interpellationNum,
+                this.title,
+                this.recipients,
+                this.sentDate,
+                this.attempt,
+                this.firstQueuedAt,
+                this.lastError,
+                attachments);
     }
 }

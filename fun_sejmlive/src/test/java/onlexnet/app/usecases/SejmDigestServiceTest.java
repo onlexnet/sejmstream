@@ -69,6 +69,7 @@ class SejmDigestServiceTest {
                         List.of("Minister Infrastruktury"),
                         "2026-06-13",
                         "2026-06-13T08:00:00",
+                        List.of(),
                         List.of()))),
                 row("WRITTEN_QUESTION", this.objectMapper.writeValueAsString(new WrittenQuestionItem(
                         888,

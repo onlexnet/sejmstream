@@ -18,12 +18,14 @@ import onlexnet.infra.adapters.out.sejm.generated.core.ApiClient;
 import onlexnet.testsupport.AppTest;
 
 @AppTest
-class SejmApiClientSpringBootTest {
+class SejmApiClientITest {
 
     private static final int MAX_ATTEMPTS = 3;
     private static final int TERM_9 = 9;
     private static final String INTERPELLATION_NUM = "32472";
     private static final String REPLY_KEY = "CDUH9D";
+    private static final String ATTACHMENT_REPLY_KEY = "ATTCDUH9D";
+    private static final String ATTACHMENT_FILE_NAME = "i32472-o1.pdf";
 
     @Autowired
     private DefaultSejmApiClient sejmApiClient;
@@ -65,6 +67,42 @@ class SejmApiClientSpringBootTest {
 
         assertThat(htmlBody).isNotBlank();
         assertThat(htmlBody).contains("<");
+    }
+
+    @Test
+    void givenKnownInterpellationAttachmentEndpoint_whenFetching_thenDownloadAttachmentContent() {
+        var attachmentFetchResult = this.sejmApiClient.fetchAttachmentText(
+                TERM_9,
+                ATTACHMENT_REPLY_KEY,
+                ATTACHMENT_FILE_NAME);
+
+        assertThat(attachmentFetchResult)
+                .isInstanceOfAny(
+                        SejmApiClient.AttachmentFetchResult.PdfText.class,
+                        SejmApiClient.AttachmentFetchResult.Unsupported.class,
+                        SejmApiClient.AttachmentFetchResult.Unavailable.class);
+
+        switch (attachmentFetchResult) {
+            case SejmApiClient.AttachmentFetchResult.PdfText pdfText -> {
+                assertThat(pdfText.replyKey()).isEqualTo(ATTACHMENT_REPLY_KEY);
+                assertThat(pdfText.fileName()).isEqualTo(ATTACHMENT_FILE_NAME);
+                assertThat(pdfText.mimeType()).isEqualTo("application/pdf");
+                assertThat(pdfText.text()).isNotBlank();
+                assertThat(pdfText.sizeBytes()).isGreaterThan(0);
+            }
+            case SejmApiClient.AttachmentFetchResult.Unsupported unsupported -> {
+                assertThat(unsupported.replyKey()).isEqualTo(ATTACHMENT_REPLY_KEY);
+                assertThat(unsupported.fileName()).isEqualTo(ATTACHMENT_FILE_NAME);
+                assertThat(unsupported.mimeType()).isNotBlank();
+                assertThat(unsupported.sizeBytes()).isGreaterThan(0);
+                assertThat(unsupported.reason()).isNotBlank();
+            }
+            case SejmApiClient.AttachmentFetchResult.Unavailable unavailable -> {
+                assertThat(unavailable.replyKey()).isEqualTo(ATTACHMENT_REPLY_KEY);
+                assertThat(unavailable.fileName()).isEqualTo(ATTACHMENT_FILE_NAME);
+                assertThat(unavailable.reason()).isNotBlank();
+            }
+        }
     }
 
     private static ApiClient createApiClientForHtmlStringResponses() {

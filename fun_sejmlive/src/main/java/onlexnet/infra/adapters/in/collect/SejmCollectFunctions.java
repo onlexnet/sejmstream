@@ -234,8 +234,8 @@ public final class SejmCollectFunctions {
     }
 
     private Task<Integer> startActivityWithRetry(
-            final TaskOrchestrationContext orchestrationContext,
-            final String activityName) {
+            TaskOrchestrationContext orchestrationContext,
+            String activityName) {
         return orchestrationContext.callActivity(activityName, null, ACTIVITY_RETRY_OPTIONS, Integer.class);
     }
 

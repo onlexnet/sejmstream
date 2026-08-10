@@ -67,8 +67,49 @@ public interface SejmApiClient {
         List<String> to,
         String sentDate,
         String lastModified,
-        List<ReplyItem> replies) {
+        List<ReplyItem> replies,
+        List<AttachmentMetadata> attachments) {
     }
+
+        /**
+         * Result of downloading and interpreting one interpellation attachment.
+         */
+        sealed interface AttachmentFetchResult
+            permits AttachmentFetchResult.PdfText, AttachmentFetchResult.Unsupported, AttachmentFetchResult.Unavailable {
+
+        /**
+         * Attachment was recognized as PDF and text extraction succeeded.
+         */
+        record PdfText(
+            String replyKey,
+            String fileName,
+            String mimeType,
+            String text,
+            int sizeBytes) implements AttachmentFetchResult {
+        }
+
+        /**
+         * Attachment was fetched but is not supported by the current processing pipeline.
+         */
+        record Unsupported(
+            String replyKey,
+            String fileName,
+            String mimeType,
+            int sizeBytes,
+            String reason) implements AttachmentFetchResult {
+        }
+
+        /**
+         * Attachment could not be fetched or was empty.
+         */
+        record Unavailable(
+            String replyKey,
+            String fileName,
+            String reason) implements AttachmentFetchResult {
+        }
+        }
+
+        AttachmentFetchResult fetchAttachmentText(int termNum, String replyKey, String fileName);
 
     record WrittenQuestionItem(
         int num,

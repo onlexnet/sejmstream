@@ -228,6 +228,7 @@ class SejmCollectServiceTest {
                         List.of("Ministerstwo"),
                         "2026-06-13",
                         "2026-06-13T00:00:00",
+                        List.of(),
                         List.of())));
 
         var count = service.collectInterpellations(10, TEST_DATE);
@@ -265,6 +266,7 @@ class SejmCollectServiceTest {
                         List.of("Ministerstwo"),
                         "2026-06-13",
                         "2026-06-13T00:00:00",
+                        List.of(),
                         List.of())));
         repository.statuses.put("10:77", "QUEUED");
 
@@ -295,6 +297,7 @@ class SejmCollectServiceTest {
                 List.of("Ministerstwo"),
                 "2026-06-13",
                 "2026-06-13T00:00:00",
+                List.of(),
                 List.of())));
 
         assertThatThrownBy(() -> service.collectInterpellations(10, TEST_DATE))
@@ -328,6 +331,7 @@ class SejmCollectServiceTest {
                 List.of("Ministerstwo"),
                 "2026-06-13",
                 "2026-06-13T00:00:00",
+                List.of(),
                 List.of())));
 
         var count = service.collectInterpellations(10, TEST_DATE);

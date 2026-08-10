@@ -5,16 +5,20 @@ import java.util.StringJoiner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.in.interpellation.ProcessInterpellationPublishCommand;
 import onlexnet.app.ports.in.interpellation.ProcessInterpellationPublishOutcome;
 import onlexnet.app.ports.in.interpellation.ProcessInterpellationPublishUseCase;
+import onlexnet.app.ports.out.AttachmentMetadata;
 import onlexnet.app.ports.out.FacebookPublisher;
-import onlexnet.app.ports.out.InterpellationPublishQueuePort;
 import onlexnet.app.ports.out.InterpellationPublishQueueMessage;
+import onlexnet.app.ports.out.InterpellationPublishQueuePort;
 import onlexnet.app.ports.out.InterpellationPublishStatePort;
+import onlexnet.app.ports.out.ProjectOwnerNotifier;
+import onlexnet.app.ports.out.SejmApiClient;
 
 /**
  * App-layer processor for queue-driven INTERPELLATION publishing to Facebook.
@@ -29,6 +33,9 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
     private final InterpellationPublishQueuePort queuePort;
     private final InterpellationPublishStatePort publishStatePort;
     private final InterpellationPublishRetryPolicy retryPolicy;
+    private final SejmApiClient sejmApiClient;
+    private final ProjectOwnerNotifier projectOwnerNotifier;
+
 
     @Override
     public ProcessInterpellationPublishOutcome process(ProcessInterpellationPublishCommand command) {
@@ -109,6 +116,7 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
         builder.add(message.title());
         builder.add("Adresaci: " + this.formatRecipients(message));
         this.appendSentDateIfPresent(builder, message);
+        this.appendAttachmentSummaryIfPresent(builder, message);
         return builder.toString();
     }
 
@@ -124,6 +132,90 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
         if (message.sentDate() != null && !message.sentDate().isBlank()) {
             builder.add("Data zlozenia: " + message.sentDate());
         }
+    }
+
+    private void appendAttachmentSummaryIfPresent(StringJoiner builder, InterpellationPublishQueueMessage message) {
+        if (this.sejmApiClient == null || message.attachments() == null || message.attachments().isEmpty()) {
+            return;
+        }
+        for (var attachment : message.attachments()) {
+            var summary = this.fetchAttachmentSummary(message, attachment);
+            if (summary != null && !summary.isBlank()) {
+                builder.add("Skrót załącznika: " + summary);
+                return;
+            }
+        }
+    }
+
+    private @Nullable String fetchAttachmentSummary(
+            InterpellationPublishQueueMessage message,
+            @Nullable AttachmentMetadata attachment) {
+        if (attachment == null) {
+            return null;
+        }
+        var fileName = attachment.fileName();
+        if (fileName == null || fileName.isBlank()) {
+            fileName = attachment.name();
+        }
+        if (fileName == null || fileName.isBlank() || attachment.replyKey() == null || attachment.replyKey().isBlank()) {
+            return null;
+        }
+        var client = this.sejmApiClient;
+        if (client == null) {
+            return null;
+        }
+        try {
+            var fetched = client.fetchAttachmentText(message.termNum(), attachment.replyKey(), fileName);
+            return switch (fetched) {
+                case SejmApiClient.AttachmentFetchResult.PdfText pdfText -> this.summarizeAttachmentText(pdfText.text());
+                case SejmApiClient.AttachmentFetchResult.Unsupported unsupported -> {
+                    this.notifyOwnerAboutUnsupportedAttachmentCase(message, unsupported);
+                    yield null;
+                }
+                case SejmApiClient.AttachmentFetchResult.Unavailable _ -> null;
+            };
+        } catch (RuntimeException exception) {
+            LOGGER.log(Level.WARNING, "Failed to fetch attachment summary for replyKey=" + attachment.replyKey(), exception);
+            return null;
+        }
+    }
+
+    private void notifyOwnerAboutUnsupportedAttachmentCase(
+            InterpellationPublishQueueMessage message,
+            SejmApiClient.AttachmentFetchResult.Unsupported unsupported) {
+        var notifier = this.projectOwnerNotifier;
+        if (notifier == null) {
+            return;
+        }
+
+        var alertMessage = "Nowy nieobslugiwany zalacznik interpelacji:"
+                + "\nTerm: " + message.termNum()
+                + "\nInterpelacja: " + message.interpellationNum()
+                + "\nReplyKey: " + unsupported.replyKey()
+                + "\nPlik: " + unsupported.fileName()
+                + "\nMimeType: " + unsupported.mimeType()
+                + "\nRozmiar: " + unsupported.sizeBytes() + " B"
+                + "\nPowod: " + unsupported.reason();
+
+        try {
+            notifier.notifyOwner(alertMessage);
+        } catch (RuntimeException notificationFailure) {
+            LOGGER.log(Level.WARNING, "Failed to notify project owner about unsupported attachment case", notificationFailure);
+        }
+    }
+
+    private @Nullable String summarizeAttachmentText(@Nullable String text) {
+        if (text == null) {
+            return null;
+        }
+        var normalized = text.strip();
+        if (normalized.isBlank()) {
+            return null;
+        }
+        if (normalized.length() <= 200) {
+            return normalized;
+        }
+        return normalized.substring(0, 197).trim() + "...";
     }
 
     private ProcessInterpellationPublishOutcome.SkippedAlreadyPublished skippedAlreadyPublishedOutcome(
