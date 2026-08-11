@@ -34,18 +34,18 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
 @RequiredArgsConstructor
 public final class JsonValidator {
 
-    public static final SchemaRef<CollectActivityRequest> COLLECT_ACTIVITY_REQUEST =
-            new SchemaRef<>(CollectActivityRequest.class, "/schemajson/collect-flow/collect-activity-request.schema.json");
-    public static final SchemaRef<CollectActivityResult> COLLECT_ACTIVITY_RESULT =
-            new SchemaRef<>(CollectActivityResult.class, "/schemajson/collect-flow/collect-activity-result.schema.json");
-    public static final SchemaRef<CollectOrchestrationInput> COLLECT_ORCHESTRATION_INPUT =
-            new SchemaRef<>(CollectOrchestrationInput.class, "/schemajson/collect-flow/collect-orchestration-input.schema.json");
-    public static final SchemaRef<CollectResult> COLLECT_RESULT =
-            new SchemaRef<>(CollectResult.class, "/schemajson/collect-flow/collect-result.schema.json");
-    public static final SchemaRef<CollectCompletion> COLLECT_COMPLETION =
-            new SchemaRef<>(CollectCompletion.class, "/schemajson/collect-flow/collect-completion.schema.json");
-    public static final SchemaRef<CollectFailure> COLLECT_FAILURE =
-            new SchemaRef<>(CollectFailure.class, "/schemajson/collect-flow/collect-failure.schema.json");
+    public static final SchemaRef<CollectActivityRequest> COLLECT_ACTIVITY_REQUEST = new SchemaRef<>(
+            CollectActivityRequest.class, "/schemajson/collect-flow/collect-activity-request.schema.json");
+    public static final SchemaRef<CollectActivityResult> COLLECT_ACTIVITY_RESULT = new SchemaRef<>(
+            CollectActivityResult.class, "/schemajson/collect-flow/collect-activity-result.schema.json");
+    public static final SchemaRef<CollectOrchestrationInput> COLLECT_ORCHESTRATION_INPUT = new SchemaRef<>(
+            CollectOrchestrationInput.class, "/schemajson/collect-flow/collect-orchestration-input.schema.json");
+    public static final SchemaRef<CollectResult> COLLECT_RESULT = new SchemaRef<>(CollectResult.class,
+            "/schemajson/collect-flow/collect-result.schema.json");
+    public static final SchemaRef<CollectCompletion> COLLECT_COMPLETION = new SchemaRef<>(CollectCompletion.class,
+            "/schemajson/collect-flow/collect-completion.schema.json");
+    public static final SchemaRef<CollectFailure> COLLECT_FAILURE = new SchemaRef<>(CollectFailure.class,
+            "/schemajson/collect-flow/collect-failure.schema.json");
 
     private static final List<SchemaRef<?>> SCHEMA_REFS = List.of(
             COLLECT_ACTIVITY_REQUEST,
@@ -55,8 +55,7 @@ public final class JsonValidator {
             COLLECT_COMPLETION,
             COLLECT_FAILURE);
 
-    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory
-            .getInstance(SpecVersion.VersionFlag.V202012);
+    private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
 
     private final ObjectMapper objectMapper;
     private Map<SchemaRef<?>, JsonSchema> schemas = Map.of();

@@ -19,7 +19,7 @@ import onlexnet.app.ports.in.interpellation.ProcessInterpellationPublishUseCase;
 import onlexnet.app.ports.out.InterpellationPublishQueueMessage;
 import onlexnet.app.ports.out.InterpellationPublishQueuePort;
 import onlexnet.app.ports.out.InterpellationPublishStatePort;
-import onlexnet.infra.adapters.in.azurefunc.Logger;
+import onlexnet.infra.adapters.in.azurefunc.Log;
 
 /**
  * Queue-triggered adapter that processes one INTERPELLATION publish message at a time.
@@ -133,7 +133,7 @@ public class InterpellationPublishQueueFunctions {
             ExecutionContext execCtx) {
         switch (outcome) {
             case ProcessInterpellationPublishOutcome.Published published ->
-                Logger.info(execCtx,
+                Log.info(execCtx,
                         "Published interpellation " + published.termNum() + "/" + published.interpellationNum());
                 case ProcessInterpellationPublishOutcome.PublishConfirmationPending pending ->
                 execCtx.getLogger().severe(
@@ -149,7 +149,7 @@ public class InterpellationPublishQueueFunctions {
                         "Dead-lettered interpellation " + deadLettered.termNum() + "/"
                                 + deadLettered.interpellationNum() + " after attempts=" + deadLettered.attemptsUsed());
             case ProcessInterpellationPublishOutcome.SkippedAlreadyPublished skipped ->
-                Logger.info(execCtx,
+                Log.info(execCtx,
                         "Skipped already published interpellation " + skipped.termNum() + "/"
                                 + skipped.interpellationNum());
         }

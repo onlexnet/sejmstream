@@ -114,7 +114,7 @@ public final class SejmCollectFunctions {
 
         try {
             var instanceId = enqueueCollectRequest(clientCtx, "timer");
-            Logger.info(execCtx,
+            Log.info(execCtx,
                     "Collect request accepted from timer, instanceId=" + instanceId);
             log.debug("Collect request from timer accepted, instanceId={}", instanceId);
         } catch (Exception e) {
@@ -140,7 +140,7 @@ public final class SejmCollectFunctions {
 
         try {
             var instanceId = enqueueCollectRequest(clientCtx, "http");
-            Logger.info(execCtx,
+            Log.info(execCtx,
                 "Manual collect request accepted, instanceId=" + instanceId);
             log.debug("Manual collect request accepted, instanceId={}", instanceId);
             return request.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.ACCEPTED)
@@ -280,10 +280,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Starting votings collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectVotings(termNum, date);
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Completed votings collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectVotings completed: {} items", count);
@@ -315,10 +315,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Starting committees collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectCommitteeSittings(termNum, date);
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Completed committees collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectCommittees completed: {} items", count);
@@ -350,9 +350,9 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            Logger.info(execCtx, "Starting prints collection for term=" + termNum + ", date=" + date);
+            Log.info(execCtx, "Starting prints collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectPrints(termNum, date);
-            Logger.info(execCtx, "Completed prints collection, count=" + count + ", term=" + termNum + ", date=" + date);
+            Log.info(execCtx, "Completed prints collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectPrints completed: {} items", count);
             return buildActivityResult(count);
         } catch (Exception e) {
@@ -382,10 +382,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Starting interpellations collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectInterpellations(termNum, date);
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Completed interpellations collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectInterpellations completed: {} items", count);
@@ -417,10 +417,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Starting written questions collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectWrittenQuestions(termNum, date);
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Completed written questions collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectQuestions completed: {} items", count);
@@ -452,10 +452,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Starting bills collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectBills(termNum, date);
-                Logger.info(execCtx,
+                Log.info(execCtx,
                     "Completed bills collection, count=" + count + ", term=" + termNum + ", date="
                             + date);
             log.debug("Activity collectBills completed: {} items", count);

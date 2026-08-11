@@ -5,9 +5,9 @@ import com.microsoft.azure.functions.ExecutionContext;
 /**
  * Utility methods for logging through Azure Functions execution contexts.
  */
-public final class Logger {
+public final class Log {
 
-    private Logger() {
+    private Log() {
     }
 
     /**

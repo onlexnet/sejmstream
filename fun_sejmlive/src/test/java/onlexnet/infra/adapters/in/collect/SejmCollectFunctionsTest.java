@@ -61,6 +61,7 @@ import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorEntity;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectCoordinatorEntityFunctions;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
@@ -436,7 +437,7 @@ class SejmCollectFunctionsTest {
     @Test
     void givenAllCollectCoordinatorOperations_whenChecked_thenEachMapsToPublicEntityMethod() {
         var publicMethods = Arrays.stream(
-                        SejmCollectCoordinatorEntityFunctions.CollectCoordinatorEntity.class.getMethods())
+                        CollectCoordinatorEntity.class.getMethods())
                 .map(Method::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
