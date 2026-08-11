@@ -1,4 +1,8 @@
-package onlexnet.infra.adapters.in.collect;
+package onlexnet.infra.adapters.in.azurefunc;
+
+import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorOperation.COLLECT_COMPLETED;
+import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorOperation.COLLECT_FAILED;
+import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorOperation.REQUEST_COLLECT;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -30,13 +34,8 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import static onlexnet.infra.adapters.in.collect.CollectCoordinatorOperation.COLLECT_COMPLETED;
-import static onlexnet.infra.adapters.in.collect.CollectCoordinatorOperation.COLLECT_FAILED;
-import static onlexnet.infra.adapters.in.collect.CollectCoordinatorOperation.REQUEST_COLLECT;
-
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
-import onlexnet.infra.adapters.in.Logger;
 import onlexnet.shared.Guards;
 
 /**
@@ -174,13 +173,13 @@ public final class SejmCollectFunctions {
             var questionsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_QUESTIONS);
             var billsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_BILLS);
 
-                orchestrationContext.allOf(List.of(
-                    votingTask,
-                    committeesTask,
-                    printsTask,
-                    interpellationsTask,
-                    questionsTask,
-                    billsTask)).await();
+            orchestrationContext.allOf(List.of(
+                votingTask,
+                committeesTask,
+                printsTask,
+                interpellationsTask,
+                questionsTask,
+                billsTask)).await();
 
             var counts = new HashMap<String, Integer>();
             counts.put("VOTING", awaitActivityWithFailureContext(votingTask, ACTIVITY_VOTINGS));

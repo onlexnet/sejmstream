@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.collect;
+package onlexnet.infra.adapters.in.azurefunc;
 
 enum CollectCoordinatorOperation {
     REQUEST_COLLECT("requestCollect"),

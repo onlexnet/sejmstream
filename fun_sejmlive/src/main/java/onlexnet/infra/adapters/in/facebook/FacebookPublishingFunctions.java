@@ -19,7 +19,7 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
 import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
-import onlexnet.infra.adapters.in.Logger;
+import onlexnet.infra.adapters.in.azurefunc.Logger;
 
 /**
  * Publishes daily Sejm digests to social media on a scheduled basis.

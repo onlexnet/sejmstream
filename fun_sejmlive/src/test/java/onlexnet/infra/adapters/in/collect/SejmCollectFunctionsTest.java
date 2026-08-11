@@ -61,6 +61,10 @@ import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorOperation;
+import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorState;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectCoordinatorEntityFunctions;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
 

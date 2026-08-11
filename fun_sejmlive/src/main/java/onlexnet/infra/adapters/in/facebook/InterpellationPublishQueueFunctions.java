@@ -19,7 +19,7 @@ import onlexnet.app.ports.in.interpellation.ProcessInterpellationPublishUseCase;
 import onlexnet.app.ports.out.InterpellationPublishQueueMessage;
 import onlexnet.app.ports.out.InterpellationPublishQueuePort;
 import onlexnet.app.ports.out.InterpellationPublishStatePort;
-import onlexnet.infra.adapters.in.Logger;
+import onlexnet.infra.adapters.in.azurefunc.Logger;
 
 /**
  * Queue-triggered adapter that processes one INTERPELLATION publish message at a time.

@@ -1,16 +1,16 @@
-package onlexnet.infra.adapters.in.collect;
+package onlexnet.infra.adapters.in.azurefunc;
 
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.durabletask.AbstractTaskEntity;
 import com.microsoft.durabletask.EntityRunner;
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
+import com.microsoft.durabletask.TaskEntityOperation;
 import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 
 import org.springframework.stereotype.Component;
 
 import onlexnet.app.usecases.CollectCoordinatorDecider;
-import onlexnet.infra.adapters.in.Logger;
 
 @Component
 public final class SejmCollectCoordinatorEntityFunctions {
@@ -34,12 +34,11 @@ public final class SejmCollectCoordinatorEntityFunctions {
         }
 
         @Override
-        protected CollectCoordinatorState initializeState(
-                final com.microsoft.durabletask.TaskEntityOperation operation) {
+        protected CollectCoordinatorState initializeState(TaskEntityOperation operation) {
             return new CollectCoordinatorState();
         }
 
-        public void requestCollect(final String source) {
+        public void requestCollect(String source) {
             var decision = DECIDER.decide(
                     this.state.toDeciderState(),
                     new CollectCoordinatorDecider.RequestCollect(source));

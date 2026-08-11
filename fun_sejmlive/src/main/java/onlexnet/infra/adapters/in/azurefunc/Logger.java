@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in;
+package onlexnet.infra.adapters.in.azurefunc;
 
 import com.microsoft.azure.functions.ExecutionContext;
 
