@@ -17,11 +17,11 @@ public final class SejmCollectCoordinatorEntityFunctions {
 
     @FunctionName(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME)
     public String runCollectCoordinatorEntity(
-        @DurableEntityTrigger(name = "entityRequest", entityName = SejmCollectFunctions.COORDINATOR_ENTITY_NAME) String entityRequest,
-        ExecutionContext execCtx) {
+            @DurableEntityTrigger(name = "entityRequest", entityName = SejmCollectFunctions.COORDINATOR_ENTITY_NAME) String entityBatchRequest,
+            ExecutionContext execCtx) {
 
         Logger.info(execCtx, "Processing collect coordinator entity batch");
-        return EntityRunner.loadAndRun(entityRequest, CollectCoordinatorEntity::new);
+        return EntityRunner.loadAndRun(entityBatchRequest, CollectCoordinatorEntity::new);
     }
 
     public static final class CollectCoordinatorEntity extends AbstractTaskEntity<CollectCoordinatorState> {
@@ -34,7 +34,8 @@ public final class SejmCollectCoordinatorEntityFunctions {
         }
 
         @Override
-        protected CollectCoordinatorState initializeState(final com.microsoft.durabletask.TaskEntityOperation operation) {
+        protected CollectCoordinatorState initializeState(
+                final com.microsoft.durabletask.TaskEntityOperation operation) {
             return new CollectCoordinatorState();
         }
 
@@ -77,36 +78,37 @@ public final class SejmCollectCoordinatorEntityFunctions {
         }
     }
 
-    static final class CollectCoordinatorState {
-        private boolean running;
-        private int pendingRequests;
+}
 
-        public CollectCoordinatorState() {
-        }
+class CollectCoordinatorState {
+    private boolean running;
+    private int pendingRequests;
 
-        public boolean isRunning() {
-            return this.running;
-        }
+    public CollectCoordinatorState() {
+    }
 
-        public void setRunning(final boolean running) {
-            this.running = running;
-        }
+    public boolean isRunning() {
+        return this.running;
+    }
 
-        public int getPendingRequests() {
-            return this.pendingRequests;
-        }
+    public void setRunning(boolean running) {
+        this.running = running;
+    }
 
-        public void setPendingRequests(final int pendingRequests) {
-            this.pendingRequests = pendingRequests;
-        }
+    public int getPendingRequests() {
+        return this.pendingRequests;
+    }
 
-        private CollectCoordinatorDecider.State toDeciderState() {
-            return new CollectCoordinatorDecider.State(this.running, this.pendingRequests);
-        }
+    public void setPendingRequests(int pendingRequests) {
+        this.pendingRequests = pendingRequests;
+    }
 
-        private void apply(final CollectCoordinatorDecider.State state) {
-            this.running = state.running();
-            this.pendingRequests = state.pendingRequests();
-        }
+    private CollectCoordinatorDecider.State toDeciderState() {
+        return new CollectCoordinatorDecider.State(this.running, this.pendingRequests);
+    }
+
+    private void apply(final CollectCoordinatorDecider.State state) {
+        this.running = state.running();
+        this.pendingRequests = state.pendingRequests();
     }
 }

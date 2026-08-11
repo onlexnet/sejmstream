@@ -1,7 +1,8 @@
 package onlexnet.app.usecases;
 
 /**
- * Pure state machine for serialized collect orchestration scheduling.
+ * Ensures at most one collect orchestration runs at a time and queues additional requests
+ * so none are lost while a run is in progress.
  */
 public final class CollectCoordinatorDecider {
 
@@ -13,7 +14,7 @@ public final class CollectCoordinatorDecider {
         };
     }
 
-    private Decision onRequestCollect(final State state, final RequestCollect requestCollect) {
+    private Decision onRequestCollect(State state, RequestCollect requestCollect) {
         if (state.running()) {
             return new Decision(new State(true, state.pendingRequests() + 1), Effect.none());
         }
@@ -21,7 +22,7 @@ public final class CollectCoordinatorDecider {
         return new Decision(new State(true, state.pendingRequests()), new Effect.StartCollectRun(requestCollect.source()));
     }
 
-    private Decision onCollectFinished(final State state) {
+    private Decision onCollectFinished(State state) {
         if (state.pendingRequests() > 0) {
             return new Decision(
                     new State(true, state.pendingRequests() - 1),
