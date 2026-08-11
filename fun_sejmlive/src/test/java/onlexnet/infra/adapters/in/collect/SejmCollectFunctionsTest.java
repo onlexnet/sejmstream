@@ -441,12 +441,12 @@ class SejmCollectFunctionsTest {
     @Test
     void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
         var objectMapper = new ObjectMapper();
-        var state = new SejmCollectCoordinatorEntityFunctions.CollectCoordinatorState();
+        var state = new CollectCoordinatorState();
         state.setRunning(true);
         state.setPendingRequests(2);
 
         var json = objectMapper.writeValueAsString(state);
-        var restored = objectMapper.readValue(json, SejmCollectCoordinatorEntityFunctions.CollectCoordinatorState.class);
+        var restored = objectMapper.readValue(json, CollectCoordinatorState.class);
 
         assertThat(restored.isRunning()).isTrue();
         assertThat(restored.getPendingRequests()).isEqualTo(2);

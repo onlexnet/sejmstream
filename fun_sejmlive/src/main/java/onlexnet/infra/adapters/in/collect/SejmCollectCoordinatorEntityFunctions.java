@@ -103,11 +103,11 @@ class CollectCoordinatorState {
         this.pendingRequests = pendingRequests;
     }
 
-    private CollectCoordinatorDecider.State toDeciderState() {
+    public CollectCoordinatorDecider.State toDeciderState() {
         return new CollectCoordinatorDecider.State(this.running, this.pendingRequests);
     }
 
-    private void apply(final CollectCoordinatorDecider.State state) {
+    public void apply(final CollectCoordinatorDecider.State state) {
         this.running = state.running();
         this.pendingRequests = state.pendingRequests();
     }
