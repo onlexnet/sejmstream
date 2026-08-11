@@ -149,7 +149,7 @@ class SejmCollectFunctionsTest {
         @Test
         void givenCoordinatorEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
                 throws NoSuchMethodException {
-            var method = SejmCollectFunctions.class.getDeclaredMethod(
+            var method = SejmCollectCoordinatorEntityFunctions.class.getDeclaredMethod(
                     "runCollectCoordinatorEntity",
                     String.class,
                     ExecutionContext.class);
@@ -423,12 +423,12 @@ class SejmCollectFunctionsTest {
     @Test
     void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
         var objectMapper = new ObjectMapper();
-        var state = new SejmCollectFunctions.CollectCoordinatorState();
+        var state = new SejmCollectCoordinatorEntityFunctions.CollectCoordinatorState();
         state.setRunning(true);
         state.setPendingRequests(2);
 
         var json = objectMapper.writeValueAsString(state);
-        var restored = objectMapper.readValue(json, SejmCollectFunctions.CollectCoordinatorState.class);
+        var restored = objectMapper.readValue(json, SejmCollectCoordinatorEntityFunctions.CollectCoordinatorState.class);
 
         assertThat(restored.isRunning()).isTrue();
         assertThat(restored.getPendingRequests()).isEqualTo(2);

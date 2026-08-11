@@ -15,28 +15,23 @@ import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
-import com.microsoft.durabletask.AbstractTaskEntity;
 import com.microsoft.durabletask.EntityInstanceId;
-import com.microsoft.durabletask.EntityRunner;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 import com.microsoft.durabletask.RetryPolicy;
 import com.microsoft.durabletask.Task;
 import com.microsoft.durabletask.TaskFailedException;
-import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
 import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableClientInput;
-import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
-import onlexnet.app.usecases.CollectCoordinatorDecider;
 import onlexnet.infra.adapters.in.Logger;
 import onlexnet.shared.Guards;
 
@@ -207,15 +202,6 @@ public final class SejmCollectFunctions {
                     new CollectFailure(orchestrationContext.getInstanceId(), e.getMessage()));
             throw e;
         }
-    }
-
-    @FunctionName(COORDINATOR_ENTITY_FUNCTION_NAME)
-    public String runCollectCoordinatorEntity(
-            @DurableEntityTrigger(name = "entityRequest", entityName = COORDINATOR_ENTITY_NAME)
-            String entityRequest,
-            ExecutionContext execCtx) {
-        Logger.info(execCtx, "Processing collect coordinator entity batch");
-        return EntityRunner.loadAndRun(entityRequest, CollectCoordinatorEntity::new);
     }
 
     private static String enqueueCollectRequest(DurableClientContext clientCtx, String source) {
@@ -484,100 +470,12 @@ public final class SejmCollectFunctions {
     public record CollectResult(Map<String, Integer> countsByType) {
     }
 
-    private record CollectOrchestrationInput(String coordinatorEntityId, String source) {
+    record CollectOrchestrationInput(String coordinatorEntityId, String source) {
     }
 
-    private record CollectCompletion(String orchestrationInstanceId) {
+    record CollectCompletion(String orchestrationInstanceId) {
     }
 
-    private record CollectFailure(String orchestrationInstanceId, String message) {
-    }
-
-    @SuppressWarnings("unused")
-    public static final class CollectCoordinatorEntity extends AbstractTaskEntity<CollectCoordinatorState> {
-
-        private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
-
-        @Override
-        protected Class<CollectCoordinatorState> getStateType() {
-            return CollectCoordinatorState.class;
-        }
-
-        @Override
-        protected CollectCoordinatorState initializeState(final com.microsoft.durabletask.TaskEntityOperation operation) {
-            return new CollectCoordinatorState();
-        }
-
-        public void requestCollect(final String source) {
-            var decision = DECIDER.decide(
-                    this.state.toDeciderState(),
-                    new CollectCoordinatorDecider.RequestCollect(source));
-            applyDecision(decision);
-        }
-
-        public void collectCompleted(final CollectCompletion completion) {
-            var decision = DECIDER.decide(
-                    this.state.toDeciderState(),
-                    new CollectCoordinatorDecider.CollectCompleted(completion.orchestrationInstanceId()));
-            applyDecision(decision);
-        }
-
-        public void collectFailed(final CollectFailure failure) {
-            var decision = DECIDER.decide(
-                    this.state.toDeciderState(),
-                    new CollectCoordinatorDecider.CollectFailed(
-                            failure.orchestrationInstanceId(),
-                            failure.message()));
-            applyDecision(decision);
-        }
-
-        private void applyDecision(final CollectCoordinatorDecider.Decision decision) {
-            this.state.apply(decision.state());
-            if (decision.effect() instanceof CollectCoordinatorDecider.Effect.StartCollectRun startCollectRun) {
-                startNextRun(startCollectRun.source());
-            }
-        }
-
-        private void startNextRun(final String source) {
-            var options = new NewOrchestrationInstanceOptions();
-            this.context.startNewOrchestration(
-                    ORCHESTRATOR_FUNCTION_NAME,
-                    new CollectOrchestrationInput(this.context.getId().toString(), source),
-                    options);
-        }
-    }
-
-    static final class CollectCoordinatorState {
-        private boolean running;
-        private int pendingRequests;
-
-        public CollectCoordinatorState() {
-        }
-
-        public boolean isRunning() {
-            return this.running;
-        }
-
-        public void setRunning(final boolean running) {
-            this.running = running;
-        }
-
-        public int getPendingRequests() {
-            return this.pendingRequests;
-        }
-
-        public void setPendingRequests(final int pendingRequests) {
-            this.pendingRequests = pendingRequests;
-        }
-
-        private CollectCoordinatorDecider.State toDeciderState() {
-            return new CollectCoordinatorDecider.State(this.running, this.pendingRequests);
-        }
-
-        private void apply(final CollectCoordinatorDecider.State state) {
-            this.running = state.running();
-            this.pendingRequests = state.pendingRequests();
-        }
-
+    record CollectFailure(String orchestrationInstanceId, String message) {
     }
 }
