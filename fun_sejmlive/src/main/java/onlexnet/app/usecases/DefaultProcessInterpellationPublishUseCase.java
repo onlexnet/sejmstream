@@ -19,6 +19,7 @@ import onlexnet.app.ports.out.InterpellationPublishQueuePort;
 import onlexnet.app.ports.out.InterpellationPublishStatePort;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.shared.Guards;
 
 /**
  * App-layer processor for queue-driven INTERPELLATION publishing to Facebook.
@@ -122,10 +123,13 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
 
     private String formatRecipients(InterpellationPublishQueueMessage message) {
         var recipients = message.recipients();
-        if (recipients == null || recipients.isEmpty()) {
+        var safeRecipients = Guards.orDefaultIfNullOrEmpty(
+                recipients,
+                java.util.Collections.<String>emptyList());
+        if (safeRecipients.isEmpty()) {
             return "brak";
         }
-        return String.join(", ", recipients);
+        return String.join(", ", safeRecipients);
     }
 
     private void appendSentDateIfPresent(StringJoiner builder, InterpellationPublishQueueMessage message) {
@@ -135,10 +139,13 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
     }
 
     private void appendAttachmentSummaryIfPresent(StringJoiner builder, InterpellationPublishQueueMessage message) {
-        if (this.sejmApiClient == null || message.attachments() == null || message.attachments().isEmpty()) {
+        var attachments = Guards.orDefaultIfNullOrEmpty(
+                message.attachments(),
+                java.util.Collections.<AttachmentMetadata>emptyList());
+        if (this.sejmApiClient == null || attachments.isEmpty()) {
             return;
         }
-        for (var attachment : message.attachments()) {
+        for (var attachment : attachments) {
             var summary = this.fetchAttachmentSummary(message, attachment);
             if (summary != null && !summary.isBlank()) {
                 builder.add("Skrót załącznika: " + summary);

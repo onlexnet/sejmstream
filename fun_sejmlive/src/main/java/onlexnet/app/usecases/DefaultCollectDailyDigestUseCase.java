@@ -10,6 +10,7 @@ import onlexnet.app.ports.in.collect.CollectDailyDigestOutcome;
 import onlexnet.app.ports.in.collect.CollectDailyDigestUseCase;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.shared.Guards;
 
 /**
  * Default application implementation for daily collect processing.
@@ -49,10 +50,13 @@ public class DefaultCollectDailyDigestUseCase implements CollectDailyDigestUseCa
 
     private java.util.Optional<Integer> resolveCurrentTermNumber() {
         var terms = this.sejmApiClient.fetchTerms();
-        if (terms == null || terms.isEmpty()) {
+        var safeTerms = Guards.orDefaultIfNullOrEmpty(
+                terms,
+                java.util.Collections.<SejmApiClient.SejmTerm>emptyList());
+        if (safeTerms.isEmpty()) {
             return java.util.Optional.empty();
         }
-        return terms.stream()
+        return safeTerms.stream()
                 .filter(term -> term != null && term.current())
                 .map(term -> term.num())
                 .findFirst();

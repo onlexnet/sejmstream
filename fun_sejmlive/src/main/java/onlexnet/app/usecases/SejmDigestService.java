@@ -24,6 +24,7 @@ import onlexnet.app.ports.out.SejmApiClient.InterpellationItem;
 import onlexnet.app.ports.out.SejmApiClient.PrintItem;
 import onlexnet.app.ports.out.SejmApiClient.VotingItem;
 import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
+import onlexnet.shared.Guards;
 
 /**
  * Builds a social-media digest from collected Sejm daily data.
@@ -286,10 +287,13 @@ public class SejmDigestService {
     }
 
     private String joinRecipients(final List<String> recipients) {
-        if (recipients == null || recipients.isEmpty()) {
+        var safeRecipients = Guards.orDefaultIfNullOrEmpty(
+                recipients,
+                java.util.Collections.<String>emptyList());
+        if (safeRecipients.isEmpty()) {
             return "brak adresata";
         }
-        return recipients.stream().map(this::safeText).collect(Collectors.joining(", "));
+        return safeRecipients.stream().map(this::safeText).collect(Collectors.joining(", "));
     }
 
     private String excerptAgenda(final String rawAgenda) {

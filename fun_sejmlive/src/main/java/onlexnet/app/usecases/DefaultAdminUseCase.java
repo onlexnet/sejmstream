@@ -21,6 +21,7 @@ import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.AdminAccessPolicy;
+import onlexnet.shared.Guards;
 
 /**
  * Default application implementation for admin command processing.
@@ -63,20 +64,23 @@ public class DefaultAdminUseCase implements AdminUseCase {
 
     private AdminOutcome handleData() {
         var terms = this.sejmApiClient.fetchTerms();
-        if (terms == null || terms.isEmpty()) {
+        var safeTerms = Guards.orDefaultIfNullOrEmpty(
+                terms,
+                java.util.Collections.<SejmApiClient.SejmTerm>emptyList());
+        if (safeTerms.isEmpty()) {
             return new AdminOutcome.DataEmpty();
         }
 
-        var currentTerm = terms.stream()
+        var currentTerm = safeTerms.stream()
                 .filter(term -> term != null && term.current())
                 .findFirst()
-                .orElse(terms.get(0));
+                .orElse(safeTerms.get(0));
 
         return new AdminOutcome.DataSummary(
             currentTerm.num(),
             currentTerm.from(),
             Optional.ofNullable(currentTerm.to()),
-            terms.size());
+                safeTerms.size());
     }
 
     private AdminOutcome handleCollect() {

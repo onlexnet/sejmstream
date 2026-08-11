@@ -37,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.usecases.CollectCoordinatorDecider;
+import onlexnet.shared.Guards;
 
 /**
  * Azure Durable Functions workflow that collects daily Sejm activity into the database.
@@ -136,12 +137,9 @@ public final class SejmCollectFunctions {
      */
     @FunctionName(HTTP_STARTER_FUNCTION_NAME)
     public HttpResponseMessage httpStart(
-            @HttpTrigger(name = "request", methods = {HttpMethod.POST},
-                    authLevel = AuthorizationLevel.FUNCTION)
-            final HttpRequestMessage<Optional<String>> request,
-            @DurableClientInput(name = "durableContext")
-            final DurableClientContext durableContext,
-            final ExecutionContext executionContext) {
+            @HttpTrigger(name = "request", methods = {HttpMethod.POST}, authLevel = AuthorizationLevel.FUNCTION) HttpRequestMessage<Optional<String>> request,
+            @DurableClientInput(name = "durableContext") DurableClientContext durableContext,
+            ExecutionContext executionContext) {
 
         try {
             var instanceId = enqueueCollectRequest(durableContext, "http");
@@ -227,7 +225,7 @@ public final class SejmCollectFunctions {
         return EntityRunner.loadAndRun(entityRequest, CollectCoordinatorEntity::new);
     }
 
-    private static String enqueueCollectRequest(final DurableClientContext durableContext, final String source) {
+    private static String enqueueCollectRequest(DurableClientContext durableContext, String source) {
         var client = durableContext.getClient().getEntities();
         client.signalEntity(COLLECT_COORDINATOR_ENTITY_ID, ENTITY_OPERATION_REQUEST_COLLECT, source);
         return COLLECT_COORDINATOR_ENTITY_ID.toString();
@@ -474,10 +472,9 @@ public final class SejmCollectFunctions {
         if (cachedTermNum instanceof CachedTerm.Resolved resolved) {
             return resolved.num();
         }
-        var terms = sejmApiClient.fetchTerms();
-        if (terms == null || terms.isEmpty()) {
-            throw new IllegalStateException("No Sejm terms found");
-        }
+        var terms = Guards.requireNonEmpty(
+                sejmApiClient.fetchTerms(),
+                () -> new IllegalStateException("No Sejm terms found"));
         var termNum = terms.stream()
                 .filter(t -> t != null && t.current())
                 .mapToInt(onlexnet.app.ports.out.SejmApiClient.SejmTerm::num)
