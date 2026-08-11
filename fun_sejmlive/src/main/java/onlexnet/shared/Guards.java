@@ -69,8 +69,8 @@ public final class Guards {
      * @throws X when value is null or empty
      */
     public static <X extends RuntimeException> String requireNonEmpty(
-            @Nullable final String value,
-            final Supplier<X> exceptionSupplier) throws X {
+            @Nullable String value,
+            Supplier<X> exceptionSupplier) throws X {
         Objects.requireNonNull(exceptionSupplier, "exceptionSupplier must not be null");
         if (value == null || value.isEmpty()) {
             throw exceptionSupplier.get();

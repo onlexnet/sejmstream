@@ -112,6 +112,15 @@ mvn test
 mvn -DskipTests package
 ```
 
+Coverage gate (local quality guard):
+
+```bash
+mvn verify
+```
+
+`mvn verify` now enforces minimum JaCoCo coverage and fails the build on regression.
+Coverage report is generated at `target/site/jacoco/index.html`.
+
 ### 4) Run locally
 
 ```bash

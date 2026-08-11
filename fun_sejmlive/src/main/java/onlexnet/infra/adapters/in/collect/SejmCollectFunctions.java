@@ -102,13 +102,6 @@ public final class SejmCollectFunctions {
         CachedTerm NONE = None.NONE;
     }
 
-    /**
-     * Timer trigger that starts the collection orchestrator at the top of every hour.
-     *
-     * @param timerInfo        timer trigger information
-    * @param clientCtx   durable client context
-     * @param execCtx Azure Functions execution context
-     */
     @FunctionName(TIMER_FUNCTION_NAME)
     public void runTimer(
             @TimerTrigger(name = "timer", schedule = "0 0 * * * *") String timerInfo,
@@ -219,8 +212,8 @@ public final class SejmCollectFunctions {
     @FunctionName(COORDINATOR_ENTITY_FUNCTION_NAME)
     public String runCollectCoordinatorEntity(
             @DurableEntityTrigger(name = "entityRequest", entityName = COORDINATOR_ENTITY_NAME)
-            final String entityRequest,
-            final ExecutionContext execCtx) {
+            String entityRequest,
+            ExecutionContext execCtx) {
         Logger.info(execCtx, "Processing collect coordinator entity batch");
         return EntityRunner.loadAndRun(entityRequest, CollectCoordinatorEntity::new);
     }
@@ -289,7 +282,7 @@ public final class SejmCollectFunctions {
      * Activity that collects committee sitting items for today.
      *
      * @param ignored          unused activity input
-    * @param execCtx Azure Functions execution context
+     * @param execCtx Azure Functions execution context
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_COMMITTEES)
@@ -322,7 +315,7 @@ public final class SejmCollectFunctions {
      * Activity that collects print items modified today.
      *
      * @param ignored          unused activity input
-    * @param execCtx Azure Functions execution context
+     * @param execCtx Azure Functions execution context
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_PRINTS)
@@ -333,12 +326,9 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-                Logger.info(execCtx,
-                    "Starting prints collection for term=" + termNum + ", date=" + date);
+            Logger.info(execCtx, "Starting prints collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectPrints(termNum, date);
-                Logger.info(execCtx,
-                    "Completed prints collection, count=" + count + ", term=" + termNum
-                            + ", date=" + date);
+            Logger.info(execCtx, "Completed prints collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectPrints completed: {} items", count);
             return count;
         } catch (Exception e) {
