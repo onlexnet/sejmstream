@@ -106,23 +106,23 @@ public final class SejmCollectFunctions {
      * Timer trigger that starts the collection orchestrator at the top of every hour.
      *
      * @param timerInfo        timer trigger information
-     * @param durableContext   durable client context
-     * @param executionContext Azure Functions execution context
+    * @param clientCtx   durable client context
+     * @param execCtx Azure Functions execution context
      */
     @FunctionName(TIMER_FUNCTION_NAME)
     public void runTimer(
             @TimerTrigger(name = "timer", schedule = "0 0 * * * *") String timerInfo,
-            @DurableClientInput(name = "durableContext") DurableClientContext durableContext,
-            ExecutionContext executionContext) {
+            @DurableClientInput(name = "durableContext") DurableClientContext clientCtx,
+            ExecutionContext execCtx) {
 
         try {
-            var instanceId = enqueueCollectRequest(durableContext, "timer");
-            Logger.info(executionContext,
+            var instanceId = enqueueCollectRequest(clientCtx, "timer");
+            Logger.info(execCtx,
                     "Collect request accepted from timer, instanceId=" + instanceId);
             log.debug("Collect request from timer accepted, instanceId={}", instanceId);
         } catch (Exception e) {
             log.error("Failed to enqueue collect request", e);
-            executionContext.getLogger().severe("Error enqueueing collect request: " + e.getMessage());
+            execCtx.getLogger().severe("Error enqueueing collect request: " + e.getMessage());
             throw new IllegalStateException("Failed to enqueue collection request", e);
         }
     }
@@ -132,18 +132,18 @@ public final class SejmCollectFunctions {
      * Useful for testing or triggering collection outside the scheduled time.
      *
      * @param request        incoming HTTP request
-     * @param durableContext durable client context
+    * @param clientCtx durable client context
      * @return HTTP 202 response with status endpoints
      */
     @FunctionName(HTTP_STARTER_FUNCTION_NAME)
     public HttpResponseMessage httpStart(
             @HttpTrigger(name = "request", methods = {HttpMethod.POST}, authLevel = AuthorizationLevel.FUNCTION) HttpRequestMessage<Optional<String>> request,
-            @DurableClientInput(name = "durableContext") DurableClientContext durableContext,
-            ExecutionContext executionContext) {
+            @DurableClientInput(name = "durableContext") DurableClientContext clientCtx,
+            ExecutionContext execCtx) {
 
         try {
-            var instanceId = enqueueCollectRequest(durableContext, "http");
-            Logger.info(executionContext,
+            var instanceId = enqueueCollectRequest(clientCtx, "http");
+            Logger.info(execCtx,
                 "Manual collect request accepted, instanceId=" + instanceId);
             log.debug("Manual collect request accepted, instanceId={}", instanceId);
             return request.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.ACCEPTED)
@@ -154,7 +154,7 @@ public final class SejmCollectFunctions {
                     .build();
         } catch (Exception e) {
             log.error("Failed to enqueue collect request via HTTP", e);
-            executionContext.getLogger().severe(
+            execCtx.getLogger().severe(
                 "Failed to enqueue collect request via HTTP: " + e.getMessage());
             return request.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to enqueue collection request: " + e.getMessage())
@@ -220,13 +220,13 @@ public final class SejmCollectFunctions {
     public String runCollectCoordinatorEntity(
             @DurableEntityTrigger(name = "entityRequest", entityName = COORDINATOR_ENTITY_NAME)
             final String entityRequest,
-            final ExecutionContext executionContext) {
-        Logger.info(executionContext, "Processing collect coordinator entity batch");
+            final ExecutionContext execCtx) {
+        Logger.info(execCtx, "Processing collect coordinator entity batch");
         return EntityRunner.loadAndRun(entityRequest, CollectCoordinatorEntity::new);
     }
 
-    private static String enqueueCollectRequest(DurableClientContext durableContext, String source) {
-        var client = durableContext.getClient().getEntities();
+    private static String enqueueCollectRequest(DurableClientContext clientCtx, String source) {
+        var client = clientCtx.getClient().getEntities();
         client.signalEntity(COLLECT_COORDINATOR_ENTITY_ID, ENTITY_OPERATION_REQUEST_COLLECT, source);
         return COLLECT_COORDINATOR_ENTITY_ID.toString();
     }
@@ -256,28 +256,28 @@ public final class SejmCollectFunctions {
      * Activity that collects voting items for today.
      *
      * @param ignored          unused activity input
-     * @param executionContext Azure Functions execution context
+    * @param execCtx Azure Functions execution context
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_VOTINGS)
     public int collectVotings(
             @DurableActivityTrigger(name = "ignored") String ignored,
-            ExecutionContext executionContext) {
+            ExecutionContext execCtx) {
 
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Starting votings collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectVotings(termNum, date);
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Completed votings collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectVotings completed: {} items", count);
             return count;
         } catch (Exception e) {
             log.error("Activity collectVotings failed", e);
-            executionContext.getLogger().severe(
+            execCtx.getLogger().severe(
                 "Activity collectVotings failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect votings: " + buildFailureMessage(e),
@@ -289,28 +289,28 @@ public final class SejmCollectFunctions {
      * Activity that collects committee sitting items for today.
      *
      * @param ignored          unused activity input
-     * @param executionContext Azure Functions execution context
+    * @param execCtx Azure Functions execution context
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_COMMITTEES)
     public int collectCommittees(
             @DurableActivityTrigger(name = "ignored") final String ignored,
-            final ExecutionContext executionContext) {
+            final ExecutionContext execCtx) {
 
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Starting committees collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectCommitteeSittings(termNum, date);
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Completed committees collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectCommittees completed: {} items", count);
             return count;
         } catch (Exception e) {
             log.error("Activity collectCommittees failed", e);
-            executionContext.getLogger().severe(
+            execCtx.getLogger().severe(
                 "Activity collectCommittees failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect committee sittings: " + buildFailureMessage(e),
@@ -322,28 +322,28 @@ public final class SejmCollectFunctions {
      * Activity that collects print items modified today.
      *
      * @param ignored          unused activity input
-     * @param executionContext Azure Functions execution context
+    * @param execCtx Azure Functions execution context
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_PRINTS)
     public int collectPrints(
             @DurableActivityTrigger(name = "ignored") final String ignored,
-            final ExecutionContext executionContext) {
+            final ExecutionContext execCtx) {
 
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Starting prints collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectPrints(termNum, date);
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Completed prints collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectPrints completed: {} items", count);
             return count;
         } catch (Exception e) {
             log.error("Activity collectPrints failed", e);
-            executionContext.getLogger().severe(
+            execCtx.getLogger().severe(
                 "Activity collectPrints failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect prints: " + buildFailureMessage(e),
@@ -355,28 +355,28 @@ public final class SejmCollectFunctions {
      * Activity that collects interpellation items modified today.
      *
      * @param ignored          unused activity input
-     * @param executionContext Azure Functions execution context
+    * @param execCtx Azure Functions execution context
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_INTERPELLATIONS)
     public int collectInterpellations(
             @DurableActivityTrigger(name = "ignored") final String ignored,
-            final ExecutionContext executionContext) {
+            final ExecutionContext execCtx) {
 
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Starting interpellations collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectInterpellations(termNum, date);
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Completed interpellations collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectInterpellations completed: {} items", count);
             return count;
         } catch (Exception e) {
             log.error("Activity collectInterpellations failed", e);
-            executionContext.getLogger().severe(
+            execCtx.getLogger().severe(
                 "Activity collectInterpellations failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect interpellations: " + buildFailureMessage(e),
@@ -388,28 +388,28 @@ public final class SejmCollectFunctions {
      * Activity that collects written question items modified today.
      *
      * @param ignored          unused activity input
-     * @param executionContext Azure Functions execution context
+    * @param execCtx Azure Functions execution context
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_QUESTIONS)
     public int collectQuestions(
             @DurableActivityTrigger(name = "ignored") final String ignored,
-            final ExecutionContext executionContext) {
+            final ExecutionContext execCtx) {
 
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Starting written questions collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectWrittenQuestions(termNum, date);
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Completed written questions collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectQuestions completed: {} items", count);
             return count;
         } catch (Exception e) {
             log.error("Activity collectQuestions failed", e);
-            executionContext.getLogger().severe(
+            execCtx.getLogger().severe(
                 "Activity collectQuestions failed: " + buildFailureMessage(e));
             throw new IllegalStateException(
                     "Failed to collect written questions: " + buildFailureMessage(e),
@@ -421,21 +421,21 @@ public final class SejmCollectFunctions {
      * Activity that collects bill items received today.
      *
      * @param ignored          unused activity input
-     * @param executionContext Azure Functions execution context
+    * @param execCtx Azure Functions execution context
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_BILLS)
     public int collectBills(
             @DurableActivityTrigger(name = "ignored") final String ignored,
-            final ExecutionContext executionContext) {
+            final ExecutionContext execCtx) {
 
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Starting bills collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectBills(termNum, date);
-            Logger.info(executionContext,
+                Logger.info(execCtx,
                     "Completed bills collection, count=" + count + ", term=" + termNum + ", date="
                             + date);
             log.debug("Activity collectBills completed: {} items", count);
@@ -445,7 +445,7 @@ public final class SejmCollectFunctions {
             // Bills are non-critical for the rest of the collection workflow.
             // Returning 0 keeps the orchestrator successful while preserving diagnostics.
             log.warn("Activity collectBills failed, continuing with partial result: {}", failure, e);
-            executionContext.getLogger().warning(
+            execCtx.getLogger().warning(
                 "Activity collectBills failed, continuing with count=0: " + failure);
             return 0;
         }

@@ -44,10 +44,10 @@ public final class FacebookPublishingFunctions {
     public void publishDailyDigest(
             @TimerTrigger(name = "timer", schedule = "0 30 23 * * *")
             final String timerInfo,
-            final ExecutionContext executionContext) {
+                        ExecutionContext execCtx) {
         var outcome = this.publishDailyDigestUseCase
                 .publish(new PublishDailyDigestCommand(LocalDate.now()));
-        this.logOutcome(outcome, timerInfo, executionContext);
+                this.logOutcome(outcome, timerInfo, execCtx);
         if (outcome instanceof PublishDailyDigestOutcome.Failed failed) {
             throw failed.exception();
         }
@@ -62,11 +62,11 @@ public final class FacebookPublishingFunctions {
                     authLevel = AuthorizationLevel.FUNCTION,
                     route = HTTP_FUNCTION_ROUTE)
             final HttpRequestMessage<Optional<String>> request,
-            final ExecutionContext executionContext) {
+            ExecutionContext execCtx) {
         try {
             var outcome = this.publishDailyDigestUseCase
                     .publish(new PublishDailyDigestCommand(LocalDate.now()));
-            this.logOutcome(outcome, "http", executionContext);
+            this.logOutcome(outcome, "http", execCtx);
             return switch (outcome) {
                 case PublishDailyDigestOutcome.Published _ -> request.createResponseBuilder(HttpStatus.OK)
                         .body(Map.of(
@@ -99,16 +99,16 @@ public final class FacebookPublishingFunctions {
     private void logOutcome(
             final PublishDailyDigestOutcome outcome,
             final String triggerInfo,
-            final ExecutionContext executionContext) {
+            ExecutionContext execCtx) {
         switch (outcome) {
-            case PublishDailyDigestOutcome.Published published -> Logger.info(executionContext,
+            case PublishDailyDigestOutcome.Published published -> Logger.info(execCtx,
                     "Publikowanie podsumowania Sejmu. Trigger: " + triggerInfo
                             + ", wiadomosc: " + published.message());
-            case PublishDailyDigestOutcome.SkippedAlreadyPublished skipped -> Logger.info(executionContext,
+            case PublishDailyDigestOutcome.SkippedAlreadyPublished skipped -> Logger.info(execCtx,
                     "Pomijanie publikacji - wpis dla dnia " + skipped.date() + " juz istnieje.");
-            case PublishDailyDigestOutcome.SkippedNoDigest skipped -> Logger.info(executionContext,
+            case PublishDailyDigestOutcome.SkippedNoDigest skipped -> Logger.info(execCtx,
                     "Brak aktywnosci sejmowej dla dnia " + skipped.date() + ", pomijanie publikacji.");
-            case PublishDailyDigestOutcome.Failed failed -> executionContext.getLogger().severe(
+            case PublishDailyDigestOutcome.Failed failed -> execCtx.getLogger().severe(
                     "Nieudana publikacja podsumowania Sejmu. Trigger: " + triggerInfo
                             + ", blad: " + this.safeErrorMessage(failed.exception()));
         }

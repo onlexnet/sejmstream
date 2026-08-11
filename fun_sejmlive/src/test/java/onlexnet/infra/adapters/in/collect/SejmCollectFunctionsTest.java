@@ -181,17 +181,17 @@ class SejmCollectFunctionsTest {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
-        var durableContext = new TestDurableClientContext(false);
+        var clientCtx = new TestDurableClientContext(false);
 
-        functions.runTimer("timer", durableContext, new FakeExecutionContext());
+        functions.runTimer("timer", clientCtx, new FakeExecutionContext());
 
-        assertThat(durableContext.lastSignaledEntityId)
+        assertThat(clientCtx.lastSignaledEntityId)
                 .isEqualTo(new EntityInstanceId(
                         SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
                         SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
-        assertThat(durableContext.lastEntityOperationName)
+        assertThat(clientCtx.lastEntityOperationName)
                 .isEqualTo("requestCollect");
-        assertThat(durableContext.lastEntityPayload).isEqualTo("timer");
+        assertThat(clientCtx.lastEntityPayload).isEqualTo("timer");
     }
 
     @Test
@@ -199,10 +199,10 @@ class SejmCollectFunctionsTest {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
-        var durableContext = new TestDurableClientContext(true);
+        var clientCtx = new TestDurableClientContext(true);
 
         assertThatThrownBy(
-                () -> functions.runTimer("timer", durableContext, new FakeExecutionContext()))
+            () -> functions.runTimer("timer", clientCtx, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Failed to enqueue collection request")
                 .hasCauseInstanceOf(RuntimeException.class);
@@ -213,10 +213,10 @@ class SejmCollectFunctionsTest {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
-        var durableContext = new TestDurableClientContext(false);
+        var clientCtx = new TestDurableClientContext(false);
         var request = new FakeHttpRequestMessage<String>(Optional.empty());
 
-        var response = functions.httpStart(request, durableContext, new FakeExecutionContext());
+        var response = functions.httpStart(request, clientCtx, new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(response.getHeader("Location")).isNull();
@@ -233,10 +233,10 @@ class SejmCollectFunctionsTest {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
-        var durableContext = new TestDurableClientContext(true);
+        var clientCtx = new TestDurableClientContext(true);
         var request = new FakeHttpRequestMessage<String>(Optional.empty());
 
-        var response = functions.httpStart(request, durableContext, new FakeExecutionContext());
+        var response = functions.httpStart(request, clientCtx, new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().toString()).contains("Failed to enqueue collection request");
@@ -247,18 +247,18 @@ class SejmCollectFunctionsTest {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var functions = new SejmCollectFunctions(collectService, sejmApiClient);
-        var durableContext = new TestDurableClientContext(false);
+        var clientCtx = new TestDurableClientContext(false);
 
-        functions.runTimer("timer-1", durableContext, new FakeExecutionContext());
-        durableContext.resetCapturedSignals();
-        functions.runTimer("timer-2", durableContext, new FakeExecutionContext());
+        functions.runTimer("timer-1", clientCtx, new FakeExecutionContext());
+        clientCtx.resetCapturedSignals();
+        functions.runTimer("timer-2", clientCtx, new FakeExecutionContext());
 
-        assertThat(durableContext.lastSignaledEntityId)
+        assertThat(clientCtx.lastSignaledEntityId)
                 .isEqualTo(new EntityInstanceId(
                         SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
                         SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
-        assertThat(durableContext.lastEntityOperationName).isEqualTo("requestCollect");
-        assertThat(durableContext.lastEntityPayload).isEqualTo("timer");
+        assertThat(clientCtx.lastEntityOperationName).isEqualTo("requestCollect");
+        assertThat(clientCtx.lastEntityPayload).isEqualTo("timer");
     }
 
     @Test

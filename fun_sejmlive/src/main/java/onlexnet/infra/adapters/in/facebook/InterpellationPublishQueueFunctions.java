@@ -56,17 +56,17 @@ public class InterpellationPublishQueueFunctions {
             // Consumer expects a raw JSON string produced by QueueClient.sendMessage(String).
             // This requires host.json queues.messageEncoding="none"; base64 mode would fail before this method is invoked.
             final String queueMessage,
-            final ExecutionContext executionContext) {
+            ExecutionContext execCtx) {
         final InterpellationPublishQueueMessage payload;
         try {
             payload = this.deserialize(queueMessage);
         } catch (IllegalArgumentException exception) {
-            this.handleMalformedMessage(queueMessage, exception, executionContext);
+            this.handleMalformedMessage(queueMessage, exception, execCtx);
             return;
         }
 
         var outcome = this.useCase.process(new ProcessInterpellationPublishCommand(payload));
-        this.logOutcome(outcome, executionContext);
+        this.logOutcome(outcome, execCtx);
     }
 
     private InterpellationPublishQueueMessage deserialize(final String queueMessage) {
@@ -82,12 +82,12 @@ public class InterpellationPublishQueueFunctions {
     private void handleMalformedMessage(
             final String rawPayload,
             final RuntimeException exception,
-            final ExecutionContext executionContext) {
+            ExecutionContext execCtx) {
         var errorMessage = this.safeErrorMessage(exception);
         var malformedMessage = this.buildMalformedDeadLetterMessage(rawPayload, errorMessage);
         this.queuePort.enqueueDeadLetter(malformedMessage);
         this.publishStatePort.markDeadLetter(malformedMessage, errorMessage);
-        executionContext.getLogger().severe(
+        execCtx.getLogger().severe(
                 "Dead-lettered malformed interpellation queue payload, domainMessageId="
                         + malformedMessage.domainMessageId());
     }
@@ -130,26 +130,26 @@ public class InterpellationPublishQueueFunctions {
 
     private void logOutcome(
             final ProcessInterpellationPublishOutcome outcome,
-            final ExecutionContext executionContext) {
+            ExecutionContext execCtx) {
         switch (outcome) {
             case ProcessInterpellationPublishOutcome.Published published ->
-                Logger.info(executionContext,
+                Logger.info(execCtx,
                         "Published interpellation " + published.termNum() + "/" + published.interpellationNum());
                 case ProcessInterpellationPublishOutcome.PublishConfirmationPending pending ->
-                executionContext.getLogger().severe(
+                execCtx.getLogger().severe(
                     "Published to Facebook but failed to persist confirmation for interpellation "
                         + pending.termNum() + "/" + pending.interpellationNum()
                         + ", error=" + pending.errorMessage());
             case ProcessInterpellationPublishOutcome.RetryScheduled retry ->
-                executionContext.getLogger().warning(
+                execCtx.getLogger().warning(
                         "Retry scheduled for interpellation " + retry.termNum() + "/"
                                 + retry.interpellationNum() + ", nextAttempt=" + retry.nextAttempt());
             case ProcessInterpellationPublishOutcome.DeadLettered deadLettered ->
-                executionContext.getLogger().severe(
+                execCtx.getLogger().severe(
                         "Dead-lettered interpellation " + deadLettered.termNum() + "/"
                                 + deadLettered.interpellationNum() + " after attempts=" + deadLettered.attemptsUsed());
             case ProcessInterpellationPublishOutcome.SkippedAlreadyPublished skipped ->
-                Logger.info(executionContext,
+                Logger.info(execCtx,
                         "Skipped already published interpellation " + skipped.termNum() + "/"
                                 + skipped.interpellationNum());
         }

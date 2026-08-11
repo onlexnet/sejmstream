@@ -13,10 +13,10 @@ public final class Logger {
     /**
      * Logs an informational message using the provided execution context.
      *
-     * @param executionContext Azure Functions execution context used for logging
+     * @param execCtx Azure Functions execution context used for logging
      * @param message message to log
      */
-    public static void info(final ExecutionContext executionContext, final String message) {
-        executionContext.getLogger().info(message);
+    public static void info(ExecutionContext execCtx, final String message) {
+        execCtx.getLogger().info(message);
     }
 }
