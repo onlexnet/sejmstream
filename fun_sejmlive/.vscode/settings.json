@@ -5,5 +5,7 @@
     "chat.useCustomizationsInParentRepositories": true,
     "github.copilot.chat.agentDebugLog.fileLogging.enabled": true,
     "java.import.gradle.enabled": false,
-    "java.import.maven.enabled": true
+    "java.import.maven.enabled": true,
+    "search.useParentIgnoreFiles": true,
+    "search.experimental.useIgnoreFilesInFindFiles": true
 }

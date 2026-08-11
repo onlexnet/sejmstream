@@ -49,7 +49,7 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Write unit tests for all service logic
 - Use meaningful test names that describe the scenario
 - Mock external dependencies (APIs, databases) in unit tests
-- Use `@SpringBootTest` for integration tests
+- Use `@AppTest` for integration tests
 - Aim for high test coverage on business logic
 
 ### Error Handling
