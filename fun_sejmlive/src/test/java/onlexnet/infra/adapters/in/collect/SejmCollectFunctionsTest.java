@@ -9,13 +9,16 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -418,6 +421,21 @@ class SejmCollectFunctionsTest {
                 SejmCollectFunctions.COORDINATOR_ENTITY_KEY)),
             eq("collectCompleted"),
             any());
+    }
+
+    @Test
+    void givenAllCollectCoordinatorOperations_whenChecked_thenEachMapsToPublicEntityMethod() {
+        var publicMethods = Arrays.stream(
+                        SejmCollectCoordinatorEntityFunctions.CollectCoordinatorEntity.class.getMethods())
+                .map(Method::getName)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+
+        for (var op : CollectCoordinatorOperation.values()) {
+            assertThat(publicMethods)
+                    .as("enum %s must match a public method on CollectCoordinatorEntity", op)
+                    .contains(op.methodName().toLowerCase());
+        }
     }
 
     @Test

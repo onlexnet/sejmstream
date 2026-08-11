@@ -30,6 +30,10 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import static onlexnet.infra.adapters.in.collect.CollectCoordinatorOperation.COLLECT_COMPLETED;
+import static onlexnet.infra.adapters.in.collect.CollectCoordinatorOperation.COLLECT_FAILED;
+import static onlexnet.infra.adapters.in.collect.CollectCoordinatorOperation.REQUEST_COLLECT;
+
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.infra.adapters.in.Logger;
@@ -82,9 +86,6 @@ public final class SejmCollectFunctions {
     private final SejmApiClient sejmApiClient;
     private CachedTerm cachedTermNum = CachedTerm.NONE;
 
-    private static final String ENTITY_OPERATION_REQUEST_COLLECT = "requestCollect";
-    private static final String ENTITY_OPERATION_COLLECT_COMPLETED = "collectCompleted";
-    private static final String ENTITY_OPERATION_COLLECT_FAILED = "collectFailed";
     private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID = new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY);
 
     /** Holds the cached current Sejm term number, or {@link None} if not yet resolved. */
@@ -192,13 +193,13 @@ public final class SejmCollectFunctions {
             var result = new CollectResult(Map.copyOf(counts));
             orchestrationContext.signalEntity(
                     coordinatorEntityId,
-                    ENTITY_OPERATION_COLLECT_COMPLETED,
+                    COLLECT_COMPLETED.methodName(),
                     new CollectCompletion(orchestrationContext.getInstanceId()));
             return result;
         } catch (RuntimeException e) {
             orchestrationContext.signalEntity(
                     coordinatorEntityId,
-                    ENTITY_OPERATION_COLLECT_FAILED,
+                    COLLECT_FAILED.methodName(),
                     new CollectFailure(orchestrationContext.getInstanceId(), e.getMessage()));
             throw e;
         }
@@ -206,7 +207,7 @@ public final class SejmCollectFunctions {
 
     private static String enqueueCollectRequest(DurableClientContext clientCtx, String source) {
         var client = clientCtx.getClient().getEntities();
-        client.signalEntity(COLLECT_COORDINATOR_ENTITY_ID, ENTITY_OPERATION_REQUEST_COLLECT, source);
+        client.signalEntity(COLLECT_COORDINATOR_ENTITY_ID, REQUEST_COLLECT.methodName(), source);
         return COLLECT_COORDINATOR_ENTITY_ID.toString();
     }
 

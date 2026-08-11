@@ -17,9 +17,9 @@ public final class SejmCollectCoordinatorEntityFunctions {
 
     @FunctionName(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME)
     public String runCollectCoordinatorEntity(
-            @DurableEntityTrigger(name = "entityRequest", entityName = SejmCollectFunctions.COORDINATOR_ENTITY_NAME)
-            final String entityRequest,
-            final ExecutionContext execCtx) {
+        @DurableEntityTrigger(name = "entityRequest", entityName = SejmCollectFunctions.COORDINATOR_ENTITY_NAME) String entityRequest,
+        ExecutionContext execCtx) {
+
         Logger.info(execCtx, "Processing collect coordinator entity batch");
         return EntityRunner.loadAndRun(entityRequest, CollectCoordinatorEntity::new);
     }
