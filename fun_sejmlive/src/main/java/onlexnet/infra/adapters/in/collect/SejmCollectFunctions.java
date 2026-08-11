@@ -37,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.usecases.CollectCoordinatorDecider;
+import onlexnet.infra.adapters.in.Logger;
 import onlexnet.shared.Guards;
 
 /**
@@ -86,11 +87,10 @@ public final class SejmCollectFunctions {
     private final SejmApiClient sejmApiClient;
     private CachedTerm cachedTermNum = CachedTerm.NONE;
 
-        private static final String ENTITY_OPERATION_REQUEST_COLLECT = "requestCollect";
-        private static final String ENTITY_OPERATION_COLLECT_COMPLETED = "collectCompleted";
-        private static final String ENTITY_OPERATION_COLLECT_FAILED = "collectFailed";
-        private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID = 
-            new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY);
+    private static final String ENTITY_OPERATION_REQUEST_COLLECT = "requestCollect";
+    private static final String ENTITY_OPERATION_COLLECT_COMPLETED = "collectCompleted";
+    private static final String ENTITY_OPERATION_COLLECT_FAILED = "collectFailed";
+    private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID = new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY);
 
     /** Holds the cached current Sejm term number, or {@link None} if not yet resolved. */
     private sealed interface CachedTerm permits CachedTerm.None, CachedTerm.Resolved {
@@ -117,7 +117,7 @@ public final class SejmCollectFunctions {
 
         try {
             var instanceId = enqueueCollectRequest(durableContext, "timer");
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Collect request accepted from timer, instanceId=" + instanceId);
             log.debug("Collect request from timer accepted, instanceId={}", instanceId);
         } catch (Exception e) {
@@ -143,7 +143,7 @@ public final class SejmCollectFunctions {
 
         try {
             var instanceId = enqueueCollectRequest(durableContext, "http");
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                 "Manual collect request accepted, instanceId=" + instanceId);
             log.debug("Manual collect request accepted, instanceId={}", instanceId);
             return request.createResponseBuilder(com.microsoft.azure.functions.HttpStatus.ACCEPTED)
@@ -221,7 +221,7 @@ public final class SejmCollectFunctions {
             @DurableEntityTrigger(name = "entityRequest", entityName = COORDINATOR_ENTITY_NAME)
             final String entityRequest,
             final ExecutionContext executionContext) {
-        executionContext.getLogger().info("Processing collect coordinator entity batch");
+        Logger.info(executionContext, "Processing collect coordinator entity batch");
         return EntityRunner.loadAndRun(entityRequest, CollectCoordinatorEntity::new);
     }
 
@@ -267,10 +267,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Starting votings collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectVotings(termNum, date);
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Completed votings collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectVotings completed: {} items", count);
@@ -300,10 +300,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Starting committees collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectCommitteeSittings(termNum, date);
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Completed committees collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectCommittees completed: {} items", count);
@@ -333,10 +333,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Starting prints collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectPrints(termNum, date);
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Completed prints collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectPrints completed: {} items", count);
@@ -366,10 +366,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Starting interpellations collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectInterpellations(termNum, date);
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Completed interpellations collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectInterpellations completed: {} items", count);
@@ -399,10 +399,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Starting written questions collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectWrittenQuestions(termNum, date);
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Completed written questions collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectQuestions completed: {} items", count);
@@ -432,10 +432,10 @@ public final class SejmCollectFunctions {
         try {
             var date = LocalDate.now();
             var termNum = getCurrentTermNum();
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Starting bills collection for term=" + termNum + ", date=" + date);
             var count = collectService.collectBills(termNum, date);
-            executionContext.getLogger().info(
+            Logger.info(executionContext,
                     "Completed bills collection, count=" + count + ", term=" + termNum + ", date="
                             + date);
             log.debug("Activity collectBills completed: {} items", count);

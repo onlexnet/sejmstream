@@ -19,6 +19,7 @@ import com.microsoft.azure.functions.annotation.TimerTrigger;
 import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
 import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
+import onlexnet.infra.adapters.in.Logger;
 
 /**
  * Publishes daily Sejm digests to social media on a scheduled basis.
@@ -100,12 +101,12 @@ public final class FacebookPublishingFunctions {
             final String triggerInfo,
             final ExecutionContext executionContext) {
         switch (outcome) {
-            case PublishDailyDigestOutcome.Published published -> executionContext.getLogger().info(
+            case PublishDailyDigestOutcome.Published published -> Logger.info(executionContext,
                     "Publikowanie podsumowania Sejmu. Trigger: " + triggerInfo
                             + ", wiadomosc: " + published.message());
-            case PublishDailyDigestOutcome.SkippedAlreadyPublished skipped -> executionContext.getLogger().info(
+            case PublishDailyDigestOutcome.SkippedAlreadyPublished skipped -> Logger.info(executionContext,
                     "Pomijanie publikacji - wpis dla dnia " + skipped.date() + " juz istnieje.");
-            case PublishDailyDigestOutcome.SkippedNoDigest skipped -> executionContext.getLogger().info(
+            case PublishDailyDigestOutcome.SkippedNoDigest skipped -> Logger.info(executionContext,
                     "Brak aktywnosci sejmowej dla dnia " + skipped.date() + ", pomijanie publikacji.");
             case PublishDailyDigestOutcome.Failed failed -> executionContext.getLogger().severe(
                     "Nieudana publikacja podsumowania Sejmu. Trigger: " + triggerInfo
