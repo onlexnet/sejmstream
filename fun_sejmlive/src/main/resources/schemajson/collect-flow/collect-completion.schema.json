@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://onlexnet.dev/sejmstream/collect-flow/collect-completion.schema.json",
+  "title": "CollectCompletion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "orchestrationInstanceId"
+  ],
+  "properties": {
+    "orchestrationInstanceId": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

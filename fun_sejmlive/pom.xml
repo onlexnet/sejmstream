@@ -198,6 +198,11 @@
 			<artifactId>pdfbox</artifactId>
 			<version>3.0.6</version>
 		</dependency>
+		<dependency>
+			<groupId>com.networknt</groupId>
+			<artifactId>json-schema-validator</artifactId>
+			<version>1.5.8</version>
+		</dependency>
 	</dependencies>
 
 	<build>
@@ -253,6 +258,38 @@
 								<useJackson3>true</useJackson3>
 								<hideGenerationTimestamp>true</hideGenerationTimestamp>
 								<openApiNullable>false</openApiNullable>
+							</configOptions>
+						</configuration>
+					</execution>
+					<execution>
+						<id>generate-collect-flow-models</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<inputSpec>${project.basedir}/src/main/resources/openapi/collect-flow-schemas.yaml</inputSpec>
+							<generatorName>java</generatorName>
+							<library>restclient</library>
+							<modelPackage>onlexnet.infra.adapters.in.azurefunc.generated.model</modelPackage>
+							<output>${project.build.directory}/generated-sources/collect-flow-schemas</output>
+							<addCompileSourceRoot>true</addCompileSourceRoot>
+							<generateApis>false</generateApis>
+							<generateApiTests>false</generateApiTests>
+							<generateModelTests>false</generateModelTests>
+							<generateApiDocumentation>false</generateApiDocumentation>
+							<generateModelDocumentation>false</generateModelDocumentation>
+							<generateSupportingFiles>false</generateSupportingFiles>
+							<configOptions>
+								<dateLibrary>java8</dateLibrary>
+								<useJspecify>true</useJspecify>
+								<useJakartaEe>true</useJakartaEe>
+								<useSpringBoot4>true</useSpringBoot4>
+								<useJackson3>true</useJackson3>
+								<hideGenerationTimestamp>true</hideGenerationTimestamp>
+								<openApiNullable>false</openApiNullable>
+								<additionalModelTypeAnnotations>@org.jspecify.annotations.NullMarked
+@java.lang.SuppressWarnings({"NullAway", "unused"})</additionalModelTypeAnnotations>
 							</configOptions>
 						</configuration>
 					</execution>
@@ -381,6 +418,7 @@
 						<configuration>
 							<excludes>
 								<exclude>onlexnet/infra/adapters/out/sejm/generated/**</exclude>
+								<exclude>onlexnet/infra/adapters/in/azurefunc/generated/**</exclude>
 							</excludes>
 						</configuration>
 					</execution>
@@ -393,6 +431,7 @@
 						<configuration>
 							<excludes>
 								<exclude>onlexnet/infra/adapters/out/sejm/generated/**</exclude>
+								<exclude>onlexnet/infra/adapters/in/azurefunc/generated/**</exclude>
 							</excludes>
 							<rules>
 								<rule>

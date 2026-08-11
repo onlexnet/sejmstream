@@ -6,9 +6,11 @@ import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorOperation.R
 
 import java.time.Duration;
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.stereotype.Component;
@@ -36,6 +38,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
 import onlexnet.shared.Guards;
 
 /**
@@ -83,6 +91,7 @@ public final class SejmCollectFunctions {
 
     private final SejmCollectOperations collectService;
     private final SejmApiClient sejmApiClient;
+    private final JsonValidator jsonValidator;
     private CachedTerm cachedTermNum = CachedTerm.NONE;
 
     private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID = new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY);
@@ -160,18 +169,21 @@ public final class SejmCollectFunctions {
     @FunctionName(ORCHESTRATOR_FUNCTION_NAME)
     public CollectResult runOrchestrator(
             @DurableOrchestrationTrigger(name = "orchestrationContext") TaskOrchestrationContext orchestrationContext) {
-        var input = orchestrationContext.getInput(CollectOrchestrationInput.class);
+        var input = this.jsonValidator.validateReceivedIfPresent(
+            JsonValidator.COLLECT_ORCHESTRATION_INPUT,
+            orchestrationContext.getInput(CollectOrchestrationInput.class));
         var coordinatorEntityId = input == null
                 ? COLLECT_COORDINATOR_ENTITY_ID
-                : EntityInstanceId.fromString(input.coordinatorEntityId());
+            : EntityInstanceId.fromString(input.getCoordinatorEntityId());
 
         try {
-            var votingTask = startActivityWithRetry(orchestrationContext, ACTIVITY_VOTINGS);
-            var committeesTask = startActivityWithRetry(orchestrationContext, ACTIVITY_COMMITTEES);
-            var printsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_PRINTS);
-            var interpellationsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_INTERPELLATIONS);
-            var questionsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_QUESTIONS);
-            var billsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_BILLS);
+            var activitySource = input == null ? null : input.getSource();
+            var votingTask = startActivityWithRetry(orchestrationContext, ACTIVITY_VOTINGS, activitySource);
+            var committeesTask = startActivityWithRetry(orchestrationContext, ACTIVITY_COMMITTEES, activitySource);
+            var printsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_PRINTS, activitySource);
+            var interpellationsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_INTERPELLATIONS, activitySource);
+            var questionsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_QUESTIONS, activitySource);
+            var billsTask = startActivityWithRetry(orchestrationContext, ACTIVITY_BILLS, activitySource);
 
             orchestrationContext.allOf(List.of(
                 votingTask,
@@ -189,17 +201,26 @@ public final class SejmCollectFunctions {
             counts.put("WRITTEN_QUESTION", awaitActivityWithFailureContext(questionsTask, ACTIVITY_QUESTIONS));
             counts.put("BILL", awaitActivityWithFailureContext(billsTask, ACTIVITY_BILLS));
 
-            var result = new CollectResult(Map.copyOf(counts));
+                var result = new CollectResult();
+                result.setCountsByType(Collections.unmodifiableMap(new HashMap<>(counts)));
+                this.jsonValidator.validateToSend(JsonValidator.COLLECT_RESULT, result);
+                var completion = new CollectCompletion();
+                completion.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
+                this.jsonValidator.validateToSend(JsonValidator.COLLECT_COMPLETION, completion);
             orchestrationContext.signalEntity(
                     coordinatorEntityId,
                     COLLECT_COMPLETED.methodName(),
-                    new CollectCompletion(orchestrationContext.getInstanceId()));
+                    completion);
             return result;
         } catch (RuntimeException e) {
+                var failure = new CollectFailure();
+                failure.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
+                failure.setMessage(orchestrationFailureMessage(e));
+                this.jsonValidator.validateToSend(JsonValidator.COLLECT_FAILURE, failure);
             orchestrationContext.signalEntity(
                     coordinatorEntityId,
                     COLLECT_FAILED.methodName(),
-                    new CollectFailure(orchestrationContext.getInstanceId(), e.getMessage()));
+                    failure);
             throw e;
         }
     }
@@ -210,15 +231,26 @@ public final class SejmCollectFunctions {
         return COLLECT_COORDINATOR_ENTITY_ID.toString();
     }
 
-    private Task<Integer> startActivityWithRetry(
+    private Task<CollectActivityResult> startActivityWithRetry(
             TaskOrchestrationContext orchestrationContext,
-            String activityName) {
-        return orchestrationContext.callActivity(activityName, null, ACTIVITY_RETRY_OPTIONS, Integer.class);
+            String activityName,
+            String source) {
+        var request = new CollectActivityRequest();
+        request.setSource(source);
+        this.jsonValidator.validateToSend(JsonValidator.COLLECT_ACTIVITY_REQUEST, request);
+        return orchestrationContext.callActivity(
+                activityName,
+                request,
+                ACTIVITY_RETRY_OPTIONS,
+                CollectActivityResult.class);
     }
 
-    private int awaitActivityWithFailureContext(Task<Integer> task, String activityName) {
+    private int awaitActivityWithFailureContext(Task<CollectActivityResult> task, String activityName) {
         try {
-            return task.await();
+                var activityResult = this.jsonValidator.validateReceived(
+                    JsonValidator.COLLECT_ACTIVITY_RESULT,
+                    task.await());
+            return Objects.requireNonNull(activityResult.getCount(), "Activity result count must not be null");
         } catch (TaskFailedException e) {
             // Surface inner activity failure details in orchestration history/logs for easier Azure diagnostics.
             var details = e.getErrorDetails();
@@ -239,9 +271,11 @@ public final class SejmCollectFunctions {
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_VOTINGS)
-    public int collectVotings(
-            @DurableActivityTrigger(name = "ignored") String ignored,
+    public CollectActivityResult collectVotings(
+            @DurableActivityTrigger(name = "request") CollectActivityRequest request,
             ExecutionContext execCtx) {
+
+        validateActivityRequest(request);
 
         try {
             var date = LocalDate.now();
@@ -253,7 +287,7 @@ public final class SejmCollectFunctions {
                     "Completed votings collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectVotings completed: {} items", count);
-            return count;
+            return buildActivityResult(count);
         } catch (Exception e) {
             log.error("Activity collectVotings failed", e);
             execCtx.getLogger().severe(
@@ -272,9 +306,11 @@ public final class SejmCollectFunctions {
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_COMMITTEES)
-    public int collectCommittees(
-            @DurableActivityTrigger(name = "ignored") final String ignored,
+    public CollectActivityResult collectCommittees(
+            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
             final ExecutionContext execCtx) {
+
+        validateActivityRequest(request);
 
         try {
             var date = LocalDate.now();
@@ -286,7 +322,7 @@ public final class SejmCollectFunctions {
                     "Completed committees collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectCommittees completed: {} items", count);
-            return count;
+            return buildActivityResult(count);
         } catch (Exception e) {
             log.error("Activity collectCommittees failed", e);
             execCtx.getLogger().severe(
@@ -305,9 +341,11 @@ public final class SejmCollectFunctions {
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_PRINTS)
-    public int collectPrints(
-            @DurableActivityTrigger(name = "ignored") final String ignored,
+    public CollectActivityResult collectPrints(
+            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
             final ExecutionContext execCtx) {
+
+        validateActivityRequest(request);
 
         try {
             var date = LocalDate.now();
@@ -316,7 +354,7 @@ public final class SejmCollectFunctions {
             var count = collectService.collectPrints(termNum, date);
             Logger.info(execCtx, "Completed prints collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectPrints completed: {} items", count);
-            return count;
+            return buildActivityResult(count);
         } catch (Exception e) {
             log.error("Activity collectPrints failed", e);
             execCtx.getLogger().severe(
@@ -335,9 +373,11 @@ public final class SejmCollectFunctions {
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_INTERPELLATIONS)
-    public int collectInterpellations(
-            @DurableActivityTrigger(name = "ignored") final String ignored,
+    public CollectActivityResult collectInterpellations(
+            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
             final ExecutionContext execCtx) {
+
+        validateActivityRequest(request);
 
         try {
             var date = LocalDate.now();
@@ -349,7 +389,7 @@ public final class SejmCollectFunctions {
                     "Completed interpellations collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectInterpellations completed: {} items", count);
-            return count;
+            return buildActivityResult(count);
         } catch (Exception e) {
             log.error("Activity collectInterpellations failed", e);
             execCtx.getLogger().severe(
@@ -368,9 +408,11 @@ public final class SejmCollectFunctions {
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_QUESTIONS)
-    public int collectQuestions(
-            @DurableActivityTrigger(name = "ignored") final String ignored,
+    public CollectActivityResult collectQuestions(
+            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
             final ExecutionContext execCtx) {
+
+        validateActivityRequest(request);
 
         try {
             var date = LocalDate.now();
@@ -382,7 +424,7 @@ public final class SejmCollectFunctions {
                     "Completed written questions collection, count=" + count + ", term=" + termNum
                             + ", date=" + date);
             log.debug("Activity collectQuestions completed: {} items", count);
-            return count;
+            return buildActivityResult(count);
         } catch (Exception e) {
             log.error("Activity collectQuestions failed", e);
             execCtx.getLogger().severe(
@@ -401,9 +443,11 @@ public final class SejmCollectFunctions {
      * @return count of items upserted
      */
     @FunctionName(ACTIVITY_BILLS)
-    public int collectBills(
-            @DurableActivityTrigger(name = "ignored") final String ignored,
+    public CollectActivityResult collectBills(
+            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
             final ExecutionContext execCtx) {
+
+        validateActivityRequest(request);
 
         try {
             var date = LocalDate.now();
@@ -415,7 +459,7 @@ public final class SejmCollectFunctions {
                     "Completed bills collection, count=" + count + ", term=" + termNum + ", date="
                             + date);
             log.debug("Activity collectBills completed: {} items", count);
-            return count;
+            return buildActivityResult(count);
         } catch (Exception e) {
             var failure = buildFailureMessage(e);
             // Bills are non-critical for the rest of the collection workflow.
@@ -423,8 +467,19 @@ public final class SejmCollectFunctions {
             log.warn("Activity collectBills failed, continuing with partial result: {}", failure, e);
             execCtx.getLogger().warning(
                 "Activity collectBills failed, continuing with count=0: " + failure);
-            return 0;
+            return buildActivityResult(0);
         }
+    }
+
+    private void validateActivityRequest(final CollectActivityRequest request) {
+        var normalizedRequest = request == null ? new CollectActivityRequest() : request;
+        this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, normalizedRequest);
+    }
+
+    private CollectActivityResult buildActivityResult(final int count) {
+        var result = new CollectActivityResult();
+        result.setCount(count);
+        return this.jsonValidator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, result);
     }
 
     // Durable activity failures in Azure often surface only top-level exception messages.
@@ -436,6 +491,14 @@ public final class SejmCollectFunctions {
         }
         var causeMessage = cause.getMessage() == null ? "(no message)" : cause.getMessage();
         return cause.getClass().getSimpleName() + ": " + causeMessage;
+    }
+
+    private static String orchestrationFailureMessage(final RuntimeException exception) {
+        var message = exception.getMessage();
+        if (message == null || message.isBlank()) {
+            return exception.getClass().getSimpleName();
+        }
+        return message;
     }
 
     /**
@@ -462,20 +525,4 @@ public final class SejmCollectFunctions {
         return termNum;
     }
 
-    /**
-     * Result record holding counts of collected items per data type.
-     *
-     * @param countsByType map of data type to count of upserted items
-     */
-    public record CollectResult(Map<String, Integer> countsByType) {
-    }
-
-    record CollectOrchestrationInput(String coordinatorEntityId, String source) {
-    }
-
-    record CollectCompletion(String orchestrationInstanceId) {
-    }
-
-    record CollectFailure(String orchestrationInstanceId, String message) {
-    }
 }

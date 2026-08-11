@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://onlexnet.dev/sejmstream/collect-flow/collect-orchestration-input.schema.json",
+  "title": "CollectOrchestrationInput",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "coordinatorEntityId",
+    "source"
+  ],
+  "properties": {
+    "coordinatorEntityId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "source": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}

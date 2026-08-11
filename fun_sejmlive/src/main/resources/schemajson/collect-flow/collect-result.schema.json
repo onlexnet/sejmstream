@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://onlexnet.dev/sejmstream/collect-flow/collect-result.schema.json",
+  "title": "CollectResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "countsByType"
+  ],
+  "properties": {
+    "countsByType": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    }
+  }
+}

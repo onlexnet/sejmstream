@@ -61,15 +61,21 @@ import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 import onlexnet.app.ports.out.SejmCollectOperations;
-import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorOperation;
-import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorState;
+import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectCoordinatorEntityFunctions;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
 
 @AppTest
 class SejmCollectFunctionsTest {
+
+    private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
+    private static final String COORDINATOR_ENTITY_KEY = "singleton";
+    private static final List<String> COLLECT_COORDINATOR_OPERATIONS =
+            List.of("requestCollect", "collectCompleted", "collectFailed");
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -168,7 +174,7 @@ class SejmCollectFunctionsTest {
             assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME);
             assertThat(trigger).isNotNull();
             assertThat(trigger.name()).isEqualTo("entityRequest");
-            assertThat(trigger.entityName()).isEqualTo(SejmCollectFunctions.COORDINATOR_ENTITY_NAME);
+            assertThat(trigger.entityName()).isEqualTo(COORDINATOR_ENTITY_NAME);
         }
 
         @Test
@@ -187,15 +193,15 @@ class SejmCollectFunctionsTest {
     void givenTimerTrigger_whenInvoked_thenSignalsCollectCoordinatorEntity() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
         var clientCtx = new TestDurableClientContext(false);
 
         functions.runTimer("timer", clientCtx, new FakeExecutionContext());
 
         assertThat(clientCtx.lastSignaledEntityId)
                 .isEqualTo(new EntityInstanceId(
-                        SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
-                        SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
+                COORDINATOR_ENTITY_NAME,
+                COORDINATOR_ENTITY_KEY));
         assertThat(clientCtx.lastEntityOperationName)
                 .isEqualTo("requestCollect");
         assertThat(clientCtx.lastEntityPayload).isEqualTo("timer");
@@ -205,7 +211,7 @@ class SejmCollectFunctionsTest {
     void givenTimerTrigger_whenSchedulingFails_thenThrowsIllegalStateException() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
         var clientCtx = new TestDurableClientContext(true);
 
         assertThatThrownBy(
@@ -219,7 +225,7 @@ class SejmCollectFunctionsTest {
     void givenHttpStart_whenInvoked_thenReturnsAcceptedQueuedResponse() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
         var clientCtx = new TestDurableClientContext(false);
         var request = new FakeHttpRequestMessage<String>(Optional.empty());
 
@@ -230,8 +236,8 @@ class SejmCollectFunctionsTest {
         assertThat(response.getBody()).isEqualTo(Map.of(
             "accepted", true,
             "coordinatorEntityId", new EntityInstanceId(
-                SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
-                SejmCollectFunctions.COORDINATOR_ENTITY_KEY).toString(),
+                COORDINATOR_ENTITY_NAME,
+                COORDINATOR_ENTITY_KEY).toString(),
             "message", "Collect request was enqueued for serialized processing"));
     }
 
@@ -239,7 +245,7 @@ class SejmCollectFunctionsTest {
     void givenHttpStart_whenSchedulingFails_thenReturnsInternalServerError() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
         var clientCtx = new TestDurableClientContext(true);
         var request = new FakeHttpRequestMessage<String>(Optional.empty());
 
@@ -253,7 +259,7 @@ class SejmCollectFunctionsTest {
     void givenMultipleTimerTriggers_whenInvoked_thenEachSignalsCoordinatorEntity() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
         var clientCtx = new TestDurableClientContext(false);
 
         functions.runTimer("timer-1", clientCtx, new FakeExecutionContext());
@@ -262,8 +268,8 @@ class SejmCollectFunctionsTest {
 
         assertThat(clientCtx.lastSignaledEntityId)
                 .isEqualTo(new EntityInstanceId(
-                        SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
-                        SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
+                COORDINATOR_ENTITY_NAME,
+                COORDINATOR_ENTITY_KEY));
         assertThat(clientCtx.lastEntityOperationName).isEqualTo("requestCollect");
         assertThat(clientCtx.lastEntityPayload).isEqualTo("timer");
     }
@@ -281,7 +287,7 @@ class SejmCollectFunctionsTest {
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
                         new SejmPrints(10, null, "/term10/prints"),
                         null)));
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
 
                 var beforeVotings = LocalDate.now();
         var votingResult = functions.collectVotings(null, new FakeExecutionContext());
@@ -291,8 +297,8 @@ class SejmCollectFunctionsTest {
         var billsResult = functions.collectBills(null, new FakeExecutionContext());
                 var afterBills = LocalDate.now();
 
-        assertThat(votingResult).isEqualTo(11);
-        assertThat(billsResult).isEqualTo(22);
+        assertThat(votingResult.getCount()).isEqualTo(11);
+        assertThat(billsResult.getCount()).isEqualTo(22);
         var votingsDateCaptor = org.mockito.ArgumentCaptor.forClass(LocalDate.class);
         var billsDateCaptor = org.mockito.ArgumentCaptor.forClass(LocalDate.class);
         verify(collectService, times(1)).collectVotings(eq(10), votingsDateCaptor.capture());
@@ -310,7 +316,7 @@ class SejmCollectFunctionsTest {
                 new SejmTerm(false, LocalDate.of(2023, 1, 1), 9,
                         new SejmPrints(0, null, "/term9/prints"),
                         LocalDate.of(2023, 10, 10))));
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
 
         assertThatThrownBy(() -> functions.collectCommittees(null, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
@@ -330,7 +336,7 @@ class SejmCollectFunctionsTest {
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
                         new SejmPrints(10, null, "/term10/prints"),
                         null)));
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
 
         assertThatThrownBy(() -> functions.collectQuestions(null, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
@@ -350,11 +356,11 @@ class SejmCollectFunctionsTest {
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
                         new SejmPrints(10, null, "/term10/prints"),
                         null)));
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
 
         var result = functions.collectBills(null, new FakeExecutionContext());
 
-        assertThat(result).isEqualTo(0);
+        assertThat(result.getCount()).isEqualTo(0);
         verify(collectService, times(1)).collectBills(eq(10), any(LocalDate.class));
     }
 
@@ -362,67 +368,67 @@ class SejmCollectFunctionsTest {
     void givenOrchestrator_whenInvoked_thenCallsActivitiesWithRetryAndAggregatesCounts() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
-        var functions = new SejmCollectFunctions(collectService, sejmApiClient);
+        var functions = newFunctions(collectService, sejmApiClient);
         var orchestrationContext = mock(TaskOrchestrationContext.class);
-        var votingTask = completedTask(1);
-        var committeesTask = completedTask(2);
-        var printsTask = completedTask(3);
-        var interpellationsTask = completedTask(4);
-        var questionsTask = completedTask(5);
-        var billsTask = completedTask(6);
+        var votingTask = completedTask(activityResult(1));
+        var committeesTask = completedTask(activityResult(2));
+        var printsTask = completedTask(activityResult(3));
+        var interpellationsTask = completedTask(activityResult(4));
+        var questionsTask = completedTask(activityResult(5));
+        var billsTask = completedTask(activityResult(6));
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-1");
 
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
-                eq(null),
+            any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(Integer.class))).thenReturn(votingTask);
+            eq(CollectActivityResult.class))).thenReturn(votingTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_COMMITTEES),
-                eq(null),
+            any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(Integer.class))).thenReturn(committeesTask);
+            eq(CollectActivityResult.class))).thenReturn(committeesTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PRINTS),
-                eq(null),
+            any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(Integer.class))).thenReturn(printsTask);
+            eq(CollectActivityResult.class))).thenReturn(printsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
-                eq(null),
+            any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(Integer.class))).thenReturn(interpellationsTask);
+            eq(CollectActivityResult.class))).thenReturn(interpellationsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_QUESTIONS),
-                eq(null),
+            any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(Integer.class))).thenReturn(questionsTask);
+            eq(CollectActivityResult.class))).thenReturn(questionsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_BILLS),
-                eq(null),
+            any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(Integer.class))).thenReturn(billsTask);
+            eq(CollectActivityResult.class))).thenReturn(billsTask);
         when(orchestrationContext.allOf(any(List.class)))
             .thenReturn(new com.microsoft.durabletask.CompletedTask<>(List.of(1, 2, 3, 4, 5, 6)));
 
         var result = functions.runOrchestrator(orchestrationContext);
 
-        assertThat(result.countsByType()).containsEntry("VOTING", 1);
-        assertThat(result.countsByType()).containsEntry("COMMITTEE_SITTING", 2);
-        assertThat(result.countsByType()).containsEntry("PRINT", 3);
-        assertThat(result.countsByType()).containsEntry("INTERPELLATION", 4);
-        assertThat(result.countsByType()).containsEntry("WRITTEN_QUESTION", 5);
-        assertThat(result.countsByType()).containsEntry("BILL", 6);
+        assertThat(result.getCountsByType()).containsEntry("VOTING", 1);
+        assertThat(result.getCountsByType()).containsEntry("COMMITTEE_SITTING", 2);
+        assertThat(result.getCountsByType()).containsEntry("PRINT", 3);
+        assertThat(result.getCountsByType()).containsEntry("INTERPELLATION", 4);
+        assertThat(result.getCountsByType()).containsEntry("WRITTEN_QUESTION", 5);
+        assertThat(result.getCountsByType()).containsEntry("BILL", 6);
 
         verify(orchestrationContext, times(6)).callActivity(
                 any(String.class),
-                eq(null),
+            any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(Integer.class));
+            eq(CollectActivityResult.class));
         verify(orchestrationContext).signalEntity(
             eq(new EntityInstanceId(
-                SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
-                SejmCollectFunctions.COORDINATOR_ENTITY_KEY)),
+                COORDINATOR_ENTITY_NAME,
+                COORDINATOR_ENTITY_KEY)),
             eq("collectCompleted"),
             any());
     }
@@ -435,32 +441,62 @@ class SejmCollectFunctionsTest {
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
 
-        for (var op : CollectCoordinatorOperation.values()) {
+        for (var op : COLLECT_COORDINATOR_OPERATIONS) {
             assertThat(publicMethods)
                     .as("enum %s must match a public method on CollectCoordinatorEntity", op)
-                    .contains(op.methodName().toLowerCase());
+                    .contains(op.toLowerCase());
         }
     }
 
     @Test
     void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
         var objectMapper = new ObjectMapper();
-        var state = new CollectCoordinatorState();
-        state.setRunning(true);
-        state.setPendingRequests(2);
+        var stateClass = Class.forName("onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorState");
+        var constructor = stateClass.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        var state = constructor.newInstance();
+        var setRunning = stateClass.getDeclaredMethod("setRunning", boolean.class);
+        setRunning.setAccessible(true);
+        setRunning.invoke(state, true);
+        var setPendingRequests = stateClass.getDeclaredMethod("setPendingRequests", int.class);
+        setPendingRequests.setAccessible(true);
+        setPendingRequests.invoke(state, 2);
 
         var json = objectMapper.writeValueAsString(state);
-        var restored = objectMapper.readValue(json, CollectCoordinatorState.class);
+        var restored = objectMapper.readValue(json, stateClass);
+        var isRunning = stateClass.getDeclaredMethod("isRunning");
+        isRunning.setAccessible(true);
+        var getPendingRequests = stateClass.getDeclaredMethod("getPendingRequests");
+        getPendingRequests.setAccessible(true);
 
-        assertThat(restored.isRunning()).isTrue();
-        assertThat(restored.getPendingRequests()).isEqualTo(2);
+        assertThat(isRunning.invoke(restored)).isEqualTo(true);
+        assertThat(getPendingRequests.invoke(restored)).isEqualTo(2);
     }
 
     @SuppressWarnings("unchecked")
-    private static Task<Integer> completedTask(final int value) {
+    private static CollectActivityResult activityResult(final int value) {
+        var result = new CollectActivityResult();
+        result.setCount(value);
+        return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> Task<T> completedTask(final T value) {
         var task = mock(Task.class);
         when(task.await()).thenReturn(value);
         return task;
+    }
+
+    private static SejmCollectFunctions newFunctions(
+            final SejmCollectOperations collectService,
+            final SejmApiClient sejmApiClient) {
+        return new SejmCollectFunctions(collectService, sejmApiClient, newJsonValidator());
+    }
+
+    private static JsonValidator newJsonValidator() {
+        var validator = new JsonValidator(new ObjectMapper().findAndRegisterModules());
+        validator.init();
+        return validator;
     }
 
     private static final class TestDurableClientContext extends DurableClientContext {
@@ -650,7 +686,7 @@ class SejmCollectFunctionsTest {
             final String expectedFunctionName) throws NoSuchMethodException {
         var method = SejmCollectFunctions.class.getDeclaredMethod(
                 methodName,
-                String.class,
+            CollectActivityRequest.class,
                 ExecutionContext.class);
         var functionName = method.getAnnotation(FunctionName.class);
         var trigger = method.getParameters()[0].getAnnotation(DurableActivityTrigger.class);
@@ -658,7 +694,7 @@ class SejmCollectFunctionsTest {
         assertThat(functionName).isNotNull();
         assertThat(functionName.value()).isEqualTo(expectedFunctionName);
         assertThat(trigger).isNotNull();
-        assertThat(trigger.name()).isEqualTo("ignored");
+        assertThat(trigger.name()).isEqualTo("request");
     }
 
     private static final class FakeExecutionContext implements ExecutionContext {

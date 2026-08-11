@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://onlexnet.dev/sejmstream/collect-flow/collect-activity-request.schema.json",
+  "title": "CollectActivityRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "source": {
+      "type": ["string", "null"],
+      "minLength": 1
+    }
+  }
+}

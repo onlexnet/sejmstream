@@ -10,10 +10,17 @@ import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 
 import org.springframework.stereotype.Component;
 
+import lombok.RequiredArgsConstructor;
 import onlexnet.app.usecases.CollectCoordinatorDecider;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 
 @Component
+@RequiredArgsConstructor
 public final class SejmCollectCoordinatorEntityFunctions {
+
+    private final JsonValidator jsonValidator;
 
     @FunctionName(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME)
     public String runCollectCoordinatorEntity(
@@ -21,12 +28,17 @@ public final class SejmCollectCoordinatorEntityFunctions {
             ExecutionContext execCtx) {
 
         Logger.info(execCtx, "Processing collect coordinator entity batch");
-        return EntityRunner.loadAndRun(entityBatchRequest, CollectCoordinatorEntity::new);
+        return EntityRunner.loadAndRun(entityBatchRequest, () -> new CollectCoordinatorEntity(this.jsonValidator));
     }
 
     public static final class CollectCoordinatorEntity extends AbstractTaskEntity<CollectCoordinatorState> {
 
         private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
+        private final JsonValidator jsonValidator;
+
+        CollectCoordinatorEntity(final JsonValidator jsonValidator) {
+            this.jsonValidator = jsonValidator;
+		}
 
         @Override
         protected Class<CollectCoordinatorState> getStateType() {
@@ -45,19 +57,25 @@ public final class SejmCollectCoordinatorEntityFunctions {
             applyDecision(decision);
         }
 
-        public void collectCompleted(final SejmCollectFunctions.CollectCompletion completion) {
+        public void collectCompleted(final CollectCompletion completion) {
+            var validatedCompletion = this.jsonValidator.validateReceived(
+                    JsonValidator.COLLECT_COMPLETION,
+					completion);
             var decision = DECIDER.decide(
                     this.state.toDeciderState(),
-                    new CollectCoordinatorDecider.CollectCompleted(completion.orchestrationInstanceId()));
+                    new CollectCoordinatorDecider.CollectCompleted(validatedCompletion.getOrchestrationInstanceId()));
             applyDecision(decision);
         }
 
-        public void collectFailed(final SejmCollectFunctions.CollectFailure failure) {
+        public void collectFailed(final CollectFailure failure) {
+            var validatedFailure = this.jsonValidator.validateReceived(
+                    JsonValidator.COLLECT_FAILURE,
+					failure);
             var decision = DECIDER.decide(
                     this.state.toDeciderState(),
                     new CollectCoordinatorDecider.CollectFailed(
-                            failure.orchestrationInstanceId(),
-                            failure.message()));
+                            validatedFailure.getOrchestrationInstanceId(),
+                            validatedFailure.getMessage()));
             applyDecision(decision);
         }
 
@@ -70,9 +88,15 @@ public final class SejmCollectCoordinatorEntityFunctions {
 
         private void startNextRun(final String source) {
             var options = new NewOrchestrationInstanceOptions();
+            var orchestrationInput = new CollectOrchestrationInput();
+            orchestrationInput.setCoordinatorEntityId(this.context.getId().toString());
+            orchestrationInput.setSource(source);
+                this.jsonValidator.validateToSend(
+                    JsonValidator.COLLECT_ORCHESTRATION_INPUT,
+                    orchestrationInput);
             this.context.startNewOrchestration(
                     SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME,
-                    new SejmCollectFunctions.CollectOrchestrationInput(this.context.getId().toString(), source),
+                    orchestrationInput,
                     options);
         }
     }

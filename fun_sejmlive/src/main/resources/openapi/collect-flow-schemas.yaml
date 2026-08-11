@@ -1,0 +1,63 @@
+openapi: 3.1.0
+info:
+  title: Collect Flow Schemas
+  version: 1.0.0
+paths:
+  /_internal/collect/orchestrator:
+    post:
+      operationId: collectOrchestratorContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectOrchestrationInput'
+      responses:
+        '200':
+          description: Collect orchestration result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectResult'
+        '500':
+          description: Collect orchestration failure signal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectFailure'
+  /_internal/collect/activity:
+    post:
+      operationId: collectActivityContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectActivityRequest'
+      responses:
+        '200':
+          description: Collect activity result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectActivityResult'
+        '202':
+          description: Collect completion signal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectCompletion'
+components:
+  schemas:
+    CollectActivityRequest:
+      $ref: '../schemajson/collect-flow/collect-activity-request.schema.json'
+    CollectActivityResult:
+      $ref: '../schemajson/collect-flow/collect-activity-result.schema.json'
+    CollectOrchestrationInput:
+      $ref: '../schemajson/collect-flow/collect-orchestration-input.schema.json'
+    CollectResult:
+      $ref: '../schemajson/collect-flow/collect-result.schema.json'
+    CollectCompletion:
+      $ref: '../schemajson/collect-flow/collect-completion.schema.json'
+    CollectFailure:
+      $ref: '../schemajson/collect-flow/collect-failure.schema.json'

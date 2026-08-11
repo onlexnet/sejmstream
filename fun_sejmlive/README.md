@@ -83,6 +83,7 @@ Notes:
 
 - Queue payloads are sent as raw JSON; this requires `host.json` queue setting `messageEncoding: "none"`.
 - `DomainStorage` is intentionally separate from `AzureWebJobsStorage`.
+- Collect durable payloads are defined schema-first under `src/main/resources/schemajson/collect-flow/`, generated during `generate-sources`, and validated against their schemas after receive and before send.
 
 ## Local development
 
