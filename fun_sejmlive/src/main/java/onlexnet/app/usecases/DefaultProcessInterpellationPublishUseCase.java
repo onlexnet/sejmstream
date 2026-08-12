@@ -45,9 +45,11 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
             return this.skippedAlreadyPublishedOutcome(message);
         }
 
-        var facebookMessage = this.formatFacebookPost(message);
+        var attachmentSummary = this.firstAttachmentSummary(message);
+        var facebookMessage = this.formatFacebookPost(message, attachmentSummary);
         try {
-            this.facebookPublisher.publish(facebookMessage);
+            var postId = this.facebookPublisher.publish(facebookMessage);
+            this.publishAttachmentCommentIfPresent(postId, attachmentSummary);
         } catch (RuntimeException exception) {
             return this.handlePublishFailure(message, exception);
         }
@@ -112,12 +114,16 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
     }
 
     private String formatFacebookPost(InterpellationPublishQueueMessage message) {
+        return this.formatFacebookPost(message, this.firstAttachmentSummary(message));
+    }
+
+    private String formatFacebookPost(InterpellationPublishQueueMessage message, @Nullable String attachmentSummary) {
         var builder = new StringJoiner("\n");
         builder.add("Interpelacja nr " + message.interpellationNum() + " (kadencja " + message.termNum() + ")");
         builder.add(message.title());
         builder.add("Adresaci: " + this.formatRecipients(message));
         this.appendSentDateIfPresent(builder, message);
-        this.appendAttachmentSummaryIfPresent(builder, message);
+        this.appendAttachmentSummaryIfPresent(builder, attachmentSummary);
         return builder.toString();
     }
 
@@ -138,20 +144,36 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
         }
     }
 
-    private void appendAttachmentSummaryIfPresent(StringJoiner builder, InterpellationPublishQueueMessage message) {
+    private void appendAttachmentSummaryIfPresent(StringJoiner builder, @Nullable String attachmentSummary) {
+        if (attachmentSummary != null && !attachmentSummary.isBlank()) {
+            builder.add("Skrót załącznika: " + attachmentSummary);
+        }
+    }
+
+    private void publishAttachmentCommentIfPresent(@Nullable String postId, @Nullable String attachmentSummary) {
+        if (postId == null || postId.isBlank()) {
+            return;
+        }
+        if (attachmentSummary == null || attachmentSummary.isBlank()) {
+            return;
+        }
+        this.facebookPublisher.publishComment(postId, "Załącznik: " + attachmentSummary);
+    }
+
+    private @Nullable String firstAttachmentSummary(InterpellationPublishQueueMessage message) {
         var attachments = Guards.orDefaultIfNullOrEmpty(
                 message.attachments(),
                 java.util.Collections.<AttachmentMetadata>emptyList());
         if (this.sejmApiClient == null || attachments.isEmpty()) {
-            return;
+            return null;
         }
         for (var attachment : attachments) {
             var summary = this.fetchAttachmentSummary(message, attachment);
             if (summary != null && !summary.isBlank()) {
-                builder.add("Skrót załącznika: " + summary);
-                return;
+                return summary;
             }
         }
+        return null;
     }
 
     private @Nullable String fetchAttachmentSummary(

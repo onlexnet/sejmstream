@@ -192,6 +192,37 @@ class DefaultProcessInterpellationPublishUseCaseTest {
     }
 
     @Test
+    void givenAttachmentTextAvailable_whenPublishing_thenAddsAttachmentSummaryAsCommentUnderPost() {
+        var publisher = mock(FacebookPublisher.class);
+        when(publisher.publish(any(String.class))).thenReturn("post-123");
+        var queuePort = mock(InterpellationPublishQueuePort.class);
+        var statePort = mock(InterpellationPublishStatePort.class);
+        var sejmApiClient = mock(SejmApiClient.class);
+        var messageWithAttachment = sampleMessage(1).withAttachments(List.of(
+                new AttachmentMetadata("reply-key", "Budżet", "https://example.com/budget.pdf", null, "budget.pdf")));
+        when(statePort.tryClaimForPublish(messageWithAttachment)).thenReturn(true);
+        when(sejmApiClient.fetchAttachmentText(10, "reply-key", "budget.pdf"))
+                .thenReturn(new SejmApiClient.AttachmentFetchResult.PdfText(
+                        "reply-key",
+                        "budget.pdf",
+                        "application/pdf",
+                        "To jest bardzo ważny tekst załącznika, który powinien zostać skrócony.",
+                        128));
+        var retryPolicy = new InterpellationPublishRetryPolicy(5, 60, 2.0, 900);
+        var useCase = newUseCase(
+                publisher,
+                queuePort,
+                statePort,
+                retryPolicy,
+                sejmApiClient,
+                mock(ProjectOwnerNotifier.class));
+
+        useCase.process(new ProcessInterpellationPublishCommand(messageWithAttachment));
+
+        verify(publisher).publishComment("post-123", "Załącznik: To jest bardzo ważny tekst załącznika, który powinien zostać skrócony.");
+    }
+
+    @Test
     void givenDuplicateDeliveries_whenOnlyFirstClaimSucceeds_thenPublishesExactlyOnce() {
         var publisher = mock(FacebookPublisher.class);
         var queuePort = mock(InterpellationPublishQueuePort.class);

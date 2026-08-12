@@ -25,16 +25,33 @@ public final class DefaultFacebookPublisher implements FacebookPublisher {
     }
 
     @Override
-    public void publish(final String message) {
+    public String publish(String message) {
         if (message == null || message.isBlank()) {
+            return null;
+        }
+
+        ensureClient();
+        var result = this.client.publish("me/feed",
+                com.restfb.types.FacebookType.class,
+                Parameter.with("message", message));
+        log.info("Published Facebook message: {}", message);
+        return result != null ? result.getId() : null;
+    }
+
+    @Override
+    public void publishComment(String postId, String comment) {
+        if (postId == null || postId.isBlank()) {
+            return;
+        }
+        if (comment == null || comment.isBlank()) {
             return;
         }
 
         ensureClient();
-        this.client.publish("me/feed",
+        this.client.publish(postId + "/comments",
                 com.restfb.types.FacebookType.class,
-                Parameter.with("message", message));
-        log.info("Published Facebook message: {}", message);
+                Parameter.with("message", comment));
+        log.info("Published Facebook comment on post {}: {}", postId, comment);
     }
 
     private synchronized void ensureClient() {

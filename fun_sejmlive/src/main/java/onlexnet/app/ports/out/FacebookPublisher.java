@@ -1,9 +1,11 @@
 package onlexnet.app.ports.out;
 
 /**
- * Publishes a Facebook post.
+ * Publishes a Facebook post and optional comments under it.
  */
 public interface FacebookPublisher {
 
-    void publish(String message);
+    String publish(String message);
+
+    void publishComment(String postId, String comment);
 }
