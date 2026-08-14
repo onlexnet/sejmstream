@@ -235,6 +235,7 @@ public class SejmCollectService implements SejmCollectOperations {
             final LocalDate collectionDate,
             final InterpellationItem item) {
         var firstQueuedAt = Instant.now();
+        var webDescription = extractWebDescription(item.links());
         var message = new InterpellationPublishQueueMessage(
                 buildDomainMessageId(termNum, item.num()),
                 termNum,
@@ -245,6 +246,7 @@ public class SejmCollectService implements SejmCollectOperations {
                 1,
                 firstQueuedAt,
                 null,
+                webDescription,
                 item.attachments() == null ? List.of() : item.attachments());
         var claimed = this.interpellationPublishStatePort.tryCreateQueuedRecord(message, collectionDate);
         if (!claimed) {
@@ -261,6 +263,17 @@ public class SejmCollectService implements SejmCollectOperations {
             }
             throw new IllegalStateException(error, exception);
         }
+    }
+
+    private static @org.jspecify.annotations.Nullable String extractWebDescription(
+            final SejmApiClient.InterpellationLinks links) {
+        if (links == null) {
+            return null;
+        }
+        return switch (links) {
+            case SejmApiClient.InterpellationLinks.Complete complete -> complete.webDescription();
+            case SejmApiClient.InterpellationLinks.Missing ignored -> null;
+        };
     }
 
     private String buildDomainMessageId(final int termNum, final int interpellationNum) {

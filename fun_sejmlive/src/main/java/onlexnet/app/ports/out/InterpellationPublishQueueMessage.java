@@ -19,6 +19,7 @@ public record InterpellationPublishQueueMessage(
         int attempt,
         Instant firstQueuedAt,
         @Nullable String lastError,
+        @Nullable String webDescription,
         List<AttachmentMetadata> attachments) {
 
     public InterpellationPublishQueueMessage {
@@ -52,7 +53,7 @@ public record InterpellationPublishQueueMessage(
             final int attempt,
             final Instant firstQueuedAt,
             final @Nullable String lastError) {
-        this(domainMessageId, termNum, interpellationNum, title, recipients, sentDate, attempt, firstQueuedAt, lastError, List.of());
+        this(domainMessageId, termNum, interpellationNum, title, recipients, sentDate, attempt, firstQueuedAt, lastError, null, List.of());
     }
 
     public InterpellationPublishQueueMessage withAttempt(final int nextAttempt) {
@@ -66,6 +67,7 @@ public record InterpellationPublishQueueMessage(
                 nextAttempt,
                 this.firstQueuedAt,
                 this.lastError,
+                this.webDescription,
                 this.attachments);
     }
 
@@ -80,6 +82,22 @@ public record InterpellationPublishQueueMessage(
                 this.attempt,
                 this.firstQueuedAt,
                 error,
+                this.webDescription,
+                this.attachments);
+    }
+
+    public InterpellationPublishQueueMessage withWebDescription(final @Nullable String webDescription) {
+        return new InterpellationPublishQueueMessage(
+                this.domainMessageId,
+                this.termNum,
+                this.interpellationNum,
+                this.title,
+                this.recipients,
+                this.sentDate,
+                this.attempt,
+                this.firstQueuedAt,
+                this.lastError,
+                webDescription,
                 this.attachments);
     }
 
@@ -94,6 +112,7 @@ public record InterpellationPublishQueueMessage(
                 this.attempt,
                 this.firstQueuedAt,
                 this.lastError,
+                this.webDescription,
                 attachments);
     }
 }

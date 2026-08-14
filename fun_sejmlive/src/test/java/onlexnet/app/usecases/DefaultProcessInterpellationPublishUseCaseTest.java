@@ -85,11 +85,11 @@ class DefaultProcessInterpellationPublishUseCaseTest {
     }
 
     @Test
-        void givenMessageClaimNotGranted_whenProcessing_thenSkipsWithoutPublish() {
+    void givenMessageClaimNotGranted_whenProcessing_thenSkipsWithoutPublish() {
         var publisher = mock(FacebookPublisher.class);
         var queuePort = mock(InterpellationPublishQueuePort.class);
         var statePort = mock(InterpellationPublishStatePort.class);
-                when(statePort.tryClaimForPublish(sampleMessage(2))).thenReturn(false);
+        when(statePort.tryClaimForPublish(sampleMessage(2))).thenReturn(false);
         var retryPolicy = new InterpellationPublishRetryPolicy(5, 60, 2.0, 900);
         var useCase = newUseCase(publisher, queuePort, statePort, retryPolicy);
 
@@ -223,6 +223,22 @@ class DefaultProcessInterpellationPublishUseCaseTest {
     }
 
     @Test
+    void givenWebDescriptionPresent_whenPublishing_thenAddsDescriptionCommentUnderPost() {
+        var publisher = mock(FacebookPublisher.class);
+        when(publisher.publish(any(String.class))).thenReturn("post-456");
+        var queuePort = mock(InterpellationPublishQueuePort.class);
+        var statePort = mock(InterpellationPublishStatePort.class);
+        var message = sampleMessage(1).withWebDescription("https://sejm.gov.pl/description");
+        when(statePort.tryClaimForPublish(message)).thenReturn(true);
+        var retryPolicy = new InterpellationPublishRetryPolicy(5, 60, 2.0, 900);
+        var useCase = newUseCase(publisher, queuePort, statePort, retryPolicy);
+
+        useCase.process(new ProcessInterpellationPublishCommand(message));
+
+        verify(publisher).publishComment("post-456", "Opis: https://sejm.gov.pl/description");
+    }
+
+    @Test
     void givenDuplicateDeliveries_whenOnlyFirstClaimSucceeds_thenPublishesExactlyOnce() {
         var publisher = mock(FacebookPublisher.class);
         var queuePort = mock(InterpellationPublishQueuePort.class);
@@ -277,7 +293,9 @@ class DefaultProcessInterpellationPublishUseCaseTest {
                 "2026-07-01",
                 attempt,
                 Instant.parse("2026-07-01T10:15:30Z"),
-                null);
+                null,
+                null,
+                List.of());
     }
 
         private static DefaultProcessInterpellationPublishUseCase newUseCase(

@@ -49,6 +49,7 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
         var facebookMessage = this.formatFacebookPost(message, attachmentSummary);
         try {
             var postId = this.facebookPublisher.publish(facebookMessage);
+            this.publishDescriptionCommentIfPresent(postId, message.webDescription());
             this.publishAttachmentCommentIfPresent(postId, attachmentSummary);
         } catch (RuntimeException exception) {
             return this.handlePublishFailure(message, exception);
@@ -148,6 +149,16 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
         if (attachmentSummary != null && !attachmentSummary.isBlank()) {
             builder.add("Skrót załącznika: " + attachmentSummary);
         }
+    }
+
+    private void publishDescriptionCommentIfPresent(@Nullable String postId, @Nullable String webDescription) {
+        if (postId == null || postId.isBlank()) {
+            return;
+        }
+        if (webDescription == null || webDescription.isBlank()) {
+            return;
+        }
+        this.facebookPublisher.publishComment(postId, "Opis: " + webDescription);
     }
 
     private void publishAttachmentCommentIfPresent(@Nullable String postId, @Nullable String attachmentSummary) {

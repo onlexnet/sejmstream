@@ -61,6 +61,15 @@ public interface SejmApiClient {
         record Prolongation(String from) implements ReplyItem {}
     }
 
+    sealed interface InterpellationLinks permits InterpellationLinks.Complete, InterpellationLinks.Missing {
+        record Complete(
+                String webDescription,
+                String webBody,
+                String body) implements InterpellationLinks {}
+
+        record Missing() implements InterpellationLinks {}
+    }
+
     record InterpellationItem(
         int num,
         String title,
@@ -68,7 +77,27 @@ public interface SejmApiClient {
         String sentDate,
         String lastModified,
         List<ReplyItem> replies,
-        List<AttachmentMetadata> attachments) {
+        List<AttachmentMetadata> attachments,
+        InterpellationLinks links) {
+
+        public static InterpellationItem missing(
+                final int num,
+                final String title,
+                final List<String> to,
+                final String sentDate,
+                final String lastModified,
+                final List<ReplyItem> replies,
+                final List<AttachmentMetadata> attachments) {
+            return new InterpellationItem(
+                    num,
+                    title,
+                    to,
+                    sentDate,
+                    lastModified,
+                    replies,
+                    attachments,
+                    new InterpellationLinks.Missing());
+        }
     }
 
         /**

@@ -47,17 +47,12 @@ public class InterpellationPublishQueueFunctions {
 
     @FunctionName(QUEUE_TRIGGER_FUNCTION_NAME)
     public void process(
-            @QueueTrigger(
-                    name = "message",
-                    queueName = "%INTERPELLATION_PUBLISH_QUEUE_NAME%",
-                // Points to the domain-logic storage account ("DomainStorage" app setting), which is
-                // separate from "AzureWebJobsStorage" (reserved for the Functions host/runtime).
-                connection = "DomainStorage")
-            // Consumer expects a raw JSON string produced by QueueClient.sendMessage(String).
-            // This requires host.json queues.messageEncoding="none"; base64 mode would fail before this method is invoked.
-            final String queueMessage,
-            ExecutionContext execCtx) {
-        final InterpellationPublishQueueMessage payload;
+        // Consumer expects a raw JSON string produced by QueueClient.sendMessage(String).
+        // This requires host.json queues.messageEncoding="none"; base64 mode would fail before this method is invoked.
+        @QueueTrigger(name = "message", queueName = "%INTERPELLATION_PUBLISH_QUEUE_NAME%", connection = "DomainStorage") final String queueMessage,
+        ExecutionContext execCtx) {
+            
+        InterpellationPublishQueueMessage payload;
         try {
             payload = this.deserialize(queueMessage);
         } catch (IllegalArgumentException exception) {

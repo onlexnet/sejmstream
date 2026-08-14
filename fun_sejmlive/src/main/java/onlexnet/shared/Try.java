@@ -43,7 +43,7 @@ package onlexnet.shared;
  *
  * </pre>
  */
-sealed interface Try<T> permits Try.TryVoid, Try.TryValue {
+public sealed interface Try<T> permits Try.TryVoid, Try.TryValue {
 
   /** Try.run() takes a Try.Runnable, which has a void run() method to "perform side-effects". */
   static TryVoid run(Runnable runnable) {

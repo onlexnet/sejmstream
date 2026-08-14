@@ -368,6 +368,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 .flatMap(reply -> nullSafe(reply.getAttachments()).stream())
                 .map(this::mapAttachment)
                 .toList();
+        var links = mapInterpellationLinks(interpellation);
         return new InterpellationItem(
                 intOrZero(interpellation.getNum()),
                 interpellation.getTitle(),
@@ -375,7 +376,36 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 interpellation.getSentDate() == null ? null : interpellation.getSentDate().toString(),
                 interpellation.getLastModified() == null ? null : interpellation.getLastModified().toString(),
                 replies.stream().map(this::mapReply).toList(),
-                attachments);
+                attachments,
+                links);
+    }
+
+    private static SejmApiClient.InterpellationLinks mapInterpellationLinks(final Interpellation interpellation) {
+        var webDescription = findLinkHref(interpellation, "web-description");
+        var webBody = findLinkHref(interpellation, "web-body");
+        var body = findLinkHref(interpellation, "body");
+        if (webDescription != null && webBody != null && body != null) {
+            return new SejmApiClient.InterpellationLinks.Complete(webDescription, webBody, body);
+        }
+        return new SejmApiClient.InterpellationLinks.Missing();
+    }
+
+    private static String findLinkHref(final Interpellation interpellation, final String rel) {
+        var links = interpellation.getLinks();
+        if (links == null || links.isEmpty()) {
+            return null;
+        }
+        for (var link : links) {
+            if (!(link instanceof java.util.Map<?, ?> map)) {
+                continue;
+            }
+            var relValue = map.get("rel");
+            var hrefValue = map.get("href");
+            if (relValue != null && relValue.toString().equals(rel) && hrefValue != null) {
+                return hrefValue.toString();
+            }
+        }
+        return null;
     }
 
     private AttachmentMetadata mapAttachment(final onlexnet.infra.adapters.out.sejm.generated.model.Attachment attachment) {
