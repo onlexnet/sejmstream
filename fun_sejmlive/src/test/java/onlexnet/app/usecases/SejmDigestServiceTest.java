@@ -63,7 +63,7 @@ class SejmDigestServiceTest {
                         "Projekt ustawy budżetowej",
                         LocalDateTime.of(2026, 6, 13, 8, 30),
                         "2026-06-13"))),
-                row("INTERPELLATION", this.objectMapper.writeValueAsString(new InterpellationItem(
+                row("INTERPELLATION", this.objectMapper.writeValueAsString(InterpellationItem.missing(
                         777,
                         "Interpelacja w sprawie transportu",
                         List.of("Minister Infrastruktury"),

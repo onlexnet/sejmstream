@@ -222,7 +222,7 @@ class SejmCollectServiceTest {
             objectMapper);
         var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
         when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
-                .thenReturn(List.of(new InterpellationItem(
+                .thenReturn(List.of(InterpellationItem.missing(
                         77,
                         "Interpelacja testowa",
                         List.of("Ministerstwo"),
@@ -260,7 +260,7 @@ class SejmCollectServiceTest {
             objectMapper);
         var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
         when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
-                .thenReturn(List.of(new InterpellationItem(
+                .thenReturn(List.of(InterpellationItem.missing(
                         77,
                         "Interpelacja testowa",
                         List.of("Ministerstwo"),
@@ -291,7 +291,7 @@ class SejmCollectServiceTest {
             objectMapper);
         var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
         when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
-            .thenReturn(List.of(new InterpellationItem(
+            .thenReturn(List.of(InterpellationItem.missing(
                 77,
                 "Interpelacja testowa",
                 List.of("Ministerstwo"),
@@ -325,7 +325,7 @@ class SejmCollectServiceTest {
             objectMapper);
         var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
         when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
-            .thenReturn(List.of(new InterpellationItem(
+            .thenReturn(List.of(InterpellationItem.missing(
                 77,
                 "Interpelacja testowa",
                 List.of("Ministerstwo"),
