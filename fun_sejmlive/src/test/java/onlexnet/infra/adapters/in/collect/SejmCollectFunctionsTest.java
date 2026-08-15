@@ -75,8 +75,8 @@ class SejmCollectFunctionsTest {
 
     private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
     private static final String COORDINATOR_ENTITY_KEY = "singleton";
-    private static final List<String> COLLECT_COORDINATOR_OPERATIONS =
-            List.of("requestCollect", "collectCompleted", "collectFailed");
+    private static final List<String> COLLECT_COORDINATOR_OPERATIONS = List.of("requestCollect", "collectCompleted",
+            "collectFailed");
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -92,26 +92,22 @@ class SejmCollectFunctionsTest {
 
     @Test
     void givenSpringBootContext_whenResolvingCollectFunctions_thenRequiredDependenciesAreInjected() {
-    assertThat(this.applicationContext).isNotNull();
-    assertThat(this.sejmCollectFunctions).isNotNull();
-    assertThat(this.sejmCollectService).isNotNull();
-    assertThat(this.sejmApiClient).isNotNull();
-    assertThat(this.applicationContext.getBean(SejmCollectFunctions.class))
-        .isSameAs(this.sejmCollectFunctions);
-    assertThat(this.applicationContext.getBean(SejmCollectService.class))
-        .isSameAs(this.sejmCollectService);
-    assertThat(this.applicationContext.getBean(SejmApiClient.class))
-        .isSameAs(this.sejmApiClient);
+        assertThat(this.applicationContext).isNotNull();
+        assertThat(this.sejmCollectFunctions).isNotNull();
+        assertThat(this.sejmCollectService).isNotNull();
+        assertThat(this.sejmApiClient).isNotNull();
+        assertThat(this.applicationContext.getBean(SejmCollectFunctions.class)).isSameAs(this.sejmCollectFunctions);
+        assertThat(this.applicationContext.getBean(SejmCollectService.class)).isSameAs(this.sejmCollectService);
+        assertThat(this.applicationContext.getBean(SejmApiClient.class)).isSameAs(this.sejmApiClient);
     }
 
     @Test
-    void givenTimerFunction_whenCheckingTriggerContract_thenRunsDailyAt1630()
-            throws NoSuchMethodException {
+    void givenTimerFunction_whenCheckingTriggerContract_thenRunsDailyAt1630() throws NoSuchMethodException {
         var method = SejmCollectFunctions.class.getDeclaredMethod(
-                "runTimer",
-                String.class,
-                DurableClientContext.class,
-                ExecutionContext.class);
+            "runTimer",
+            String.class,
+            DurableClientContext.class,
+            ExecutionContext.class);
 
         var functionName = method.getAnnotation(FunctionName.class);
         var trigger = method.getParameters()[0].getAnnotation(TimerTrigger.class);
@@ -128,8 +124,8 @@ class SejmCollectFunctionsTest {
         var method = SejmCollectFunctions.class.getDeclaredMethod(
                 "httpStart",
                 HttpRequestMessage.class,
-            DurableClientContext.class,
-            ExecutionContext.class);
+                DurableClientContext.class,
+                ExecutionContext.class);
 
         var functionName = method.getAnnotation(FunctionName.class);
         var trigger = method.getParameters()[0].getAnnotation(HttpTrigger.class);
@@ -143,54 +139,54 @@ class SejmCollectFunctionsTest {
     }
 
     @Test
-        void givenOrchestratorFunction_whenCheckingTriggerContract_thenFunctionAndOrchestrationTriggerAreConfigured()
+    void givenOrchestratorFunction_whenCheckingTriggerContract_thenFunctionAndOrchestrationTriggerAreConfigured()
             throws NoSuchMethodException {
         var method = SejmCollectFunctions.class.getDeclaredMethod(
-            "runOrchestrator",
-            com.microsoft.durabletask.TaskOrchestrationContext.class);
+                "runOrchestrator",
+                com.microsoft.durabletask.TaskOrchestrationContext.class);
 
         var functionName = method.getAnnotation(FunctionName.class);
         var trigger = method.getParameters()[0]
-            .getAnnotation(DurableOrchestrationTrigger.class);
+                .getAnnotation(DurableOrchestrationTrigger.class);
 
         assertThat(functionName).isNotNull();
         assertThat(functionName.value())
-            .isEqualTo(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME);
+                .isEqualTo(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME);
         assertThat(trigger).isNotNull();
         assertThat(trigger.name()).isEqualTo("orchestrationContext");
-        }
+    }
 
-        @Test
-        void givenCoordinatorEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
-                throws NoSuchMethodException {
-            var method = SejmCollectCoordinatorEntityFunctions.class.getDeclaredMethod(
-                    "runCollectCoordinatorEntity",
-                    String.class,
-                    ExecutionContext.class);
+    @Test
+    void givenCoordinatorEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
+            throws NoSuchMethodException {
+        var method = SejmCollectCoordinatorEntityFunctions.class.getDeclaredMethod(
+                "runCollectCoordinatorEntity",
+                String.class,
+                ExecutionContext.class);
 
-            var functionName = method.getAnnotation(FunctionName.class);
-            var trigger = method.getParameters()[0].getAnnotation(DurableEntityTrigger.class);
+        var functionName = method.getAnnotation(FunctionName.class);
+        var trigger = method.getParameters()[0].getAnnotation(DurableEntityTrigger.class);
 
-            assertThat(functionName).isNotNull();
-            assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME);
-            assertThat(trigger).isNotNull();
-            assertThat(trigger.name()).isEqualTo("entityRequest");
-            assertThat(trigger.entityName()).isEqualTo(COORDINATOR_ENTITY_NAME);
-        }
+        assertThat(functionName).isNotNull();
+        assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME);
+        assertThat(trigger).isNotNull();
+        assertThat(trigger.name()).isEqualTo("entityRequest");
+        assertThat(trigger.entityName()).isEqualTo(COORDINATOR_ENTITY_NAME);
+    }
 
-        @Test
-        void givenActivities_whenCheckingTriggerContract_thenFunctionAndActivityTriggersAreConfigured()
+    @Test
+    void givenActivities_whenCheckingTriggerContract_thenFunctionAndActivityTriggersAreConfigured()
             throws NoSuchMethodException {
         assertActivityContract("collectVotings", SejmCollectFunctions.ACTIVITY_VOTINGS);
         assertActivityContract("collectCommittees", SejmCollectFunctions.ACTIVITY_COMMITTEES);
         assertActivityContract("collectPrints", SejmCollectFunctions.ACTIVITY_PRINTS);
         assertActivityContract("collectInterpellations",
-            SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
+                SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
         assertActivityContract("collectQuestions", SejmCollectFunctions.ACTIVITY_QUESTIONS);
         assertActivityContract("collectBills", SejmCollectFunctions.ACTIVITY_BILLS);
-        }
+    }
 
-        @Test
+    @Test
     void givenTimerTrigger_whenInvoked_thenSignalsCollectCoordinatorEntity() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
@@ -201,8 +197,8 @@ class SejmCollectFunctionsTest {
 
         assertThat(clientCtx.lastSignaledEntityId)
                 .isEqualTo(new EntityInstanceId(
-                COORDINATOR_ENTITY_NAME,
-                COORDINATOR_ENTITY_KEY));
+                        COORDINATOR_ENTITY_NAME,
+                        COORDINATOR_ENTITY_KEY));
         assertThat(clientCtx.lastEntityOperationName)
                 .isEqualTo("requestCollect");
         assertThat(clientCtx.lastEntityPayload).isEqualTo("timer");
@@ -216,7 +212,7 @@ class SejmCollectFunctionsTest {
         var clientCtx = new TestDurableClientContext(true);
 
         assertThatThrownBy(
-            () -> functions.runTimer("timer", clientCtx, new FakeExecutionContext()))
+                () -> functions.runTimer("timer", clientCtx, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Failed to enqueue collection request")
                 .hasCauseInstanceOf(RuntimeException.class);
@@ -235,11 +231,11 @@ class SejmCollectFunctionsTest {
         assertThat(response.getStatus()).isEqualTo(HttpStatus.ACCEPTED);
         assertThat(response.getHeader("Location")).isNull();
         assertThat(response.getBody()).isEqualTo(Map.of(
-            "accepted", true,
-            "coordinatorEntityId", new EntityInstanceId(
-                COORDINATOR_ENTITY_NAME,
-                COORDINATOR_ENTITY_KEY).toString(),
-            "message", "Collect request was enqueued for serialized processing"));
+                "accepted", true,
+                "coordinatorEntityId", new EntityInstanceId(
+                        COORDINATOR_ENTITY_NAME,
+                        COORDINATOR_ENTITY_KEY).toString(),
+                "message", "Collect request was enqueued for serialized processing"));
     }
 
     @Test
@@ -269,8 +265,8 @@ class SejmCollectFunctionsTest {
 
         assertThat(clientCtx.lastSignaledEntityId)
                 .isEqualTo(new EntityInstanceId(
-                COORDINATOR_ENTITY_NAME,
-                COORDINATOR_ENTITY_KEY));
+                        COORDINATOR_ENTITY_NAME,
+                        COORDINATOR_ENTITY_KEY));
         assertThat(clientCtx.lastEntityOperationName).isEqualTo("requestCollect");
         assertThat(clientCtx.lastEntityPayload).isEqualTo("timer");
     }
@@ -290,13 +286,13 @@ class SejmCollectFunctionsTest {
                         null)));
         var functions = newFunctions(collectService, sejmApiClient);
 
-                var beforeVotings = LocalDate.now();
+        var beforeVotings = LocalDate.now();
         var votingResult = functions.collectVotings(null, new FakeExecutionContext());
-                var afterVotings = LocalDate.now();
+        var afterVotings = LocalDate.now();
 
-                var beforeBills = LocalDate.now();
+        var beforeBills = LocalDate.now();
         var billsResult = functions.collectBills(null, new FakeExecutionContext());
-                var afterBills = LocalDate.now();
+        var afterBills = LocalDate.now();
 
         assertThat(votingResult.getCount()).isEqualTo(11);
         assertThat(billsResult.getCount()).isEqualTo(22);
@@ -321,7 +317,7 @@ class SejmCollectFunctionsTest {
 
         assertThatThrownBy(() -> functions.collectCommittees(null, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
-            .hasMessageStartingWith("Failed to collect committee sittings")
+                .hasMessageStartingWith("Failed to collect committee sittings")
                 .hasCauseInstanceOf(IllegalStateException.class)
                 .cause()
                 .hasMessageContaining("No current Sejm term found");
@@ -331,7 +327,7 @@ class SejmCollectFunctionsTest {
     void givenServiceThrows_whenCollectQuestions_thenWrapsAsIllegalStateException() {
         var collectService = mock(SejmCollectOperations.class);
         when(collectService.collectWrittenQuestions(eq(10), any(LocalDate.class)))
-            .thenThrow(new RuntimeException("service failure"));
+                .thenThrow(new RuntimeException("service failure"));
         var sejmApiClient = mock(SejmApiClient.class);
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
@@ -341,7 +337,7 @@ class SejmCollectFunctionsTest {
 
         assertThatThrownBy(() -> functions.collectQuestions(null, new FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
-            .hasMessageStartingWith("Failed to collect written questions")
+                .hasMessageStartingWith("Failed to collect written questions")
                 .hasCauseInstanceOf(RuntimeException.class)
                 .cause()
                 .hasMessage("service failure");
@@ -351,7 +347,7 @@ class SejmCollectFunctionsTest {
     void givenServiceThrows_whenCollectBills_thenReturnsZeroInsteadOfFailingOrchestration() {
         var collectService = mock(SejmCollectOperations.class);
         when(collectService.collectBills(eq(10), any(LocalDate.class)))
-            .thenThrow(new RuntimeException("sejm api timeout"));
+                .thenThrow(new RuntimeException("sejm api timeout"));
         var sejmApiClient = mock(SejmApiClient.class);
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
@@ -381,36 +377,36 @@ class SejmCollectFunctionsTest {
 
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
-            any(CollectActivityRequest.class),
+                any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-            eq(CollectActivityResult.class))).thenReturn(votingTask);
+                eq(CollectActivityResult.class))).thenReturn(votingTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_COMMITTEES),
-            any(CollectActivityRequest.class),
+                any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-            eq(CollectActivityResult.class))).thenReturn(committeesTask);
+                eq(CollectActivityResult.class))).thenReturn(committeesTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PRINTS),
-            any(CollectActivityRequest.class),
+                any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-            eq(CollectActivityResult.class))).thenReturn(printsTask);
+                eq(CollectActivityResult.class))).thenReturn(printsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
-            any(CollectActivityRequest.class),
+                any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-            eq(CollectActivityResult.class))).thenReturn(interpellationsTask);
+                eq(CollectActivityResult.class))).thenReturn(interpellationsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_QUESTIONS),
-            any(CollectActivityRequest.class),
+                any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-            eq(CollectActivityResult.class))).thenReturn(questionsTask);
+                eq(CollectActivityResult.class))).thenReturn(questionsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_BILLS),
-            any(CollectActivityRequest.class),
+                any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-            eq(CollectActivityResult.class))).thenReturn(billsTask);
+                eq(CollectActivityResult.class))).thenReturn(billsTask);
         when(orchestrationContext.allOf(any(List.class)))
-            .thenReturn(new com.microsoft.durabletask.CompletedTask<>(List.of(1, 2, 3, 4, 5, 6)));
+                .thenReturn(new com.microsoft.durabletask.CompletedTask<>(List.of(1, 2, 3, 4, 5, 6)));
 
         var result = functions.runOrchestrator(orchestrationContext);
 
@@ -423,21 +419,21 @@ class SejmCollectFunctionsTest {
 
         verify(orchestrationContext, times(6)).callActivity(
                 any(String.class),
-            any(CollectActivityRequest.class),
+                any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-            eq(CollectActivityResult.class));
+                eq(CollectActivityResult.class));
         verify(orchestrationContext).signalEntity(
-            eq(new EntityInstanceId(
-                COORDINATOR_ENTITY_NAME,
-                COORDINATOR_ENTITY_KEY)),
-            eq("collectCompleted"),
-            any());
+                eq(new EntityInstanceId(
+                        COORDINATOR_ENTITY_NAME,
+                        COORDINATOR_ENTITY_KEY)),
+                eq("collectCompleted"),
+                any());
     }
 
     @Test
     void givenAllCollectCoordinatorOperations_whenChecked_thenEachMapsToPublicEntityMethod() {
         var publicMethods = Arrays.stream(
-                        CollectCoordinatorEntity.class.getMethods())
+                CollectCoordinatorEntity.class.getMethods())
                 .map(Method::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
@@ -687,7 +683,7 @@ class SejmCollectFunctionsTest {
             final String expectedFunctionName) throws NoSuchMethodException {
         var method = SejmCollectFunctions.class.getDeclaredMethod(
                 methodName,
-            CollectActivityRequest.class,
+                CollectActivityRequest.class,
                 ExecutionContext.class);
         var functionName = method.getAnnotation(FunctionName.class);
         var trigger = method.getParameters()[0].getAnnotation(DurableActivityTrigger.class);
@@ -765,8 +761,7 @@ class SejmCollectFunctionsTest {
             implements HttpResponseMessage.Builder {
 
         private HttpStatusType status = HttpStatus.OK;
-        private final java.util.LinkedHashMap<String, String> headers =
-                new java.util.LinkedHashMap<>();
+        private final java.util.LinkedHashMap<String, String> headers = new java.util.LinkedHashMap<>();
         private Object body;
 
         @Override

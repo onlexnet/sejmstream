@@ -4,6 +4,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+
 /**
  * Minimal Sejm API client used by the anonymous HTTP function.
  */
@@ -54,13 +57,25 @@ public interface SejmApiClient {
      * A single entry in the replies list for an interpellation.
      * Use {@link ActualReply} for a real reply, {@link Prolongation} when the ministry requested a deadline extension.
      */
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = ReplyItem.ActualReply.class, name = "ActualReply"),
+        @JsonSubTypes.Type(value = ReplyItem.Prolongation.class, name = "Prolongation")
+    })
     sealed interface ReplyItem permits ReplyItem.ActualReply, ReplyItem.Prolongation {
+
         /** A substantive reply with a document key, author and receipt date. */
         record ActualReply(String key, String from, LocalDate receiptDate) implements ReplyItem {}
+
         /** The ministry requested a deadline extension — no reply document exists. */
         record Prolongation(String from) implements ReplyItem {}
     }
 
+    @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+    @JsonSubTypes({
+        @JsonSubTypes.Type(value = InterpellationLinks.Complete.class, name = "Complete"),
+        @JsonSubTypes.Type(value = InterpellationLinks.Missing.class, name = "Missing")
+    })
     sealed interface InterpellationLinks permits InterpellationLinks.Complete, InterpellationLinks.Missing {
         record Complete(
                 String webDescription,
@@ -103,6 +118,12 @@ public interface SejmApiClient {
         /**
          * Result of downloading and interpreting one interpellation attachment.
          */
+        @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
+        @JsonSubTypes({
+            @JsonSubTypes.Type(value = AttachmentFetchResult.PdfText.class, name = "PdfText"),
+            @JsonSubTypes.Type(value = AttachmentFetchResult.Unsupported.class, name = "Unsupported"),
+            @JsonSubTypes.Type(value = AttachmentFetchResult.Unavailable.class, name = "Unavailable")
+        })
         sealed interface AttachmentFetchResult
             permits AttachmentFetchResult.PdfText, AttachmentFetchResult.Unsupported, AttachmentFetchResult.Unavailable {
 

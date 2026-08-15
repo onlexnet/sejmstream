@@ -20,6 +20,7 @@ applyTo: '**/*.java'
 - **Streams and Lambdas**: Use the Streams API and lambda expressions for collection processing. Employ method references (e.g., `stream.map(Foo::toBar)`).
 - **Null Handling**: Avoid returning or accepting `null`. Use `Optional<T>` for possibly-absent values. Use JSpecify annotations to understand where null is allowed to skip unnecessary null checks.
 - **JavaDoc for Public Contracts**: Add short JavaDoc comments to public classes, interfaces, and methods when they define a contract. Describe the responsibility, intent, inputs, outputs, and guarantees of the API, not obvious implementation details. Do not add JavaDoc to methods overriding a base class or interface contract unless they need to document important implementation-specific behavior or constraints.
+- **JSON Round-tripping for DTOs and contracts**: Any record, class, interface, or sealed hierarchy used as API input/output, queue payload, persistence model, or message contract must be serializable and deserializable with Jackson without losing subtype information. For polymorphic/sealed types, add `@JsonTypeInfo` and `@JsonSubTypes` with a discriminator property such as `"type"`. Validate by round-tripping a representative payload in a test before finalizing the change.
 - **Formatting**: keep text lines not longer than 140 characters
 - **Constructors**: should be without logic, replaced with @RequiredArgsConstructors so that required final fields are initialized
 

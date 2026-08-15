@@ -98,6 +98,10 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Application properties in `application.properties`
 - Use Spring profiles for different environments (dev, prod)
 
+### Java contract rules
+- For Java DTOs, records, sealed hierarchies, and API contracts, follow the JSON round-trip rules in [.github/instructions/java.instructions.md](instructions/java.instructions.md).
+- Treat serialization compatibility as part of the public contract whenever data is persisted, queued, or exchanged over HTTP.
+
 ## Common Tasks
 
 ### Adding a New Entity
