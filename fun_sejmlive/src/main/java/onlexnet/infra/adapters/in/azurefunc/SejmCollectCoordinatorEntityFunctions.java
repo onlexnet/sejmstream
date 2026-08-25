@@ -28,7 +28,7 @@ public final class SejmCollectCoordinatorEntityFunctions {
 
 }
 
-class CollectCoordinatorState {
+final class CollectCoordinatorState implements CollectCoordinatorEntityState {
     private boolean running;
     private int pendingRequests;
 

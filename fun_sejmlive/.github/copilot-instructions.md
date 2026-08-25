@@ -98,9 +98,28 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Application properties in `application.properties`
 - Use Spring profiles for different environments (dev, prod)
 
+### Azure Functions Structure (Project Convention)
+- Keep Azure Function triggers split by responsibility:
+  - one entrypoint class per trigger/orchestrator/activity.
+  - shared behavior in a dedicated support class (for example `...FunctionSupport`).
+- Keep function name constants in a stable shared class (for example `SejmCollectFunctions`) and avoid duplicating literal names in entrypoint classes.
+- Prefer composition/delegation from entrypoint classes to support services rather than large multi-function classes.
+- For durable entities and similar lifecycle-driven components, do not use nullable lifecycle fields for state/context.
+  Model lifecycle explicitly with typed `Uninitialized`/`Initialized` variants.
+
 ### Java contract rules
 - For Java DTOs, records, sealed hierarchies, and API contracts, follow the JSON round-trip rules in [.github/instructions/java.instructions.md](instructions/java.instructions.md).
 - Treat serialization compatibility as part of the public contract whenever data is persisted, queued, or exchanged over HTTP.
+
+### Refactor Verification Rules
+- If function entrypoints are split, split tests in parallel into focused suites:
+  - contract/annotation tests,
+  - trigger behavior tests,
+  - orchestrator behavior tests,
+  - activity behavior tests,
+  - Spring wiring/startup tests.
+- Extract reusable fakes and test harnesses into a dedicated test support class.
+- Run at least targeted compile and the affected focused test suites before finalizing changes.
 
 ## Common Tasks
 

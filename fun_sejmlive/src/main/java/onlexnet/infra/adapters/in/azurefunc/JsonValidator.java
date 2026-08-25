@@ -67,11 +67,11 @@ public final class JsonValidator {
         this.schemas = Map.copyOf(loadedSchemas);
     }
 
-    public <T> T validateReceived(final SchemaRef<T> schemaRef, final T payload) {
+    public <T> T validateReceived(SchemaRef<T> schemaRef, T payload) {
         return validate(schemaRef, payload, "Received");
     }
 
-    public <T> @Nullable T validateReceivedIfPresent(final SchemaRef<T> schemaRef, final @Nullable T payload) {
+    public <T> @Nullable T validateReceivedIfPresent(final SchemaRef<T> schemaRef, @Nullable final T payload) {
         if (payload == null) {
             return null;
         }

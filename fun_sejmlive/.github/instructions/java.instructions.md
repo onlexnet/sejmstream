@@ -24,6 +24,19 @@ applyTo: '**/*.java'
 - **Formatting**: keep text lines not longer than 140 characters
 - **Constructors**: should be without logic, replaced with @RequiredArgsConstructors so that required final fields are initialized
 
+### Refactor Patterns (Mandatory for New Refactors)
+
+- **No nullable lifecycle fields**: For fields that are initialized in one phase and consumed later (for example entity state/context), do not model lifecycle with `null`.
+  Use explicit types to represent lifecycle states, for example a sealed interface with `Uninitialized` and `Initialized` variants.
+- **Guard methods over implicit null assumptions**: Expose `require...()` methods that pattern-match on explicit variants and throw `IllegalStateException`
+  with actionable messages when used out of lifecycle order.
+- **Split oversized function classes**: For Azure Functions and similar adapters, keep one trigger entrypoint per file/class and delegate shared
+  behavior to a dedicated support/service class.
+- **Keep compatibility anchors stable**: Preserve shared constants (for example function names/entity names) in a stable class to minimize
+  churn in tests and references during refactors.
+- **Refactor tests with production split**: When splitting production entrypoints, split tests accordingly (contracts, triggers, orchestrator,
+  activities, Spring wiring), and extract shared test helpers to reduce duplication.
+
 ### Naming Conventions
 
 - Follow Google's Java style guide:

@@ -9,21 +9,13 @@ import org.springframework.context.ApplicationContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
-import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
 
 @AppTest
-class SejmCollectFunctionsSpringBootTest {
+class SejmCollectFunctionsSpringBootWiringTest {
 
     @Autowired
     private ApplicationContext applicationContext;
-
-    @Autowired
-    private SejmCollectFunctions sejmCollectFunctions;
-
-    @Autowired
-    private SejmCollectService sejmCollectService;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -32,12 +24,7 @@ class SejmCollectFunctionsSpringBootTest {
     private JsonValidator jsonValidator;
 
     @Test
-    void givenSpringBootContext_whenResolvingCollectBeans_thenFunctionsServiceAndObjectMapperAreAvailable() {
-        assertThat(this.applicationContext).isNotNull();
-        assertThat(this.sejmCollectFunctions).isNotNull();
-        assertThat(this.sejmCollectService).isNotNull();
-        assertThat(this.objectMapper).isNotNull();
-        assertThat(this.jsonValidator).isNotNull();
+    void givenSpringBootContext_whenResolvingCoreInfraBeans_thenContextReturnsSameSingletons() {
         assertThat(this.applicationContext.getBean(ObjectMapper.class)).isSameAs(this.objectMapper);
         assertThat(this.applicationContext.getBean(JsonValidator.class)).isSameAs(this.jsonValidator);
     }
