@@ -31,7 +31,7 @@ class SejmApiClientITest {
     private static final String ATTACHMENT_FILE_NAME = "i32472-o1.pdf";
 
     @MockitoBean
-    FacebookClient facebookCLient;
+    FacebookClient facebookClient;
 
     @Autowired
     private DefaultSejmApiClient sejmApiClient;
