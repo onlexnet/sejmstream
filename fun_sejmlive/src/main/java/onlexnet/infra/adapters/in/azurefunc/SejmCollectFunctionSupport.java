@@ -122,17 +122,17 @@ public class SejmCollectFunctionSupport {
                 ? "orchestrator"
                 : Guards.orDefaultIfNullOrEmpty(input.getSource(), "orchestrator");
 
-        try {
-            var votingTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_VOTINGS, activitySource);
-            var committeesTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_COMMITTEES, activitySource);
-            var printsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_PRINTS, activitySource);
-            var interpellationsTask = startActivityWithRetry(
-                    orchestrationContext,
-                    SejmCollectFunctions.ACTIVITY_INTERPELLATIONS,
-                    activitySource);
-            var questionsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_QUESTIONS, activitySource);
-            var billsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_BILLS, activitySource);
+        var votingTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_VOTINGS, activitySource);
+        var committeesTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_COMMITTEES, activitySource);
+        var printsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_PRINTS, activitySource);
+        var interpellationsTask = startActivityWithRetry(
+            orchestrationContext,
+            SejmCollectFunctions.ACTIVITY_INTERPELLATIONS,
+            activitySource);
+        var questionsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_QUESTIONS, activitySource);
+        var billsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_BILLS, activitySource);
 
+        try {
             orchestrationContext.allOf(List.of(
                     votingTask,
                     committeesTask,
@@ -140,7 +140,15 @@ public class SejmCollectFunctionSupport {
                     interpellationsTask,
                     questionsTask,
                     billsTask)).await();
+        } catch (TaskFailedException e) {
+            var wrapped = new IllegalStateException(
+                    "Collect orchestrator failed while waiting for activity completion: " + taskFailureSummary(e),
+                    e);
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, wrapped);
+            throw wrapped;
+        }
 
+        try {
             var counts = new HashMap<String, Integer>();
             counts.put("VOTING", awaitActivityWithFailureContext(votingTask, SejmCollectFunctions.ACTIVITY_VOTINGS));
             counts.put("COMMITTEE_SITTING", awaitActivityWithFailureContext(committeesTask, SejmCollectFunctions.ACTIVITY_COMMITTEES));
@@ -158,11 +166,7 @@ public class SejmCollectFunctionSupport {
             orchestrationContext.signalEntity(coordinatorEntityId, COLLECT_COMPLETED.methodName(), completion);
             return result;
         } catch (RuntimeException e) {
-            var failure = new CollectFailure();
-            failure.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
-            failure.setMessage(orchestrationFailureMessage(e));
-            this.jsonValidator.validateToSend(JsonValidator.COLLECT_FAILURE, failure);
-            orchestrationContext.signalEntity(coordinatorEntityId, COLLECT_FAILED.methodName(), failure);
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
             throw e;
         }
     }
@@ -338,6 +342,27 @@ public class SejmCollectFunctionSupport {
             return exception.getClass().getSimpleName();
         }
         return message;
+    }
+
+    private static String taskFailureSummary(final TaskFailedException exception) {
+        var details = exception.getErrorDetails();
+        if (details == null) {
+            return orchestrationFailureMessage(exception);
+        }
+        var errorType = details.getErrorType() == null ? "unknown" : details.getErrorType();
+        var errorMessage = details.getErrorMessage() == null ? "(no message)" : details.getErrorMessage();
+        return errorType + ": " + errorMessage;
+    }
+
+    private void signalCollectFailed(
+            final TaskOrchestrationContext orchestrationContext,
+            final EntityInstanceId coordinatorEntityId,
+            final RuntimeException exception) {
+        var failure = new CollectFailure();
+        failure.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
+        failure.setMessage(orchestrationFailureMessage(exception));
+        this.jsonValidator.validateToSend(JsonValidator.COLLECT_FAILURE, failure);
+        orchestrationContext.signalEntity(coordinatorEntityId, COLLECT_FAILED.methodName(), failure);
     }
 
     private int getCurrentTermNum() {

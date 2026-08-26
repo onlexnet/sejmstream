@@ -96,6 +96,10 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Keep Azure Function triggers split by responsibility:
   - one entrypoint class per trigger/orchestrator/activity.
   - shared behavior in a dedicated support class (for example `...FunctionSupport`).
+- Durable orchestrators must never catch `com.microsoft.durabletask.interruption.OrchestratorBlockedException`.
+  Since it extends `RuntimeException`, do not place blocking `Task.await()` calls inside broad `RuntimeException` or
+  `Exception` catches. Keep failure-reporting catches around only post-await processing, or otherwise ensure the blocking
+  await can propagate untouched without signaling failure.
 - Keep function name constants in a stable shared class (for example `SejmCollectFunctions`) and avoid duplicating literal names in entrypoint classes.
 - Prefer composition/delegation from entrypoint classes to support services rather than large multi-function classes.
 - For durable entities and similar lifecycle-driven components, do not use nullable lifecycle fields for state/context.
