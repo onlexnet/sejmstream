@@ -10,7 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.web.client.RestClientException;
+
+import com.restfb.FacebookClient;
 
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.infra.adapters.out.sejm.generated.api.InterpellationsApi;
@@ -26,6 +29,9 @@ class SejmApiClientITest {
     private static final String REPLY_KEY = "CDUH9D";
     private static final String ATTACHMENT_REPLY_KEY = "ATTCDUH9D";
     private static final String ATTACHMENT_FILE_NAME = "i32472-o1.pdf";
+
+    @MockitoBean
+    FacebookClient facebookCLient;
 
     @Autowired
     private DefaultSejmApiClient sejmApiClient;

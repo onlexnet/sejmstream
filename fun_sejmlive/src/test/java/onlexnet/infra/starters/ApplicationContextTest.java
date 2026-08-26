@@ -14,6 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+
+import com.restfb.FacebookClient;
 
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.facebook.FacebookPublishingFunctions;
@@ -62,6 +65,9 @@ class ApplicationContextTest {
         registry.add("FB_TOKEN", () -> "test-placeholder-token-for-context-startup-check");
     }
 
+    @MockitoBean
+    FacebookClient facebookClient;
+  
     @Autowired
     private ApplicationContext applicationContext;
 

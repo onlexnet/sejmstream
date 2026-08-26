@@ -8,11 +8,9 @@ import org.springframework.context.annotation.Import;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import onlexnet.app.AppModuleConfigurer;
-import onlexnet.app.ports.out.FacebookPublisher;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.infra.adapters.in.AdaptersInModuleConfigurer;
 import onlexnet.infra.adapters.out.AdaptersOutModuleConfigurer;
-import onlexnet.infra.adapters.out.facebook.DefaultFacebookPublisher;
 import onlexnet.infra.adapters.out.telegram.DefaultTelegramNotifier;
 import onlexnet.infra.config.DatabaseConfiguration;
 
@@ -28,11 +26,6 @@ public class StartersConfiguration {
 	@Bean
 	public ObjectMapper objectMapper() {
 		return new ObjectMapper().findAndRegisterModules();
-	}
-
-	@Bean
-	public FacebookPublisher facebookPublisher(@Value("${FB_TOKEN}") String token) {
-		return new DefaultFacebookPublisher(token);
 	}
 
 	/**

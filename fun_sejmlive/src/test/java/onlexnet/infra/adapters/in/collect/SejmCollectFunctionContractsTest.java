@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -23,6 +24,7 @@ import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
+import com.restfb.FacebookClient;
 
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations;
@@ -52,6 +54,9 @@ class SejmCollectFunctionContractsTest {
             .map(onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding::methodName)
             .toList();
 
+    @MockitoBean
+    FacebookClient facebookClient;
+    
     @Autowired
     private ApplicationContext applicationContext;
 
