@@ -17,6 +17,8 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.facebook.FacebookPublishingFunctions;
+import onlexnet.infra.adapters.in.facebook.FacebookPublishingHttpFunction;
+import onlexnet.infra.adapters.in.facebook.FacebookPublishingTimerFunction;
 import onlexnet.testsupport.AppTest;
 
 /**
@@ -70,6 +72,12 @@ class ApplicationContextTest {
                 .isNotNull();
         assertThat(this.applicationContext.getBean(FacebookPublishingFunctions.class))
                 .as("FacebookPublishingFunctions must be available when FB_TOKEN is configured")
+                .isNotNull();
+        assertThat(this.applicationContext.getBean(FacebookPublishingTimerFunction.class))
+                .as("FacebookPublishingTimerFunction must be available when FB_TOKEN is configured")
+                .isNotNull();
+        assertThat(this.applicationContext.getBean(FacebookPublishingHttpFunction.class))
+                .as("FacebookPublishingHttpFunction must be available when FB_TOKEN is configured")
                 .isNotNull();
     }
 
