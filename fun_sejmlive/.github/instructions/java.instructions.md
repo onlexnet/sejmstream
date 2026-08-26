@@ -46,6 +46,7 @@ applyTo: '**/*.java'
   - `lowercase` for package names.
 - Use nouns for classes (`UserService`) and verbs for methods (`getUserById`).
 - Avoid abbreviations and Hungarian notation.
+- Prefer concise JUnit test names that begin with `should`, for example `shouldMatchGeneratedFunctionMetadataWithAnnotationEntryPoints()`. Avoid long `given/when/then` style names unless a case truly requires them.
 
 ### Spring patterns
 - Avoid generating constructor, use Lombok @RequiredArgsConstructor to inject dependencies

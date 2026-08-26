@@ -25,8 +25,7 @@ class AzureFunctionsMetadataGenerationIT {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Test
-    void givenFunctionNameAnnotations_whenInspectingGeneratedMetadata_thenEachFunctionHasMatchingFunctionJson()
-            throws IOException {
+    void shouldMatchGeneratedFunctionMetadataWithAnnotationEntryPoints() throws IOException {
         var expectedEntryPointsByFunctionName = findExpectedEntryPointsByFunctionName();
         assertThat(expectedEntryPointsByFunctionName)
                 .as("Expected at least one @FunctionName-annotated method on the classpath")

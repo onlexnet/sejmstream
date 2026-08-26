@@ -23,14 +23,8 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 ## Coding Standards & Best Practices
 
 ### Java Style
-- use [Java instructions](instructions/java.instructions.md) as the base coding standard
-- **Use `var`** for local variable type inference when the type is obvious from the right-hand side
-  ```java
-  var mpStats = new MpStats();
-  var response = restTemplate.getForEntity(url, String.class);
-  ```
-- Use explicit types when clarity is important (method parameters, return types, fields)
-- Follow Java naming conventions: camelCase for variables/methods, PascalCase for classes
+- Use [Java instructions](instructions/java.instructions.md) as the base coding standard for Java-specific rules and naming conventions.
+- Keep Java code aligned with the repo’s Spring and Azure Functions conventions.
 
 ### Spring Boot Patterns
 - Use constructor-based dependency injection (avoid `@Autowired` on fields)
@@ -46,11 +40,11 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Repository interfaces should extend `JpaRepository`
 
 ### Testing
-- Write unit tests for all service logic
-- Use meaningful test names that describe the scenario
-- Mock external dependencies (APIs, databases) in unit tests
-- Use `@AppTest` for integration tests
-- Aim for high test coverage on business logic
+- Write unit tests for all service logic.
+- Mock external dependencies (APIs, databases) in unit tests.
+- Use `@AppTest` for integration tests.
+- Aim for high test coverage on business logic.
+- Follow the Java naming conventions in [Java instructions](instructions/java.instructions.md) for test method names.
 
 ### Error Handling
 - Use proper exception handling with try-catch blocks
