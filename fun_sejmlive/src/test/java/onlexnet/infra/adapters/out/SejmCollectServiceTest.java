@@ -427,7 +427,7 @@ class SejmCollectServiceTest {
         var repository = new RecordingRepository();
         var objectMapper = new ObjectMapper() {
             @Override
-            public String writeValueAsString(final Object value)
+            public String writeValueAsString(Object value)
                     throws JsonProcessingException {
                 throw new JsonProcessingException("boom") {
                 };
@@ -524,8 +524,8 @@ class SejmCollectServiceTest {
         private RuntimeException failWith;
 
         @Override
-        public int upsertItem(final LocalDate date, final String dataType,
-                final String itemKey, final String title, final String itemJson) {
+        public int upsertItem(LocalDate date, String dataType,
+                String itemKey, String title, String itemJson) {
             if (this.failWith != null) {
                 throw this.failWith;
             }
@@ -534,31 +534,31 @@ class SejmCollectServiceTest {
         }
 
         @Override
-        public List<java.util.Map<String, Object>> findByDate(final LocalDate date) {
+        public List<java.util.Map<String, Object>> findByDate(LocalDate date) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 
         @Override
-        public List<java.util.Map<String, Object>> findByDateAndType(final LocalDate date,
-                final String dataType) {
+        public List<java.util.Map<String, Object>> findByDateAndType(LocalDate date,
+                String dataType) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 
         @Override
-        public int insertPublishLog(final LocalDate date, final String message,
-                final boolean success, final String errorMsg) {
+        public int insertPublishLog(LocalDate date, String message,
+                boolean success, String errorMsg) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 
         @Override
-        public boolean alreadyPublishedToday(final LocalDate date) {
+        public boolean alreadyPublishedToday(LocalDate date) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 
         @Override
         public boolean tryCreateQueuedRecord(
-                final InterpellationPublishQueueMessage message,
-                final LocalDate collectionDate) {
+                InterpellationPublishQueueMessage message,
+                LocalDate collectionDate) {
             var key = key(message.termNum(), message.interpellationNum());
             var current = this.statuses.get(key);
             if (current == null || "QUEUE_ENQUEUE_FAILED".equals(current)) {
@@ -569,7 +569,7 @@ class SejmCollectServiceTest {
         }
 
         @Override
-        public boolean tryClaimForPublish(final InterpellationPublishQueueMessage message) {
+        public boolean tryClaimForPublish(InterpellationPublishQueueMessage message) {
             var key = key(message.termNum(), message.interpellationNum());
             var current = this.statuses.get(key);
             if ("QUEUED".equals(current) || "RETRY_SCHEDULED".equals(current)) {
@@ -580,63 +580,63 @@ class SejmCollectServiceTest {
         }
 
         @Override
-        public boolean isPublished(final int termNum, final int interpellationNum) {
+        public boolean isPublished(int termNum, int interpellationNum) {
             return "PUBLISHED".equals(this.statuses.get(key(termNum, interpellationNum)));
         }
 
         @Override
         public void markPublished(
-                final InterpellationPublishQueueMessage message,
-                final String facebookPostMessage) {
+                InterpellationPublishQueueMessage message,
+                String facebookPostMessage) {
             this.statuses.put(key(message.termNum(), message.interpellationNum()), "PUBLISHED");
         }
 
         @Override
         public void markPublishConfirmationPending(
-                final InterpellationPublishQueueMessage message,
-                final String errorMessage,
-                final String facebookPostMessage) {
+                InterpellationPublishQueueMessage message,
+                String errorMessage,
+                String facebookPostMessage) {
             this.statuses.put(key(message.termNum(), message.interpellationNum()), "PUBLISH_CONFIRMATION_PENDING");
         }
 
         @Override
         public void markRetryScheduled(
-                final InterpellationPublishQueueMessage message,
-                final String errorMessage) {
+                InterpellationPublishQueueMessage message,
+                String errorMessage) {
             this.statuses.put(key(message.termNum(), message.interpellationNum()), "RETRY_SCHEDULED");
         }
 
         @Override
         public void markEnqueueFailed(
-                final InterpellationPublishQueueMessage message,
-                final String errorMessage) {
+                InterpellationPublishQueueMessage message,
+                String errorMessage) {
             this.statuses.put(key(message.termNum(), message.interpellationNum()), "QUEUE_ENQUEUE_FAILED");
         }
 
         @Override
         public void markDeadLetter(
-                final InterpellationPublishQueueMessage message,
-                final String errorMessage) {
+                InterpellationPublishQueueMessage message,
+                String errorMessage) {
             this.statuses.put(key(message.termNum(), message.interpellationNum()), "DEAD_LETTER");
         }
 
         @Override
-        public int getLastKnownReplyCount(final int termNum, final int interpellationNum) {
+        public int getLastKnownReplyCount(int termNum, int interpellationNum) {
             return 0;
         }
 
         @Override
-        public void updateLastKnownReplyCount(final int termNum, final int interpellationNum, final int replyCount) {
+        public void updateLastKnownReplyCount(int termNum, int interpellationNum, int replyCount) {
             // not used in these tests
         }
 
         @Override
         public void markReplyNotificationPublished(
-                final int termNum, final int interpellationNum, final java.time.LocalDateTime publishedAt) {
+                int termNum, int interpellationNum, java.time.LocalDateTime publishedAt) {
             // not used in these tests
         }
 
-        private String key(final int termNum, final int interpellationNum) {
+        private String key(int termNum, int interpellationNum) {
             return termNum + ":" + interpellationNum;
         }
     }
@@ -647,7 +647,7 @@ class SejmCollectServiceTest {
         private RuntimeException failWith;
 
         @Override
-        public void enqueue(final InterpellationPublishQueueMessage message, final Duration visibilityDelay) {
+        public void enqueue(InterpellationPublishQueueMessage message, Duration visibilityDelay) {
             if (this.failWith != null) {
                 throw this.failWith;
             }
@@ -655,7 +655,7 @@ class SejmCollectServiceTest {
         }
 
         @Override
-        public void enqueueDeadLetter(final InterpellationPublishQueueMessage message) {
+        public void enqueueDeadLetter(InterpellationPublishQueueMessage message) {
             throw new UnsupportedOperationException("Not used by this test");
         }
     }

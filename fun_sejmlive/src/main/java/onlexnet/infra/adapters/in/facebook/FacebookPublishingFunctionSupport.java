@@ -29,7 +29,7 @@ public final class FacebookPublishingFunctionSupport {
     /**
      * Publishes today's Sejm digest to Facebook, rethrowing on failure.
      */
-    public void publishDailyDigest(final String triggerInfo, final ExecutionContext execCtx) {
+    public void publishDailyDigest(String triggerInfo, ExecutionContext execCtx) {
         var outcome = this.publishDailyDigestUseCase
                 .publish(new PublishDailyDigestCommand(LocalDate.now()));
         this.logOutcome(outcome, triggerInfo, execCtx);
@@ -42,8 +42,8 @@ public final class FacebookPublishingFunctionSupport {
      * HTTP trigger behavior for manually publishing today's Sejm digest to Facebook.
      */
     public HttpResponseMessage publishDailyDigestHttp(
-            final HttpRequestMessage<Optional<String>> request,
-            final ExecutionContext execCtx) {
+            HttpRequestMessage<Optional<String>> request,
+            ExecutionContext execCtx) {
         try {
             var outcome = this.publishDailyDigestUseCase
                     .publish(new PublishDailyDigestCommand(LocalDate.now()));
@@ -78,9 +78,9 @@ public final class FacebookPublishingFunctionSupport {
     }
 
     private void logOutcome(
-            final PublishDailyDigestOutcome outcome,
-            final String triggerInfo,
-            final ExecutionContext execCtx) {
+            PublishDailyDigestOutcome outcome,
+            String triggerInfo,
+            ExecutionContext execCtx) {
         switch (outcome) {
             case PublishDailyDigestOutcome.Published published -> Log.info(execCtx,
                     "Publikowanie podsumowania Sejmu. Trigger: " + triggerInfo
@@ -95,7 +95,7 @@ public final class FacebookPublishingFunctionSupport {
         }
     }
 
-    private String safeErrorMessage(final RuntimeException exception) {
+    private String safeErrorMessage(RuntimeException exception) {
         var message = exception.getMessage();
         if (message == null || message.isBlank()) {
             return "Unknown error";

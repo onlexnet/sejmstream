@@ -96,13 +96,13 @@ public interface SejmApiClient {
         InterpellationLinks links) {
 
         public static InterpellationItem missing(
-                final int num,
-                final String title,
-                final List<String> to,
-                final String sentDate,
-                final String lastModified,
-                final List<ReplyItem> replies,
-                final List<AttachmentMetadata> attachments) {
+                int num,
+                String title,
+                List<String> to,
+                String sentDate,
+                String lastModified,
+                List<ReplyItem> replies,
+                List<AttachmentMetadata> attachments) {
             return new InterpellationItem(
                     num,
                     title,

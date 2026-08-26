@@ -18,8 +18,8 @@ public final class SejmCollectInterpellationsActivityFunction {
 
     @FunctionName(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS)
     public CollectActivityResult collectInterpellations(
-            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
-            final ExecutionContext execCtx) {
+            @DurableActivityTrigger(name = "request") CollectActivityRequest request,
+            ExecutionContext execCtx) {
         return this.support.collectInterpellations(request, execCtx);
     }
 }

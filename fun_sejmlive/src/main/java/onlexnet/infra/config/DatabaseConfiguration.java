@@ -14,9 +14,9 @@ import liquibase.integration.spring.SpringLiquibase;
 public class DatabaseConfiguration {
 
     @Bean
-    public DataSource dataSource(@Value("${spring.datasource.url:}") final String url,
-            @Value("${spring.datasource.username:}") final String username,
-            @Value("${spring.datasource.password:}") final String password) {
+    public DataSource dataSource(@Value("${spring.datasource.url:}") String url,
+            @Value("${spring.datasource.username:}") String username,
+            @Value("${spring.datasource.password:}") String password) {
         if (url.startsWith("@Microsoft.KeyVault")) {
             throw new IllegalStateException(
                     "spring.datasource.url contains an unresolved Key Vault reference. " +
@@ -31,13 +31,13 @@ public class DatabaseConfiguration {
     }
 
     @Bean
-    public JdbcTemplate jdbcTemplate(final DataSource dataSource) {
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
         return new JdbcTemplate(dataSource);
     }
 
     @Bean
-    public SpringLiquibase springLiquibase(final DataSource dataSource,
-            @Value("${spring.datasource.url:}") final String url) {
+    public SpringLiquibase springLiquibase(DataSource dataSource,
+            @Value("${spring.datasource.url:}") String url) {
         var liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog("classpath:db/changelog/db.changelog-master.yaml");

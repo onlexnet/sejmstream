@@ -17,7 +17,7 @@ public final class SejmCollectOrchestratorFunction {
 
     @FunctionName(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME)
     public CollectResult runOrchestrator(
-            @DurableOrchestrationTrigger(name = "orchestrationContext") final TaskOrchestrationContext orchestrationContext) {
+            @DurableOrchestrationTrigger(name = "orchestrationContext") TaskOrchestrationContext orchestrationContext) {
         return this.support.runOrchestrator(orchestrationContext);
     }
 }

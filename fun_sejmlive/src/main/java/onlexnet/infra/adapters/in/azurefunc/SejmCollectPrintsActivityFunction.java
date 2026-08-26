@@ -18,8 +18,8 @@ public final class SejmCollectPrintsActivityFunction {
 
     @FunctionName(SejmCollectFunctions.ACTIVITY_PRINTS)
     public CollectActivityResult collectPrints(
-            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
-            final ExecutionContext execCtx) {
+            @DurableActivityTrigger(name = "request") CollectActivityRequest request,
+            ExecutionContext execCtx) {
         return this.support.collectPrints(request, execCtx);
     }
 }

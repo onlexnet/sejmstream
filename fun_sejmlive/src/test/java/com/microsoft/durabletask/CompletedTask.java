@@ -11,11 +11,11 @@ import java.util.function.Function;
  */
 public final class CompletedTask<V> extends Task<V> {
 
-    public CompletedTask(final V result) {
+    public CompletedTask(V result) {
         super(CompletableFuture.completedFuture(result));
     }
 
-    private CompletedTask(final CompletableFuture<V> future) {
+    private CompletedTask(CompletableFuture<V> future) {
         super(future);
     }
 
@@ -25,12 +25,12 @@ public final class CompletedTask<V> extends Task<V> {
     }
 
     @Override
-    public <U> Task<U> thenApply(final Function<V, U> transform) {
+    public <U> Task<U> thenApply(Function<V, U> transform) {
         return new CompletedTask<>(this.future.thenApply(transform));
     }
 
     @Override
-    public Task<Void> thenAccept(final Consumer<V> action) {
+    public Task<Void> thenAccept(Consumer<V> action) {
         return new CompletedTask<>(this.future.thenAccept(action));
     }
 }

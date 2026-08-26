@@ -19,13 +19,13 @@ public class InterpellationPublishRetryPolicy {
     private final Duration maxRetryDelay;
 
     public InterpellationPublishRetryPolicy(
-            @Value("${interpellation.publish.queue.max-attempts:5}") final int maxAttempts,
+            @Value("${interpellation.publish.queue.max-attempts:5}") int maxAttempts,
             @Value("${interpellation.publish.queue.retry-delay-seconds:60}")
-            final long retryDelaySeconds,
+            long retryDelaySeconds,
             @Value("${interpellation.publish.queue.backoff-multiplier:2.0}")
-            final double backoffMultiplier,
+            double backoffMultiplier,
             @Value("${interpellation.publish.queue.max-retry-delay-seconds:900}")
-            final long maxRetryDelaySeconds) {
+            long maxRetryDelaySeconds) {
         this.maxAttempts = Math.max(MIN_ATTEMPTS, maxAttempts);
         this.retryDelay = Duration.ofSeconds(Math.max(1L, retryDelaySeconds));
         this.backoffMultiplier = backoffMultiplier < 1.0 ? 1.0 : backoffMultiplier;
@@ -36,7 +36,7 @@ public class InterpellationPublishRetryPolicy {
         return this.maxAttempts;
     }
 
-    public Duration retryDelayForAttempt(final int currentAttempt) {
+    public Duration retryDelayForAttempt(int currentAttempt) {
         var exponent = Math.max(0, currentAttempt - 1);
         var seconds = (long) Math.min(
                 this.maxRetryDelay.toSeconds(),

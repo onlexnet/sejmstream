@@ -44,19 +44,19 @@ public record InterpellationPublishQueueMessage(
     }
 
     public InterpellationPublishQueueMessage(
-            final String domainMessageId,
-            final int termNum,
-            final int interpellationNum,
-            final String title,
-            final List<String> recipients,
-            final @Nullable String sentDate,
-            final int attempt,
-            final Instant firstQueuedAt,
-            final @Nullable String lastError) {
+            String domainMessageId,
+            int termNum,
+            int interpellationNum,
+            String title,
+            List<String> recipients,
+            @Nullable String sentDate,
+            int attempt,
+            Instant firstQueuedAt,
+            @Nullable String lastError) {
         this(domainMessageId, termNum, interpellationNum, title, recipients, sentDate, attempt, firstQueuedAt, lastError, null, List.of());
     }
 
-    public InterpellationPublishQueueMessage withAttempt(final int nextAttempt) {
+    public InterpellationPublishQueueMessage withAttempt(int nextAttempt) {
         return new InterpellationPublishQueueMessage(
                 this.domainMessageId,
                 this.termNum,
@@ -71,7 +71,7 @@ public record InterpellationPublishQueueMessage(
                 this.attachments);
     }
 
-    public InterpellationPublishQueueMessage withLastError(final @Nullable String error) {
+    public InterpellationPublishQueueMessage withLastError(@Nullable String error) {
         return new InterpellationPublishQueueMessage(
                 this.domainMessageId,
                 this.termNum,
@@ -86,7 +86,7 @@ public record InterpellationPublishQueueMessage(
                 this.attachments);
     }
 
-    public InterpellationPublishQueueMessage withWebDescription(final @Nullable String webDescription) {
+    public InterpellationPublishQueueMessage withWebDescription(@Nullable String webDescription) {
         return new InterpellationPublishQueueMessage(
                 this.domainMessageId,
                 this.termNum,
@@ -101,7 +101,7 @@ public record InterpellationPublishQueueMessage(
                 this.attachments);
     }
 
-    public InterpellationPublishQueueMessage withAttachments(final List<AttachmentMetadata> attachments) {
+    public InterpellationPublishQueueMessage withAttachments(List<AttachmentMetadata> attachments) {
         return new InterpellationPublishQueueMessage(
                 this.domainMessageId,
                 this.termNum,

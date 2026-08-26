@@ -9,6 +9,9 @@
   // https://containers.dev/features
   "features": {
     "ghcr.io/devcontainers/features/dotnet:2": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
     "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},

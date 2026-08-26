@@ -35,10 +35,10 @@ public class InterpellationPublishQueueFunctions {
     private final InterpellationPublishStatePort publishStatePort;
 
     public InterpellationPublishQueueFunctions(
-            final ProcessInterpellationPublishUseCase useCase,
-            final ObjectMapper objectMapper,
-            final InterpellationPublishQueuePort queuePort,
-            final InterpellationPublishStatePort publishStatePort) {
+            ProcessInterpellationPublishUseCase useCase,
+            ObjectMapper objectMapper,
+            InterpellationPublishQueuePort queuePort,
+            InterpellationPublishStatePort publishStatePort) {
         this.useCase = useCase;
         this.objectMapper = objectMapper;
         this.queuePort = queuePort;
@@ -64,7 +64,7 @@ public class InterpellationPublishQueueFunctions {
         this.logOutcome(outcome, execCtx);
     }
 
-    private InterpellationPublishQueueMessage deserialize(final String queueMessage) {
+    private InterpellationPublishQueueMessage deserialize(String queueMessage) {
         try {
             return this.objectMapper.readValue(queueMessage, InterpellationPublishQueueMessage.class);
         } catch (IOException | IllegalArgumentException exception) {
@@ -75,8 +75,8 @@ public class InterpellationPublishQueueFunctions {
     }
 
     private void handleMalformedMessage(
-            final String rawPayload,
-            final RuntimeException exception,
+            String rawPayload,
+            RuntimeException exception,
             ExecutionContext execCtx) {
         var errorMessage = this.safeErrorMessage(exception);
         var malformedMessage = this.buildMalformedDeadLetterMessage(rawPayload, errorMessage);
@@ -88,8 +88,8 @@ public class InterpellationPublishQueueFunctions {
     }
 
     private InterpellationPublishQueueMessage buildMalformedDeadLetterMessage(
-            final String rawPayload,
-            final String errorMessage) {
+            String rawPayload,
+            String errorMessage) {
         var payloadChecksum = this.crc32(rawPayload);
         var termNum = 900_000_000 + (int) ((payloadChecksum >>> 16) & 0x7FFF);
         var interpellationNum = 900_000_000 + (int) (payloadChecksum & 0x7FFF);
@@ -109,13 +109,13 @@ public class InterpellationPublishQueueFunctions {
                 "MALFORMED: " + errorMessage + " payload=" + truncatedPayload);
     }
 
-    private long crc32(final String payload) {
+    private long crc32(String payload) {
         var crc32 = new CRC32();
         crc32.update(payload.getBytes(StandardCharsets.UTF_8));
         return crc32.getValue();
     }
 
-    private String safeErrorMessage(final RuntimeException exception) {
+    private String safeErrorMessage(RuntimeException exception) {
         var message = exception.getMessage();
         if (message == null || message.isBlank()) {
             return exception.getClass().getSimpleName();
@@ -124,7 +124,7 @@ public class InterpellationPublishQueueFunctions {
     }
 
     private void logOutcome(
-            final ProcessInterpellationPublishOutcome outcome,
+            ProcessInterpellationPublishOutcome outcome,
             ExecutionContext execCtx) {
         switch (outcome) {
             case ProcessInterpellationPublishOutcome.Published published ->

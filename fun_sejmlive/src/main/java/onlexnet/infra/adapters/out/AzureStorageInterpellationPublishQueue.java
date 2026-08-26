@@ -32,10 +32,10 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
             // "AzureWebJobsStorage" which is reserved for the Azure Functions host/runtime.
             @Value("${DomainStorage}") final String storageConnectionString,
             @Value("${interpellation.publish.queue.name:sejm-interpellations-publish}")
-            final String publishQueueName,
+            String publishQueueName,
             @Value("${interpellation.publish.queue.dead-letter-name:sejm-interpellations-publish-deadletter}")
-            final String deadLetterQueueName,
-            final ObjectMapper objectMapper) {
+            String deadLetterQueueName,
+            ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
         var normalizedConnectionString = Objects.requireNonNull(storageConnectionString, "Storage connection string must be configured").trim();
         if (normalizedConnectionString.isEmpty()) {
@@ -53,7 +53,7 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
     }
 
     @Override
-    public void enqueue(final InterpellationPublishQueueMessage message, final Duration visibilityDelay) {
+    public void enqueue(InterpellationPublishQueueMessage message, Duration visibilityDelay) {
         this.ensureQueuesInitialized();
         // Producer sends raw JSON text. The Functions host queue trigger must use host.json queues.messageEncoding="none".
         var payload = this.serialize(message);
@@ -65,7 +65,7 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
     }
 
     @Override
-    public void enqueueDeadLetter(final InterpellationPublishQueueMessage message) {
+    public void enqueueDeadLetter(InterpellationPublishQueueMessage message) {
         this.ensureQueuesInitialized();
         // Keep dead-letter payload in the same raw JSON format as the primary queue.
         var payload = this.serialize(message);
@@ -87,7 +87,7 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
         }
     }
 
-    private String serialize(final InterpellationPublishQueueMessage message) {
+    private String serialize(InterpellationPublishQueueMessage message) {
         try {
             return this.objectMapper.writeValueAsString(message);
         } catch (JsonProcessingException exception) {

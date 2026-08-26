@@ -25,6 +25,7 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 ### Java Style
 - Use [Java instructions](instructions/java.instructions.md) as the base coding standard for Java-specific rules and naming conventions.
 - Keep Java code aligned with the repo’s Spring and Azure Functions conventions.
+- Do not generate the `final` keyword for method parameters (input params). Use plain parameter declarations.
 
 ### Spring Boot Patterns
 - Use constructor-based dependency injection (avoid `@Autowired` on fields)

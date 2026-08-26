@@ -43,7 +43,7 @@ final class FacebookPublishingFunctionTestSupport {
 
         private final Optional<T> body;
 
-        FakeHttpRequestMessage(final Optional<T> body) {
+        FakeHttpRequestMessage(Optional<T> body) {
             this.body = body;
         }
 
@@ -73,12 +73,12 @@ final class FacebookPublishingFunctionTestSupport {
         }
 
         @Override
-        public HttpResponseMessage.Builder createResponseBuilder(final HttpStatus status) {
+        public HttpResponseMessage.Builder createResponseBuilder(HttpStatus status) {
             return new FakeHttpResponseBuilder().status(status);
         }
 
         @Override
-        public HttpResponseMessage.Builder createResponseBuilder(final HttpStatusType status) {
+        public HttpResponseMessage.Builder createResponseBuilder(HttpStatusType status) {
             return new FakeHttpResponseBuilder().status(status);
         }
     }
@@ -90,19 +90,19 @@ final class FacebookPublishingFunctionTestSupport {
         private Object body;
 
         @Override
-        public HttpResponseMessage.Builder status(final HttpStatusType value) {
+        public HttpResponseMessage.Builder status(HttpStatusType value) {
             this.status = value;
             return this;
         }
 
         @Override
-        public HttpResponseMessage.Builder header(final String key, final String value) {
+        public HttpResponseMessage.Builder header(String key, String value) {
             this.headers.put(key, value);
             return this;
         }
 
         @Override
-        public HttpResponseMessage.Builder body(final Object value) {
+        public HttpResponseMessage.Builder body(Object value) {
             this.body = value;
             return this;
         }
@@ -119,7 +119,7 @@ final class FacebookPublishingFunctionTestSupport {
         private final Map<String, String> headers;
         private final Object body;
 
-        FakeHttpResponseMessage(final HttpStatusType status, final Map<String, String> headers, final Object body) {
+        FakeHttpResponseMessage(HttpStatusType status, Map<String, String> headers, Object body) {
             this.status = status;
             this.headers = Map.copyOf(headers);
             this.body = body;
@@ -131,7 +131,7 @@ final class FacebookPublishingFunctionTestSupport {
         }
 
         @Override
-        public String getHeader(final String key) {
+        public String getHeader(String key) {
             return this.headers.get(key);
         }
 

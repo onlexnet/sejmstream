@@ -25,7 +25,7 @@ public final class DefaultTelegramNotifier implements TelegramNotifier {
      *
      * @param token Telegram bot token
      */
-    public DefaultTelegramNotifier(final String token) {
+    public DefaultTelegramNotifier(String token) {
         if (token == null || token.isBlank()) {
             throw new IllegalStateException("Telegram bot token is not configured");
         }
@@ -35,7 +35,7 @@ public final class DefaultTelegramNotifier implements TelegramNotifier {
     }
 
     @Override
-    public void sendMessage(final long chatId, final String text) {
+    public void sendMessage(long chatId, String text) {
         if (text == null || text.isBlank()) {
             return;
         }
@@ -57,7 +57,7 @@ public final class DefaultTelegramNotifier implements TelegramNotifier {
         }
     }
 
-    private String trimToTelegramLimit(final String text) {
+    private String trimToTelegramLimit(String text) {
         var normalized = Objects.requireNonNull(text, "text must not be null");
         if (normalized.length() <= TELEGRAM_MAX_TEXT_LENGTH) {
             return normalized;

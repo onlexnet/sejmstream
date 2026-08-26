@@ -71,7 +71,7 @@ class AzureFunctionsMetadataGenerationIT {
         return expectedEntryPointsByFunctionName;
     }
 
-    private static List<String> findGeneratedFunctionNames(final Path appDirectory) throws IOException {
+    private static List<String> findGeneratedFunctionNames(Path appDirectory) throws IOException {
         try (var paths = Files.list(appDirectory)) {
             return paths
                     .filter(Files::isDirectory)

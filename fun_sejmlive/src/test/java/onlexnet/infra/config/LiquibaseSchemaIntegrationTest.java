@@ -65,7 +65,7 @@ class LiquibaseSchemaIntegrationTest {
     }
 
     @DynamicPropertySource
-    static void configureProperties(final DynamicPropertyRegistry registry) {
+    static void configureProperties(DynamicPropertyRegistry registry) {
                 ensurePostgresStarted();
                 registry.add("DB_URL", () -> jdbcUrl);
                 registry.add("DB_USERNAME", () -> DB_USERNAME);
@@ -335,7 +335,7 @@ class LiquibaseSchemaIntegrationTest {
                 .contains("QUEUE_ENQUEUE_FAILED");
             }
 
-    private java.util.List<ColumnDefinition> findColumnsFor(final String tableName) {
+    private java.util.List<ColumnDefinition> findColumnsFor(String tableName) {
         return this.jdbcTemplate.query("""
                 SELECT column_name,
                        data_type,
@@ -368,7 +368,7 @@ class LiquibaseSchemaIntegrationTest {
         return new DefaultSejmDailyDigestPersistence(this.jdbcTemplate);
     }
 
-    private static String extractJsonValue(final Object dbValue) {
+    private static String extractJsonValue(Object dbValue) {
         if (dbValue instanceof CharSequence sequence) {
             return sequence.toString();
         }
@@ -433,7 +433,7 @@ class LiquibaseSchemaIntegrationTest {
         throw new IllegalStateException("Timed out waiting for PostgreSQL to accept JDBC connections");
     }
 
-    private static String runCommand(final String... command) {
+    private static String runCommand(String... command) {
         try {
             Process process = new ProcessBuilder(command)
                     .redirectErrorStream(true)
@@ -458,7 +458,7 @@ class LiquibaseSchemaIntegrationTest {
         }
     }
 
-    private static void sleepMillis(final long millis) {
+    private static void sleepMillis(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ex) {

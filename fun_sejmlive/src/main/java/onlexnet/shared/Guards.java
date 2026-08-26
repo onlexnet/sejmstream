@@ -22,7 +22,7 @@ public final class Guards {
      * @param <T> collection type
      * @return non-empty value or defaultValue when value is null/empty
      */
-    public static <T extends Collection<?>> T orDefaultIfNullOrEmpty(@Nullable final T value, final T defaultValue) {
+    public static <T extends Collection<?>> T orDefaultIfNullOrEmpty(@Nullable T value, T defaultValue) {
         Objects.requireNonNull(defaultValue, "defaultValue must not be null");
         return value == null || value.isEmpty() ? defaultValue : value;
     }
@@ -34,7 +34,7 @@ public final class Guards {
      * @param defaultValue value returned when input is null or empty
      * @return non-empty input string or defaultValue
      */
-    public static String orDefaultIfNullOrEmpty(@Nullable final String value, final String defaultValue) {
+    public static String orDefaultIfNullOrEmpty(@Nullable String value, String defaultValue) {
         Objects.requireNonNull(defaultValue, "defaultValue must not be null");
         return value == null || value.isEmpty() ? defaultValue : value;
     }
@@ -50,8 +50,8 @@ public final class Guards {
      * @throws X when value is null or empty
      */
     public static <T extends Collection<?>, X extends RuntimeException> T requireNonEmpty(
-            @Nullable final T value,
-            final Supplier<X> exceptionSupplier) throws X {
+            @Nullable T value,
+            Supplier<X> exceptionSupplier) throws X {
         Objects.requireNonNull(exceptionSupplier, "exceptionSupplier must not be null");
         if (value == null || value.isEmpty()) {
             throw exceptionSupplier.get();

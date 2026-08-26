@@ -18,8 +18,8 @@ public final class SejmCollectQuestionsActivityFunction {
 
     @FunctionName(SejmCollectFunctions.ACTIVITY_QUESTIONS)
     public CollectActivityResult collectQuestions(
-            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
-            final ExecutionContext execCtx) {
+            @DurableActivityTrigger(name = "request") CollectActivityRequest request,
+            ExecutionContext execCtx) {
         return this.support.collectQuestions(request, execCtx);
     }
 }

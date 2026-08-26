@@ -87,13 +87,13 @@ class DefaultCollectDailyDigestUseCaseTest {
                         failed -> assertThat(failed.exception()).isInstanceOf(IllegalStateException.class));
     }
 
-    private SejmTerm currentTerm(final int num) {
+    private SejmTerm currentTerm(int num) {
         return new SejmTerm(true, LocalDate.of(2023, 10, 11), num,
                 new SejmPrints(2, LocalDateTime.of(2023, 10, 11, 10, 0), "link"),
                 LocalDate.of(2027, 10, 10));
     }
 
-    private SejmTerm nonCurrentTerm(final int num) {
+    private SejmTerm nonCurrentTerm(int num) {
         return new SejmTerm(false, LocalDate.of(2019, 1, 1), num,
                 new SejmPrints(1, LocalDateTime.of(2019, 1, 1, 10, 0), "link"),
                 LocalDate.of(2023, 10, 10));

@@ -55,7 +55,7 @@ import tools.jackson.databind.json.JsonMapper;
 import tools.jackson.databind.module.SimpleModule;
 
 @Component
-final class DefaultSejmApiClient implements SejmApiClient {
+class DefaultSejmApiClient implements SejmApiClient {
 
     private static final String DEFAULT_API_BASE_PATH = "https://api.sejm.gov.pl";
     private static final int DEFAULT_LIMIT = 100;
@@ -77,8 +77,8 @@ final class DefaultSejmApiClient implements SejmApiClient {
     }
 
     public DefaultSejmApiClient(
-            final RestClient.Builder restClientBuilder,
-            @Value("${sejm.api.base-path:https://api.sejm.gov.pl}") final String basePath) {
+            RestClient.Builder restClientBuilder,
+            @Value("${sejm.api.base-path:https://api.sejm.gov.pl}") String basePath) {
         this(buildApiClient(restClientBuilder, basePath), HttpClient.newHttpClient(), basePath);
     }
 
@@ -105,7 +105,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
     }
 
     @Override
-    public List<VotingItem> fetchVotingsForDate(final int termNum, final LocalDate date) {
+    public List<VotingItem> fetchVotingsForDate(int termNum, LocalDate date) {
         var votings = callSejmApi(
                 "VotingsApi.sejmTermtermVotingsSearchGet",
                 () -> this.votingsApi.sejmTermtermVotingsSearchGet(termNum, date, date, DEFAULT_LIMIT, 0, null, null));
@@ -113,7 +113,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
     }
 
     @Override
-    public List<CommitteeSittingItem> fetchCommitteeSittingsForDate(final int termNum, final LocalDate date) {
+    public List<CommitteeSittingItem> fetchCommitteeSittingsForDate(int termNum, LocalDate date) {
         var sittings = callSejmApi(
                 "CommitteesApi.sejmTermtermCommitteesSittingsDateGet",
                 () -> this.committeesApi.sejmTermtermCommitteesSittingsDateGet(date, termNum, null));
@@ -121,7 +121,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
     }
 
     @Override
-    public List<PrintItem> fetchPrintsModifiedSince(final int termNum, final LocalDate since) {
+    public List<PrintItem> fetchPrintsModifiedSince(int termNum, LocalDate since) {
         var prints = callSejmApi(
                 "PrintsApi.sejmTermtermPrintsGet",
                 () -> this.printsApi.sejmTermtermPrintsGet(termNum, null, "-lastModified"));
@@ -137,7 +137,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
     }
 
     @Override
-    public List<InterpellationItem> fetchInterpellationsModifiedSince(final int termNum, final LocalDateTime since) {
+    public List<InterpellationItem> fetchInterpellationsModifiedSince(int termNum, LocalDateTime since) {
         var interpellations = callSejmApi(
                 "InterpellationsApi.sejmTermtermInterpellationsGet",
                 () -> this.interpellationsApi.sejmTermtermInterpellationsGet(
@@ -158,7 +158,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
     }
 
     @Override
-    public List<WrittenQuestionItem> fetchWrittenQuestionsModifiedSince(final int termNum, final LocalDateTime since) {
+    public List<WrittenQuestionItem> fetchWrittenQuestionsModifiedSince(int termNum, LocalDateTime since) {
         var writtenQuestions = callSejmApi(
                 "WrittenQuestionsApi.sejmTermtermWrittenQuestionsGet",
                 () -> this.writtenQuestionsApi.sejmTermtermWrittenQuestionsGet(
@@ -233,7 +233,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
     }
 
     @Override
-    public List<BillItem> fetchBillsReceivedSince(final int termNum, final LocalDate since) {
+    public List<BillItem> fetchBillsReceivedSince(int termNum, LocalDate since) {
         var bills = callSejmApi(
                 "BillsApi.sejmTermtermBillsGet",
                 () -> this.billsApi.sejmTermtermBillsGet(
@@ -255,7 +255,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
         return nullSafe(bills).stream().map(this::mapBill).toList();
     }
 
-    private static ApiClient buildApiClient(final RestClient.Builder restClientBuilder, final String basePath) {
+    private static ApiClient buildApiClient(RestClient.Builder restClientBuilder, String basePath) {
         var dateFormat = ApiClient.createDefaultDateFormat();
         var mapper = createDefaultMapper(dateFormat);
 
@@ -270,7 +270,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
         return apiClient;
     }
 
-    private static JsonMapper createDefaultMapper(final DateFormat dateFormat) {
+    private static JsonMapper createDefaultMapper(DateFormat dateFormat) {
         var customModule = new SimpleModule();
         customModule.addDeserializer(OffsetDateTime.class, new LenientOffsetDateTimeDeserializer());
         return JsonMapper.builder()
@@ -299,7 +299,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
         return new BinaryAttachmentContent(mimeType, body);
     }
 
-    private static String extractPdfText(final byte[] pdfBytes) {
+    private static String extractPdfText(byte[] pdfBytes) {
         try (var document = Loader.loadPDF(pdfBytes)) {
             var text = new PDFTextStripper().getText(document);
             if (text == null || text.isBlank()) {
@@ -311,7 +311,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
         }
     }
 
-    private SejmTerm mapTerm(final Term term) {
+    private SejmTerm mapTerm(Term term) {
         var prints = term.getPrints();
         return new SejmTerm(
                 Boolean.TRUE.equals(term.getCurrent()),
@@ -321,7 +321,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 term.getTo());
     }
 
-    private SejmPrints mapPrints(final PrintInfo prints) {
+    private SejmPrints mapPrints(PrintInfo prints) {
         if (prints == null) {
             return null;
         }
@@ -331,7 +331,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 prints.getLink());
     }
 
-    private VotingItem mapVoting(final Voting voting) {
+    private VotingItem mapVoting(Voting voting) {
         return new VotingItem(
                 toLocalDateTime(voting.getDate()),
                 intOrZero(voting.getSitting()),
@@ -344,7 +344,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 intOrZero(voting.getNotParticipating()));
     }
 
-    private CommitteeSittingItem mapCommitteeSitting(final CommitteeSitting sitting) {
+    private CommitteeSittingItem mapCommitteeSitting(CommitteeSitting sitting) {
         return new CommitteeSittingItem(
                 sitting.getCode(),
                 sitting.getDate(),
@@ -354,7 +354,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 sitting.getRoom());
     }
 
-    private PrintItem mapPrint(final Print print) {
+    private PrintItem mapPrint(Print print) {
         return new PrintItem(
                 print.getNumber(),
                 print.getTitle(),
@@ -362,7 +362,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 print.getDeliveryDate() == null ? null : print.getDeliveryDate().toString());
     }
 
-    private InterpellationItem mapInterpellation(final Interpellation interpellation) {
+    private InterpellationItem mapInterpellation(Interpellation interpellation) {
         var replies = nullSafe(interpellation.getReplies());
         var attachments = replies.stream()
                 .flatMap(reply -> nullSafe(reply.getAttachments()).stream())
@@ -380,7 +380,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 links);
     }
 
-    private static SejmApiClient.InterpellationLinks mapInterpellationLinks(final Interpellation interpellation) {
+    private static SejmApiClient.InterpellationLinks mapInterpellationLinks(Interpellation interpellation) {
         var webDescription = findLinkHref(interpellation, "web-description");
         var webBody = findLinkHref(interpellation, "web-body");
         var body = findLinkHref(interpellation, "body");
@@ -390,7 +390,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
         return new SejmApiClient.InterpellationLinks.Missing();
     }
 
-    private static String findLinkHref(final Interpellation interpellation, final String rel) {
+    private static String findLinkHref(Interpellation interpellation, String rel) {
         var links = interpellation.getLinks();
         if (links == null || links.isEmpty()) {
             return null;
@@ -408,13 +408,13 @@ final class DefaultSejmApiClient implements SejmApiClient {
         return null;
     }
 
-    private AttachmentMetadata mapAttachment(final onlexnet.infra.adapters.out.sejm.generated.model.Attachment attachment) {
+    private AttachmentMetadata mapAttachment(onlexnet.infra.adapters.out.sejm.generated.model.Attachment attachment) {
         var name = attachment.getName();
         return new AttachmentMetadata(null, name, attachment.getURL(),
                 attachment.getLastModified() == null ? null : attachment.getLastModified().toString(), name);
     }
 
-    private ReplyItem mapReply(final Reply reply) {
+    private ReplyItem mapReply(Reply reply) {
         var from = Objects.requireNonNull(reply.getFrom(), "ReplyItem.from must not be null");
         if (Boolean.TRUE.equals(reply.getProlongation())) {
             return new SejmApiClient.ReplyItem.Prolongation(from);
@@ -425,7 +425,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 Objects.requireNonNull(reply.getReceiptDate(), "ReplyItem.receiptDate must not be null"));
     }
 
-    private WrittenQuestionItem mapWrittenQuestion(final WrittenQuestion question) {
+    private WrittenQuestionItem mapWrittenQuestion(WrittenQuestion question) {
         return new WrittenQuestionItem(
                 intOrZero(question.getNum()),
                 question.getTitle(),
@@ -434,7 +434,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 question.getLastModified() == null ? null : question.getLastModified().toString());
     }
 
-    private BillItem mapBill(final Bill bill) {
+    private BillItem mapBill(Bill bill) {
         return new BillItem(
                 bill.getNumber(),
                 bill.getTitle(),
@@ -443,26 +443,26 @@ final class DefaultSejmApiClient implements SejmApiClient {
                 bill.getStatus() == null ? null : bill.getStatus().toString());
     }
 
-    private static String encodePathSegment(final String value) {
+    private static String encodePathSegment(String value) {
         if (value == null || value.isBlank()) {
             return "";
         }
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private static LocalDateTime toLocalDateTime(final OffsetDateTime value) {
+    private static LocalDateTime toLocalDateTime(OffsetDateTime value) {
         return value == null ? null : value.toLocalDateTime();
     }
 
-    private static int intOrZero(final Integer value) {
+    private static int intOrZero(Integer value) {
         return value == null ? 0 : value;
     }
 
-    private static <T> List<T> nullSafe(final List<T> value) {
+    private static <T> List<T> nullSafe(List<T> value) {
         return value == null ? List.of() : value;
     }
 
-    private static String firstPresent(final String... candidates) {
+    private static String firstPresent(String... candidates) {
         for (var candidate : candidates) {
             if (candidate != null && !candidate.isBlank()) {
                 return candidate;
@@ -471,7 +471,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
         return null;
     }
 
-    private <T> T callSejmApi(final String operationName, final ApiCall<T> call) {
+    private <T> T callSejmApi(String operationName, ApiCall<T> call) {
         try {
             return call.execute();
         } catch (RestClientException exception) {
@@ -496,7 +496,7 @@ final class DefaultSejmApiClient implements SejmApiClient {
     private static final class LenientOffsetDateTimeDeserializer extends ValueDeserializer<OffsetDateTime> {
 
         @Override
-        public OffsetDateTime deserialize(final JsonParser parser, final DeserializationContext context)
+        public OffsetDateTime deserialize(JsonParser parser, DeserializationContext context)
                 throws JacksonException {
             var textValue = parser.getValueAsString();
             if (textValue == null || textValue.isBlank()) {

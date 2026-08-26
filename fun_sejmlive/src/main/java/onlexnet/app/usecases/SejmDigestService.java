@@ -51,8 +51,8 @@ public class SejmDigestService {
     private final SejmDailyDigestPersistence repository;
     private final ObjectMapper objectMapper;
 
-    public SejmDigestService(final SejmDailyDigestPersistence repository,
-            final ObjectMapper objectMapper) {
+    public SejmDigestService(SejmDailyDigestPersistence repository,
+            ObjectMapper objectMapper) {
         this.repository = Objects.requireNonNull(repository, "repository cannot be null");
         this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
     }
@@ -63,7 +63,7 @@ public class SejmDigestService {
      * @param date collection date
      * @return empty when no sections contain items
      */
-    public Optional<String> buildDigest(final LocalDate date) {
+    public Optional<String> buildDigest(LocalDate date) {
         var rows = this.repository.findByDate(date);
         if (rows.isEmpty()) {
             return Optional.empty();
@@ -99,8 +99,8 @@ public class SejmDigestService {
         return Optional.of(postBuilder.toString());
     }
 
-    private void addVotingSection(final Map<String, List<Map<String, Object>>> groupedRows,
-            final List<String> sections) {
+    private void addVotingSection(Map<String, List<Map<String, Object>>> groupedRows,
+            List<String> sections) {
         var rows = groupedRows.getOrDefault(DATA_TYPE_VOTING, List.of());
         if (rows.isEmpty()) {
             return;
@@ -122,8 +122,8 @@ public class SejmDigestService {
         sections.add(formatSection("📊 GŁOSOWANIA", lines));
     }
 
-    private void addCommitteeSection(final Map<String, List<Map<String, Object>>> groupedRows,
-            final List<String> sections) {
+    private void addCommitteeSection(Map<String, List<Map<String, Object>>> groupedRows,
+            List<String> sections) {
         var rows = groupedRows.getOrDefault(DATA_TYPE_COMMITTEE_SITTING, List.of());
         if (rows.isEmpty()) {
             return;
@@ -144,8 +144,8 @@ public class SejmDigestService {
         sections.add(formatSection("📋 KOMISJE", lines));
     }
 
-    private void addPrintSection(final Map<String, List<Map<String, Object>>> groupedRows,
-            final List<String> sections) {
+    private void addPrintSection(Map<String, List<Map<String, Object>>> groupedRows,
+            List<String> sections) {
         var rows = groupedRows.getOrDefault(DATA_TYPE_PRINT, List.of());
         if (rows.isEmpty()) {
             return;
@@ -165,8 +165,8 @@ public class SejmDigestService {
     }
 
     private void addInterpellationSection(
-            final Map<String, List<Map<String, Object>>> groupedRows,
-            final List<String> sections) {
+            Map<String, List<Map<String, Object>>> groupedRows,
+            List<String> sections) {
         var rows = groupedRows.getOrDefault(DATA_TYPE_INTERPELLATION, List.of());
         if (rows.isEmpty()) {
             return;
@@ -186,8 +186,8 @@ public class SejmDigestService {
         sections.add(formatSection("🗣️ INTERPELACJE", lines));
     }
 
-    private void addQuestionSection(final Map<String, List<Map<String, Object>>> groupedRows,
-            final List<String> sections) {
+    private void addQuestionSection(Map<String, List<Map<String, Object>>> groupedRows,
+            List<String> sections) {
         var rows = groupedRows.getOrDefault(DATA_TYPE_WRITTEN_QUESTION, List.of());
         if (rows.isEmpty()) {
             return;
@@ -207,8 +207,8 @@ public class SejmDigestService {
         sections.add(formatSection("❓ ZAPYTANIA", lines));
     }
 
-    private void addBillSection(final Map<String, List<Map<String, Object>>> groupedRows,
-            final List<String> sections) {
+    private void addBillSection(Map<String, List<Map<String, Object>>> groupedRows,
+            List<String> sections) {
         var rows = groupedRows.getOrDefault(DATA_TYPE_BILL, List.of());
         if (rows.isEmpty()) {
             return;
@@ -227,7 +227,7 @@ public class SejmDigestService {
         sections.add(formatSection("📝 PROJEKTY", lines));
     }
 
-    private String formatSection(final String header, final List<String> lines) {
+    private String formatSection(String header, List<String> lines) {
         var total = lines.size();
         var displayedLines = lines.stream().limit(MAX_ITEMS_PER_SECTION).toList();
 
@@ -246,31 +246,31 @@ public class SejmDigestService {
         return section.toString();
     }
 
-    private Optional<VotingItem> toVotingItem(final Map<String, Object> row) {
+    private Optional<VotingItem> toVotingItem(Map<String, Object> row) {
         return readJson(row, VotingItem.class);
     }
 
-    private Optional<CommitteeSittingItem> toCommitteeSittingItem(final Map<String, Object> row) {
+    private Optional<CommitteeSittingItem> toCommitteeSittingItem(Map<String, Object> row) {
         return readJson(row, CommitteeSittingItem.class);
     }
 
-    private Optional<PrintItem> toPrintItem(final Map<String, Object> row) {
+    private Optional<PrintItem> toPrintItem(Map<String, Object> row) {
         return readJson(row, PrintItem.class);
     }
 
-    private Optional<InterpellationItem> toInterpellationItem(final Map<String, Object> row) {
+    private Optional<InterpellationItem> toInterpellationItem(Map<String, Object> row) {
         return readJson(row, InterpellationItem.class);
     }
 
-    private Optional<WrittenQuestionItem> toWrittenQuestionItem(final Map<String, Object> row) {
+    private Optional<WrittenQuestionItem> toWrittenQuestionItem(Map<String, Object> row) {
         return readJson(row, WrittenQuestionItem.class);
     }
 
-    private Optional<BillItem> toBillItem(final Map<String, Object> row) {
+    private Optional<BillItem> toBillItem(Map<String, Object> row) {
         return readJson(row, BillItem.class);
     }
 
-    private <T> Optional<T> readJson(final Map<String, Object> row, final Class<T> type) {
+    private <T> Optional<T> readJson(Map<String, Object> row, Class<T> type) {
         var json = tryGetJsonValue(row, ITEM_JSON_COLUMN).orElse(null);
         if (json == null || json.isBlank()) {
             LOGGER.warn("Skipping digest row due to missing item_json for type {}", type.getSimpleName());
@@ -286,7 +286,7 @@ public class SejmDigestService {
         }
     }
 
-    private String joinRecipients(final List<String> recipients) {
+    private String joinRecipients(List<String> recipients) {
         var safeRecipients = Guards.orDefaultIfNullOrEmpty(
                 recipients,
                 java.util.Collections.<String>emptyList());
@@ -296,7 +296,7 @@ public class SejmDigestService {
         return safeRecipients.stream().map(this::safeText).collect(Collectors.joining(", "));
     }
 
-    private String excerptAgenda(final String rawAgenda) {
+    private String excerptAgenda(String rawAgenda) {
         var withoutHtml = HTML_TAG_PATTERN.matcher(safeText(rawAgenda)).replaceAll(" ");
         var normalized = WHITESPACE_PATTERN.matcher(withoutHtml).replaceAll(" ").trim();
         if (normalized.length() <= AGENDA_EXCERPT_MAX_LENGTH) {
@@ -305,22 +305,22 @@ public class SejmDigestService {
         return normalized.substring(0, AGENDA_EXCERPT_MAX_LENGTH - 1) + "…";
     }
 
-    private String safeText(final String value) {
+    private String safeText(String value) {
         if (value == null || value.isBlank()) {
             return "brak danych";
         }
         return value.trim();
     }
 
-    private Optional<String> tryGetJsonValue(final Map<String, Object> row, final String key) {
+    private Optional<String> tryGetJsonValue(Map<String, Object> row, String key) {
         return tryGetColumnValue(row, key).map(this::extractJsonValue);
     }
 
-    private Optional<String> tryGetStringValue(final Map<String, Object> row, final String key) {
+    private Optional<String> tryGetStringValue(Map<String, Object> row, String key) {
         return tryGetColumnValue(row, key).map(String::valueOf);
     }
 
-    private Optional<Object> tryGetColumnValue(final Map<String, Object> row, final String key) {
+    private Optional<Object> tryGetColumnValue(Map<String, Object> row, String key) {
         var value = row.get(key);
         if (value == null) {
             value = row.get(key.toUpperCase());
@@ -332,7 +332,7 @@ public class SejmDigestService {
         return Optional.of(value);
     }
 
-    private String extractJsonValue(final Object value) {
+    private String extractJsonValue(Object value) {
         if (value instanceof CharSequence sequence) {
             return sequence.toString();
         }

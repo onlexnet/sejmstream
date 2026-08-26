@@ -18,8 +18,8 @@ public final class SejmCollectBillsActivityFunction {
 
     @FunctionName(SejmCollectFunctions.ACTIVITY_BILLS)
     public CollectActivityResult collectBills(
-            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
-            final ExecutionContext execCtx) {
+            @DurableActivityTrigger(name = "request") CollectActivityRequest request,
+            ExecutionContext execCtx) {
         return this.support.collectBills(request, execCtx);
     }
 }

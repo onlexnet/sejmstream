@@ -28,8 +28,8 @@ public final class FacebookPublishingHttpFunction {
             @HttpTrigger(name = "request", methods = {HttpMethod.POST},
                     authLevel = AuthorizationLevel.FUNCTION,
                     route = FacebookPublishingFunctions.HTTP_FUNCTION_ROUTE)
-            final HttpRequestMessage<Optional<String>> request,
-            final ExecutionContext execCtx) {
+            HttpRequestMessage<Optional<String>> request,
+            ExecutionContext execCtx) {
         return this.support.publishDailyDigestHttp(request, execCtx);
     }
 }

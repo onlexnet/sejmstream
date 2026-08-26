@@ -51,7 +51,7 @@ class ApplicationContextTest {
     }
 
     @DynamicPropertySource
-    static void configureProperties(final DynamicPropertyRegistry registry) {
+    static void configureProperties(DynamicPropertyRegistry registry) {
         ensurePostgresStarted();
         registry.add("spring.datasource.url", () -> jdbcUrl);
         registry.add("spring.datasource.username", () -> DB_USERNAME);
@@ -130,7 +130,7 @@ class ApplicationContextTest {
         throw new IllegalStateException("Timed out waiting for PostgreSQL to accept JDBC connections");
     }
 
-    private static String runCommand(final String... command) {
+    private static String runCommand(String... command) {
         try {
             Process process = new ProcessBuilder(command)
                     .redirectErrorStream(true)
@@ -155,7 +155,7 @@ class ApplicationContextTest {
         }
     }
 
-    private static void sleepMillis(final long millis) {
+    private static void sleepMillis(long millis) {
         try {
             Thread.sleep(millis);
         } catch (InterruptedException ex) {

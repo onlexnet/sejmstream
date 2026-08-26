@@ -17,7 +17,7 @@ public final class DefaultFacebookPublisher implements FacebookPublisher {
     /** Lazily initialised on the first {@link #publish} call; guarded by {@link #ensureClient()}. */
     private DefaultFacebookClient client = null;
 
-    public DefaultFacebookPublisher(final String token) {
+    public DefaultFacebookPublisher(String token) {
         if (token == null || token.isBlank()) {
             throw new IllegalStateException("Facebook token is not configured");
         }
@@ -60,7 +60,7 @@ public final class DefaultFacebookPublisher implements FacebookPublisher {
         }
     }
 
-    private DefaultFacebookClient createClient(final String token) {
+    private DefaultFacebookClient createClient(String token) {
         var fbClient = new DefaultFacebookClient(token, Version.LATEST);
         try {
             var pages = fbClient.fetchConnection("me/accounts", Page.class);

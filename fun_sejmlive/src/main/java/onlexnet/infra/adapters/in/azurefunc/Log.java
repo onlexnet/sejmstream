@@ -16,7 +16,7 @@ public final class Log {
      * @param execCtx Azure Functions execution context used for logging
      * @param message message to log
      */
-    public static void info(ExecutionContext execCtx, final String message) {
+    public static void info(ExecutionContext execCtx, String message) {
         execCtx.getLogger().info(message);
     }
 }

@@ -67,7 +67,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 
     @Override
-    public void collectCompleted(final CollectCompletion completion) {
+    public void collectCompleted(CollectCompletion completion) {
         var validatedCompletion = this.jsonValidator.validateReceived(
                 JsonValidator.COLLECT_COMPLETION,
                 completion);
@@ -78,7 +78,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 
     @Override
-    public void collectFailed(final CollectFailure failure) {
+    public void collectFailed(CollectFailure failure) {
         var validatedFailure = this.jsonValidator.validateReceived(
                 JsonValidator.COLLECT_FAILURE,
                 failure);
@@ -90,14 +90,14 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
         applyDecision(decision);
     }
 
-    private void applyDecision(final CollectCoordinatorDecider.Decision decision) {
+    private void applyDecision(CollectCoordinatorDecider.Decision decision) {
         requireState().apply(decision.state());
         if (decision.effect() instanceof CollectCoordinatorDecider.Effect.StartCollectRun startCollectRun) {
             startNextRun(startCollectRun.source());
         }
     }
 
-    private void startNextRun(final String source) {
+    private void startNextRun(String source) {
         var options = new NewOrchestrationInstanceOptions();
         var orchestrationInput = new CollectOrchestrationInput();
         orchestrationInput.setCoordinatorEntityId(requireContext().getId().toString());

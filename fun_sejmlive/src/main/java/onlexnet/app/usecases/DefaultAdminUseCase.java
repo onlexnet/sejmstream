@@ -136,12 +136,12 @@ public class DefaultAdminUseCase implements AdminUseCase {
     }
 
     private int countFor(
-            final CollectDailyDigestOutcome.Collected collected,
-            final String type) {
+            CollectDailyDigestOutcome.Collected collected,
+            String type) {
         return collected.countsByType().getOrDefault(type, 0);
     }
 
-    private String safeErrorMessage(final RuntimeException exception) {
+    private String safeErrorMessage(RuntimeException exception) {
         var message = exception.getMessage();
         if (message == null || message.isBlank()) {
             return "Unknown error";

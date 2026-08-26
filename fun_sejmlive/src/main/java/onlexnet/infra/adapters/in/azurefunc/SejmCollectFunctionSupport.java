@@ -72,9 +72,9 @@ public class SejmCollectFunctionSupport {
     }
 
     public void runTimer(
-            final String timerInfo,
-            final com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
-            final ExecutionContext execCtx) {
+            String timerInfo,
+            com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
+            ExecutionContext execCtx) {
 
         try {
             var instanceId = enqueueCollectRequest(clientCtx, "timer");
@@ -88,9 +88,9 @@ public class SejmCollectFunctionSupport {
     }
 
     public HttpResponseMessage httpStart(
-            final HttpRequestMessage<Optional<String>> request,
-            final com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
-            final ExecutionContext execCtx) {
+            HttpRequestMessage<Optional<String>> request,
+            com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
+            ExecutionContext execCtx) {
 
         try {
             var instanceId = enqueueCollectRequest(clientCtx, "http");
@@ -111,7 +111,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectResult runOrchestrator(final TaskOrchestrationContext orchestrationContext) {
+    public CollectResult runOrchestrator(TaskOrchestrationContext orchestrationContext) {
         var input = this.jsonValidator.validateReceivedIfPresent(
                 JsonValidator.COLLECT_ORCHESTRATION_INPUT,
                 orchestrationContext.getInput(CollectOrchestrationInput.class));
@@ -171,7 +171,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectVotings(final CollectActivityRequest request, final ExecutionContext execCtx) {
+    public CollectActivityResult collectVotings(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -189,7 +189,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectCommittees(final CollectActivityRequest request, final ExecutionContext execCtx) {
+    public CollectActivityResult collectCommittees(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -207,7 +207,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectPrints(final CollectActivityRequest request, final ExecutionContext execCtx) {
+    public CollectActivityResult collectPrints(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -225,7 +225,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectInterpellations(final CollectActivityRequest request, final ExecutionContext execCtx) {
+    public CollectActivityResult collectInterpellations(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -243,7 +243,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectQuestions(final CollectActivityRequest request, final ExecutionContext execCtx) {
+    public CollectActivityResult collectQuestions(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -261,7 +261,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectBills(final CollectActivityRequest request, final ExecutionContext execCtx) {
+    public CollectActivityResult collectBills(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -281,17 +281,17 @@ public class SejmCollectFunctionSupport {
     }
 
     private String enqueueCollectRequest(
-            final com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
-            final String source) {
+            com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
+            String source) {
         var client = clientCtx.getClient().getEntities();
         client.signalEntity(COLLECT_COORDINATOR_ENTITY_ID, REQUEST_COLLECT.methodName(), source);
         return COLLECT_COORDINATOR_ENTITY_ID.toString();
     }
 
     private Task<CollectActivityResult> startActivityWithRetry(
-            final TaskOrchestrationContext orchestrationContext,
-            final String activityName,
-            final String source) {
+            TaskOrchestrationContext orchestrationContext,
+            String activityName,
+            String source) {
         var request = new CollectActivityRequest();
         request.setSource(source);
         this.jsonValidator.validateToSend(JsonValidator.COLLECT_ACTIVITY_REQUEST, request);
@@ -302,7 +302,7 @@ public class SejmCollectFunctionSupport {
                 CollectActivityResult.class);
     }
 
-    private int awaitActivityWithFailureContext(final Task<CollectActivityResult> task, final String activityName) {
+    private int awaitActivityWithFailureContext(Task<CollectActivityResult> task, String activityName) {
         try {
             var activityResult = this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_RESULT, task.await());
             return Objects.requireNonNull(activityResult.getCount(), "Activity result count must not be null");
@@ -316,18 +316,18 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    private void validateActivityRequest(final CollectActivityRequest request) {
+    private void validateActivityRequest(CollectActivityRequest request) {
         var normalizedRequest = request == null ? new CollectActivityRequest() : request;
         this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, normalizedRequest);
     }
 
-    private CollectActivityResult buildActivityResult(final int count) {
+    private CollectActivityResult buildActivityResult(int count) {
         var result = new CollectActivityResult();
         result.setCount(count);
         return this.jsonValidator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, result);
     }
 
-    private static String buildFailureMessage(final Exception exception) {
+    private static String buildFailureMessage(Exception exception) {
         var cause = exception.getCause();
         if (cause == null) {
             return exception.getClass().getSimpleName() + ": " + exception.getMessage();
@@ -336,7 +336,7 @@ public class SejmCollectFunctionSupport {
         return cause.getClass().getSimpleName() + ": " + causeMessage;
     }
 
-    private static String orchestrationFailureMessage(final RuntimeException exception) {
+    private static String orchestrationFailureMessage(RuntimeException exception) {
         var message = exception.getMessage();
         if (message == null || message.isBlank()) {
             return exception.getClass().getSimpleName();
@@ -344,7 +344,7 @@ public class SejmCollectFunctionSupport {
         return message;
     }
 
-    private static String taskFailureSummary(final TaskFailedException exception) {
+    private static String taskFailureSummary(TaskFailedException exception) {
         var details = exception.getErrorDetails();
         if (details == null) {
             return orchestrationFailureMessage(exception);
@@ -355,9 +355,9 @@ public class SejmCollectFunctionSupport {
     }
 
     private void signalCollectFailed(
-            final TaskOrchestrationContext orchestrationContext,
-            final EntityInstanceId coordinatorEntityId,
-            final RuntimeException exception) {
+            TaskOrchestrationContext orchestrationContext,
+            EntityInstanceId coordinatorEntityId,
+            RuntimeException exception) {
         var failure = new CollectFailure();
         failure.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
         failure.setMessage(orchestrationFailureMessage(exception));

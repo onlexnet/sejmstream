@@ -18,8 +18,8 @@ public final class SejmCollectCommitteesActivityFunction {
 
     @FunctionName(SejmCollectFunctions.ACTIVITY_COMMITTEES)
     public CollectActivityResult collectCommittees(
-            @DurableActivityTrigger(name = "request") final CollectActivityRequest request,
-            final ExecutionContext execCtx) {
+            @DurableActivityTrigger(name = "request") CollectActivityRequest request,
+            ExecutionContext execCtx) {
         return this.support.collectCommittees(request, execCtx);
     }
 }

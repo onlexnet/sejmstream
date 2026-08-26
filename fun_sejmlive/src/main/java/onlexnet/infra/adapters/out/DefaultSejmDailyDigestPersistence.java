@@ -24,13 +24,13 @@ public class DefaultSejmDailyDigestPersistence
 
     private final JdbcTemplate jdbcTemplate;
 
-    public DefaultSejmDailyDigestPersistence(final JdbcTemplate jdbcTemplate) {
+    public DefaultSejmDailyDigestPersistence(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
-    public int upsertItem(final LocalDate date, final String dataType,
-            final String itemKey, final String title, final String itemJson) {
+    public int upsertItem(LocalDate date, String dataType,
+            String itemKey, String title, String itemJson) {
         var sql = """
                 INSERT INTO sejm_daily_digest_item (
                     collection_date, data_type, item_key, item_title, item_json, collected_at
@@ -51,7 +51,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public List<Map<String, Object>> findByDate(final LocalDate date) {
+    public List<Map<String, Object>> findByDate(LocalDate date) {
         var sql = """
                 SELECT collection_date, data_type, item_key, item_title, item_json, collected_at
                 FROM sejm_daily_digest_item
@@ -62,8 +62,8 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public List<Map<String, Object>> findByDateAndType(final LocalDate date,
-            final String dataType) {
+    public List<Map<String, Object>> findByDateAndType(LocalDate date,
+            String dataType) {
         var sql = """
                 SELECT collection_date, data_type, item_key, item_title, item_json, collected_at
                 FROM sejm_daily_digest_item
@@ -74,8 +74,8 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-        public int insertPublishLog(final LocalDate date, final @Nullable String message,
-            final boolean success, final @Nullable String errorMsg) {
+        public int insertPublishLog(LocalDate date, @Nullable String message,
+            boolean success, @Nullable String errorMsg) {
         var sql = """
                 INSERT INTO sejm_publish_log (publish_date, published_at, post_message, success, error_message)
                 VALUES (?, NOW(), ?, ?, ?)
@@ -84,7 +84,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public boolean alreadyPublishedToday(final LocalDate date) {
+    public boolean alreadyPublishedToday(LocalDate date) {
         var sql = """
                 SELECT EXISTS(
                     SELECT 1
@@ -98,8 +98,8 @@ public class DefaultSejmDailyDigestPersistence
 
     @Override
     public boolean tryCreateQueuedRecord(
-            final InterpellationPublishQueueMessage message,
-            final LocalDate collectionDate) {
+            InterpellationPublishQueueMessage message,
+            LocalDate collectionDate) {
         var sql = """
                 INSERT INTO sejm_interpellation_publish_state (
                     term_num,
@@ -139,7 +139,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public boolean tryClaimForPublish(final InterpellationPublishQueueMessage message) {
+    public boolean tryClaimForPublish(InterpellationPublishQueueMessage message) {
         var sql = """
                 INSERT INTO sejm_interpellation_publish_state (
                     term_num,
@@ -177,7 +177,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public boolean isPublished(final int termNum, final int interpellationNum) {
+    public boolean isPublished(int termNum, int interpellationNum) {
         var sql = """
                 SELECT EXISTS(
                     SELECT 1
@@ -193,8 +193,8 @@ public class DefaultSejmDailyDigestPersistence
 
     @Override
     public void markPublished(
-            final InterpellationPublishQueueMessage message,
-            final String facebookPostMessage) {
+            InterpellationPublishQueueMessage message,
+            String facebookPostMessage) {
         var sql = """
                 INSERT INTO sejm_interpellation_publish_state (
                     term_num,
@@ -236,9 +236,9 @@ public class DefaultSejmDailyDigestPersistence
 
     @Override
     public void markPublishConfirmationPending(
-            final InterpellationPublishQueueMessage message,
-            final String errorMessage,
-            final String facebookPostMessage) {
+            InterpellationPublishQueueMessage message,
+            String errorMessage,
+            String facebookPostMessage) {
         var sql = """
                 INSERT INTO sejm_interpellation_publish_state (
                     term_num,
@@ -279,7 +279,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public void markRetryScheduled(final InterpellationPublishQueueMessage message, final String errorMessage) {
+    public void markRetryScheduled(InterpellationPublishQueueMessage message, String errorMessage) {
         var sql = """
                 INSERT INTO sejm_interpellation_publish_state (
                     term_num,
@@ -317,7 +317,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public void markEnqueueFailed(final InterpellationPublishQueueMessage message, final String errorMessage) {
+    public void markEnqueueFailed(InterpellationPublishQueueMessage message, String errorMessage) {
         var sql = """
                 INSERT INTO sejm_interpellation_publish_state (
                     term_num,
@@ -355,7 +355,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public void markDeadLetter(final InterpellationPublishQueueMessage message, final String errorMessage) {
+    public void markDeadLetter(InterpellationPublishQueueMessage message, String errorMessage) {
         var sql = """
                 INSERT INTO sejm_interpellation_publish_state (
                     term_num,
@@ -393,7 +393,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public int getLastKnownReplyCount(final int termNum, final int interpellationNum) {
+    public int getLastKnownReplyCount(int termNum, int interpellationNum) {
         var sql = """
                 SELECT COALESCE(last_known_reply_count, 0)
                 FROM sejm_interpellation_publish_state
@@ -404,7 +404,7 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
-    public void updateLastKnownReplyCount(final int termNum, final int interpellationNum, final int replyCount) {
+    public void updateLastKnownReplyCount(int termNum, int interpellationNum, int replyCount) {
         var sql = """
                 UPDATE sejm_interpellation_publish_state
                 SET last_known_reply_count = ?, updated_at = NOW()
@@ -415,7 +415,7 @@ public class DefaultSejmDailyDigestPersistence
 
     @Override
     public void markReplyNotificationPublished(
-            final int termNum, final int interpellationNum, final LocalDateTime publishedAt) {
+            int termNum, int interpellationNum, LocalDateTime publishedAt) {
         var sql = """
                 UPDATE sejm_interpellation_publish_state
                 SET reply_notification_published_at = ?, updated_at = NOW()

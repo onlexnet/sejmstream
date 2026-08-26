@@ -283,7 +283,7 @@ class DefaultProcessInterpellationPublishUseCaseTest {
         verify(queuePort, never()).enqueueDeadLetter(any());
     }
 
-    private static InterpellationPublishQueueMessage sampleMessage(final int attempt) {
+    private static InterpellationPublishQueueMessage sampleMessage(int attempt) {
         return new InterpellationPublishQueueMessage(
                 "term-10-interpellation-42",
                 10,
@@ -299,10 +299,10 @@ class DefaultProcessInterpellationPublishUseCaseTest {
     }
 
         private static DefaultProcessInterpellationPublishUseCase newUseCase(
-                        final FacebookPublisher publisher,
-                        final InterpellationPublishQueuePort queuePort,
-                        final InterpellationPublishStatePort statePort,
-                        final InterpellationPublishRetryPolicy retryPolicy) {
+                        FacebookPublisher publisher,
+                        InterpellationPublishQueuePort queuePort,
+                        InterpellationPublishStatePort statePort,
+                        InterpellationPublishRetryPolicy retryPolicy) {
                 return newUseCase(
                                 publisher,
                                 queuePort,
@@ -313,12 +313,12 @@ class DefaultProcessInterpellationPublishUseCaseTest {
         }
 
         private static DefaultProcessInterpellationPublishUseCase newUseCase(
-                        final FacebookPublisher publisher,
-                        final InterpellationPublishQueuePort queuePort,
-                        final InterpellationPublishStatePort statePort,
-                        final InterpellationPublishRetryPolicy retryPolicy,
-                        final SejmApiClient sejmApiClient,
-                        final ProjectOwnerNotifier projectOwnerNotifier) {
+                        FacebookPublisher publisher,
+                        InterpellationPublishQueuePort queuePort,
+                        InterpellationPublishStatePort statePort,
+                        InterpellationPublishRetryPolicy retryPolicy,
+                        SejmApiClient sejmApiClient,
+                        ProjectOwnerNotifier projectOwnerNotifier) {
                 return new DefaultProcessInterpellationPublishUseCase(
                                 publisher,
                                 queuePort,

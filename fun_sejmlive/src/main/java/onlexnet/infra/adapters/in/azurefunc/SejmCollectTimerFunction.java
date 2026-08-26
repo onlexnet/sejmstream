@@ -18,9 +18,9 @@ public final class SejmCollectTimerFunction {
 
     @FunctionName(SejmCollectFunctions.TIMER_FUNCTION_NAME)
     public void runTimer(
-            @TimerTrigger(name = "timer", schedule = "0 0 * * * *") final String timerInfo,
-            @DurableClientInput(name = "durableContext") final DurableClientContext clientCtx,
-            final ExecutionContext execCtx) {
+            @TimerTrigger(name = "timer", schedule = "0 0 * * * *") String timerInfo,
+            @DurableClientInput(name = "durableContext") DurableClientContext clientCtx,
+            ExecutionContext execCtx) {
         this.support.runTimer(timerInfo, clientCtx, execCtx);
     }
 }

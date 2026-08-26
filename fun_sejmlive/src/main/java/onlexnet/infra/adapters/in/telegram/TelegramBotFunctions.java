@@ -40,11 +40,11 @@ public final class TelegramBotFunctions {
     private final ObjectMapper objectMapper;
 
     public TelegramBotFunctions(
-            final AdminUseCase adminUseCase,
-            final TelegramAdminActionParser adminActionParser,
-            final TelegramAdminOutcomePresenter outcomePresenter,
-            final TelegramNotifier telegramNotifier,
-            final ObjectMapper objectMapper) {
+            AdminUseCase adminUseCase,
+            TelegramAdminActionParser adminActionParser,
+            TelegramAdminOutcomePresenter outcomePresenter,
+            TelegramNotifier telegramNotifier,
+            ObjectMapper objectMapper) {
         this.adminUseCase = adminUseCase;
         this.adminActionParser = adminActionParser;
         this.outcomePresenter = outcomePresenter;
@@ -65,8 +65,8 @@ public final class TelegramBotFunctions {
             @HttpTrigger(name = "request", methods = {HttpMethod.POST},
                     authLevel = AuthorizationLevel.ANONYMOUS,
                     route = HTTP_FUNCTION_ROUTE)
-            final HttpRequestMessage<Optional<String>> request,
-            final ExecutionContext context) {
+            HttpRequestMessage<Optional<String>> request,
+            ExecutionContext context) {
         try {
             var payload = request.getBody().orElse("");
             if (!payload.isBlank()) {
@@ -84,7 +84,7 @@ public final class TelegramBotFunctions {
                 .build();
     }
 
-    private void handleUpdate(final TelegramUpdate update) {
+    private void handleUpdate(TelegramUpdate update) {
         if (update == null || update.message() == null || update.message().chat() == null) {
             return;
         }
@@ -104,11 +104,11 @@ public final class TelegramBotFunctions {
         }
     }
 
-    private String requestId(final TelegramUpdate update) {
+    private String requestId(TelegramUpdate update) {
         return "telegram:" + update.updateId() + ":" + update.message().messageId();
     }
 
-    private Map<String, String> metadata(final TelegramUpdate update) {
+    private Map<String, String> metadata(TelegramUpdate update) {
         var metadata = new LinkedHashMap<String, String>();
         metadata.put("updateId", Long.toString(update.updateId()));
         metadata.put("messageId", Long.toString(update.message().messageId()));

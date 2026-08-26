@@ -116,11 +116,11 @@ class SejmApiClientITest {
         return new ApiClient(restClient, mapper, ApiClient.createDefaultDateFormat());
     }
 
-    private static void assertListCallReachable(final Supplier<?> apiCall) {
+    private static void assertListCallReachable(Supplier<?> apiCall) {
         assertThat(assertCallReachable(apiCall)).isNotNull();
     }
 
-    private static <T> T assertCallReachable(final Supplier<T> apiCall) {
+    private static <T> T assertCallReachable(Supplier<T> apiCall) {
         RuntimeException lastFailure = null;
 
         for (var attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {

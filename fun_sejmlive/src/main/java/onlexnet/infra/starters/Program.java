@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication(scanBasePackages = "onlexnet")
 public class Program {
 
-    public static void main(final String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(Program.class, args);
     }
 }

@@ -183,7 +183,7 @@ class SejmDigestServiceTest {
         assertThat(digest).isEmpty();
     }
 
-    private static Map<String, Object> row(final String dataType, final String json) {
+    private static Map<String, Object> row(String dataType, String json) {
         var row = new LinkedHashMap<String, Object>();
         row.put("data_type", dataType);
         row.put("item_json", json);
@@ -196,34 +196,34 @@ class SejmDigestServiceTest {
         private List<Map<String, Object>> rows = List.of();
 
         @Override
-        public List<Map<String, Object>> findByDate(final LocalDate date) {
+        public List<Map<String, Object>> findByDate(LocalDate date) {
             return this.rows;
         }
 
         @Override
-        public int upsertItem(final LocalDate date, final String dataType,
-                final String itemKey, final String title, final String itemJson) {
+        public int upsertItem(LocalDate date, String dataType,
+                String itemKey, String title, String itemJson) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 
         @Override
-        public List<Map<String, Object>> findByDateAndType(final LocalDate date,
-                final String dataType) {
+        public List<Map<String, Object>> findByDateAndType(LocalDate date,
+                String dataType) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 
         @Override
-        public int insertPublishLog(final LocalDate date, final @Nullable String message,
-                final boolean success, final @Nullable String errorMsg) {
+        public int insertPublishLog(LocalDate date, @Nullable String message,
+                boolean success, @Nullable String errorMsg) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 
         @Override
-        public boolean alreadyPublishedToday(final LocalDate date) {
+        public boolean alreadyPublishedToday(LocalDate date) {
             throw new UnsupportedOperationException("Not used by this test");
         }
 
-        private void setRows(final List<Map<String, Object>> rows) {
+        private void setRows(List<Map<String, Object>> rows) {
             this.rows = rows;
         }
     }

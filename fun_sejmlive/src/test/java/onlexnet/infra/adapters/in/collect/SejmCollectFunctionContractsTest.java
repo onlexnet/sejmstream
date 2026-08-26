@@ -205,9 +205,9 @@ class SejmCollectFunctionContractsTest {
     }
 
     private static void assertActivityContract(
-            final Class<?> ownerType,
-            final String methodName,
-            final String expectedFunctionName) throws NoSuchMethodException {
+            Class<?> ownerType,
+            String methodName,
+            String expectedFunctionName) throws NoSuchMethodException {
         var method = ownerType.getDeclaredMethod(
                 methodName,
                 CollectActivityRequest.class,

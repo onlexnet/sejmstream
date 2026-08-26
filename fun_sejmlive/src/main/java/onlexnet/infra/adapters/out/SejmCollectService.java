@@ -46,11 +46,11 @@ public class SejmCollectService implements SejmCollectOperations {
         private final InterpellationPublishStatePort interpellationPublishStatePort;
     private final ObjectMapper objectMapper;
 
-    public SejmCollectService(final SejmApiClient sejmApiClient,
-            final SejmDailyDigestPersistence repository,
-            final InterpellationPublishQueuePort interpellationQueuePort,
-            final InterpellationPublishStatePort interpellationPublishStatePort,
-            final ObjectMapper objectMapper) {
+    public SejmCollectService(SejmApiClient sejmApiClient,
+            SejmDailyDigestPersistence repository,
+            InterpellationPublishQueuePort interpellationQueuePort,
+            InterpellationPublishStatePort interpellationPublishStatePort,
+            ObjectMapper objectMapper) {
         this.sejmApiClient = Objects.requireNonNull(sejmApiClient, "sejmApiClient must not be null");
         this.repository = Objects.requireNonNull(repository, "repository must not be null");
         this.interpellationQueuePort = Objects.requireNonNull(
@@ -69,7 +69,7 @@ public class SejmCollectService implements SejmCollectOperations {
      * @param date    collection date
      * @return number of items upserted
      */
-    public int collectVotings(final int termNum, final LocalDate date) {
+    public int collectVotings(int termNum, LocalDate date) {
         Objects.requireNonNull(date, "date must not be null");
         try {
             return collectItems(termNum, date, null, "VOTING", "voting(s)", "votings",
@@ -88,7 +88,7 @@ public class SejmCollectService implements SejmCollectOperations {
      * @param date    collection date
      * @return number of items upserted
      */
-    public int collectCommitteeSittings(final int termNum, final LocalDate date) {
+    public int collectCommitteeSittings(int termNum, LocalDate date) {
         Objects.requireNonNull(date, "date must not be null");
         try {
             return collectItems(termNum, date, null, "COMMITTEE_SITTING",
@@ -108,7 +108,7 @@ public class SejmCollectService implements SejmCollectOperations {
      * @param date    collection date
      * @return number of items upserted
      */
-    public int collectPrints(final int termNum, final LocalDate date) {
+    public int collectPrints(int termNum, LocalDate date) {
         Objects.requireNonNull(date, "date must not be null");
         try {
             return collectItems(termNum, date, null, "PRINT", "print(s)", "prints",
@@ -127,7 +127,7 @@ public class SejmCollectService implements SejmCollectOperations {
      * @param date    collection date
      * @return number of items upserted
      */
-    public int collectInterpellations(final int termNum, final LocalDate date) {
+    public int collectInterpellations(int termNum, LocalDate date) {
         Objects.requireNonNull(date, "date must not be null");
         try {
             var since = startOfDay(date);
@@ -167,7 +167,7 @@ public class SejmCollectService implements SejmCollectOperations {
      * @param date    collection date
      * @return number of items upserted
      */
-    public int collectWrittenQuestions(final int termNum, final LocalDate date) {
+    public int collectWrittenQuestions(int termNum, LocalDate date) {
         Objects.requireNonNull(date, "date must not be null");
         try {
             var since = startOfDay(date);
@@ -188,7 +188,7 @@ public class SejmCollectService implements SejmCollectOperations {
      * @param date    collection date
      * @return number of items upserted
      */
-    public int collectBills(final int termNum, final LocalDate date) {
+    public int collectBills(int termNum, LocalDate date) {
         Objects.requireNonNull(date, "date must not be null");
         try {
             return collectItems(termNum, date, null, "BILL", "bill(s)", "bills",
@@ -200,10 +200,10 @@ public class SejmCollectService implements SejmCollectOperations {
         }
     }
 
-    private <T> int collectItems(final int termNum, final LocalDate date,
-            final LocalDateTime since, final String dataType, final String collectedLabel,
-            final String noItemsLabel, final Supplier<List<T>> fetcher,
-            final Function<T, String> itemKeyExtractor, final Function<T, String> titleExtractor) {
+    private <T> int collectItems(int termNum, LocalDate date,
+            LocalDateTime since, String dataType, String collectedLabel,
+            String noItemsLabel, Supplier<List<T>> fetcher,
+            Function<T, String> itemKeyExtractor, Function<T, String> titleExtractor) {
         var items = fetcher.get();
         if (items == null) {
             LOGGER.fine(buildNoItemsMessage(termNum, noItemsLabel, since, date));
@@ -222,8 +222,8 @@ public class SejmCollectService implements SejmCollectOperations {
         return count;
     }
 
-    private String buildNoItemsMessage(final int termNum, final String noItemsLabel,
-            final LocalDateTime since, final LocalDate date) {
+    private String buildNoItemsMessage(int termNum, String noItemsLabel,
+            LocalDateTime since, LocalDate date) {
         if (since != null) {
             return "No " + noItemsLabel + " returned for term " + termNum + " since " + since;
         }
@@ -231,9 +231,9 @@ public class SejmCollectService implements SejmCollectOperations {
     }
 
     private void enqueueInterpellationPublish(
-            final int termNum,
-            final LocalDate collectionDate,
-            final InterpellationItem item) {
+            int termNum,
+            LocalDate collectionDate,
+            InterpellationItem item) {
         var firstQueuedAt = Instant.now();
         var webDescription = extractWebDescription(item.links());
         var message = new InterpellationPublishQueueMessage(
@@ -266,7 +266,7 @@ public class SejmCollectService implements SejmCollectOperations {
     }
 
     private static @org.jspecify.annotations.Nullable String extractWebDescription(
-            final SejmApiClient.InterpellationLinks links) {
+            SejmApiClient.InterpellationLinks links) {
         if (links == null) {
             return null;
         }
@@ -276,11 +276,11 @@ public class SejmCollectService implements SejmCollectOperations {
         };
     }
 
-    private String buildDomainMessageId(final int termNum, final int interpellationNum) {
+    private String buildDomainMessageId(int termNum, int interpellationNum) {
         return "term-" + termNum + "-interpellation-" + interpellationNum;
     }
 
-    private String safeErrorMessage(final RuntimeException exception) {
+    private String safeErrorMessage(RuntimeException exception) {
         var message = exception.getMessage();
         if (message == null || message.isBlank()) {
             return exception.getClass().getSimpleName();
@@ -291,7 +291,7 @@ public class SejmCollectService implements SejmCollectOperations {
     /**
      * Normalizes a collection date to the start of the day for APIs that filter by timestamp.
      */
-    private LocalDateTime startOfDay(final LocalDate date) {
+    private LocalDateTime startOfDay(LocalDate date) {
         return LocalDateTime.of(date, LocalTime.MIDNIGHT);
     }
 
@@ -302,7 +302,7 @@ public class SejmCollectService implements SejmCollectOperations {
      * @return JSON string representation
      * @throws IllegalStateException if serialization fails
      */
-    private String toJson(final Object item) {
+    private String toJson(Object item) {
         try {
             return objectMapper.writeValueAsString(item);
         } catch (JsonProcessingException e) {

@@ -47,7 +47,7 @@ class AzureFunctionsPackagingIT {
                 .isTrue();
     }
 
-    private static List<Path> findJarFiles(final Path libDirectory) {
+    private static List<Path> findJarFiles(Path libDirectory) {
         try (var paths = Files.list(libDirectory)) {
             return paths
                     .filter(Files::isRegularFile)
@@ -58,7 +58,7 @@ class AzureFunctionsPackagingIT {
         }
     }
 
-    private static boolean jarContainsClass(final Path jarPath, final String classEntry) {
+    private static boolean jarContainsClass(Path jarPath, String classEntry) {
         try (var zipFile = new ZipFile(jarPath.toFile())) {
             return zipFile.getEntry(classEntry) != null;
         } catch (IOException ex) {

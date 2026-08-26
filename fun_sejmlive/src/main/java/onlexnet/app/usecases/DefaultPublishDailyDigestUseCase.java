@@ -19,16 +19,16 @@ public class DefaultPublishDailyDigestUseCase implements PublishDailyDigestUseCa
     private final SejmDailyDigestPersistence repository;
 
     public DefaultPublishDailyDigestUseCase(
-            final FacebookPublisher facebookPublisher,
-            final SejmDigestService digestService,
-            final SejmDailyDigestPersistence repository) {
+            FacebookPublisher facebookPublisher,
+            SejmDigestService digestService,
+            SejmDailyDigestPersistence repository) {
         this.facebookPublisher = facebookPublisher;
         this.digestService = digestService;
         this.repository = repository;
     }
 
     @Override
-    public PublishDailyDigestOutcome publish(final PublishDailyDigestCommand command) {
+    public PublishDailyDigestOutcome publish(PublishDailyDigestCommand command) {
         var date = command.date();
         if (this.repository.alreadyPublishedToday(date)) {
             return new PublishDailyDigestOutcome.SkippedAlreadyPublished(date);

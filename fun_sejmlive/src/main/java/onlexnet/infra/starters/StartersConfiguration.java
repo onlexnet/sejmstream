@@ -31,7 +31,7 @@ public class StartersConfiguration {
 	}
 
 	@Bean
-	public FacebookPublisher facebookPublisher(@Value("${FB_TOKEN}") final String token) {
+	public FacebookPublisher facebookPublisher(@Value("${FB_TOKEN}") String token) {
 		return new DefaultFacebookPublisher(token);
 	}
 
@@ -39,7 +39,7 @@ public class StartersConfiguration {
 	 * Creates the Telegram notifier using configured token.
 	 */
 	@Bean
-	public TelegramNotifier telegramNotifier(@Value("${TELEGRAM_BOT_TOKEN}") final String token) {
+	public TelegramNotifier telegramNotifier(@Value("${TELEGRAM_BOT_TOKEN}") String token) {
 		return new DefaultTelegramNotifier(token);
 	}
 }

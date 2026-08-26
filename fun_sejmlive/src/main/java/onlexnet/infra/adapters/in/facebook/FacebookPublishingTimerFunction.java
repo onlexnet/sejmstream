@@ -20,8 +20,8 @@ public final class FacebookPublishingTimerFunction {
     @FunctionName(FacebookPublishingFunctions.TIMER_FUNCTION_NAME)
     public void publishDailyDigest(
             @TimerTrigger(name = "timer", schedule = "0 30 23 * * *")
-            final String timerInfo,
-            final ExecutionContext execCtx) {
+            String timerInfo,
+            ExecutionContext execCtx) {
         this.support.publishDailyDigest(timerInfo, execCtx);
     }
 }

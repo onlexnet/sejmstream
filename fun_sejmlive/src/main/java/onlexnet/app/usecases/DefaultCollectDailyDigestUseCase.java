@@ -23,7 +23,7 @@ public class DefaultCollectDailyDigestUseCase implements CollectDailyDigestUseCa
     private final SejmCollectOperations sejmCollectService;
 
     @Override
-    public CollectDailyDigestOutcome collect(final CollectDailyDigestCommand command) {
+    public CollectDailyDigestOutcome collect(CollectDailyDigestCommand command) {
         var date = command.date();
         var termNum = this.resolveCurrentTermNumber();
         if (termNum.isEmpty()) {
