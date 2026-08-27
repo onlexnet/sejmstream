@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
@@ -18,6 +19,8 @@ class JsonValidatorTest {
 		var validator = newValidator();
 		var result = new CollectActivityResult();
 		result.setCount(3);
+		result.setTermNum(10);
+		result.setCollectionDate(java.time.LocalDate.of(2026, 8, 27));
 
 		assertThatCode(() -> validator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, new CollectActivityRequest()))
 				.doesNotThrowAnyException();
@@ -35,7 +38,9 @@ class JsonValidatorTest {
 	}
 
 	private static JsonValidator newValidator() {
-		var validator = new JsonValidator(new ObjectMapper().findAndRegisterModules());
+		var objectMapper = new ObjectMapper().findAndRegisterModules();
+		objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+		var validator = new JsonValidator(objectMapper);
 		validator.init();
 		return validator;
 	}

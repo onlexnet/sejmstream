@@ -30,8 +30,8 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResul
 
 class SejmCollectOrchestratorFunctionTest {
 
-    private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
-    private static final String COORDINATOR_ENTITY_KEY = "singleton";
+        private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
+        private static final String COORDINATOR_ENTITY_KEY = "singleton";
         private static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
 
     @Test
@@ -143,7 +143,7 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()),
                 any());
         verify(orchestrationContext).signalEntity(
-                eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "10")),
+                eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
                 eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
                 any());
     }
@@ -229,7 +229,7 @@ class SejmCollectOrchestratorFunctionTest {
         org.mockito.Mockito.doThrow(new IllegalStateException("snapshot signal failed"))
                 .when(orchestrationContext)
                 .signalEntity(
-                        eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "10")),
+                        eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
                         eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
                         any());
 
