@@ -31,7 +31,7 @@ import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations
 import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractV1;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectBillsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectCommitteesActivityFunction;
-import onlexnet.infra.adapters.in.azurefunc.SejmCollectCoordinatorEntityFunctions;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectCoordinatorEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectHttpStarterFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectInterpellationsActivityFunction;
@@ -40,7 +40,7 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectPrintsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectQuestionsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectTimerFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectVotingsActivityFunction;
-import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotEntityFunctions;
+import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
@@ -132,7 +132,7 @@ class SejmCollectFunctionContractsTest {
     @Test
     void givenCoordinatorEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
             throws NoSuchMethodException {
-        var method = SejmCollectCoordinatorEntityFunctions.class.getDeclaredMethod(
+        var method = SejmCollectCoordinatorEntityFunction.class.getDeclaredMethod(
                 "runCollectCoordinatorEntity",
                 String.class,
                 ExecutionContext.class);
@@ -150,7 +150,7 @@ class SejmCollectFunctionContractsTest {
         @Test
         void givenTermSnapshotEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
                         throws NoSuchMethodException {
-                var method = SejmTermSnapshotEntityFunctions.class.getDeclaredMethod(
+                var method = SejmTermSnapshotEntityFunction.class.getDeclaredMethod(
                                 "runSejmTermSnapshotEntity",
                                 String.class,
                                 ExecutionContext.class);

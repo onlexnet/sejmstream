@@ -13,9 +13,16 @@ import lombok.RequiredArgsConstructor;
 import onlexnet.infra.adapters.in.azurefunc.Log;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 
+/**
+ * Azure Functions durable entity entrypoint for term snapshots.
+ *
+ * Invariant: every invocation routed through this trigger targets exactly one durable entity instance,
+ * and the instance key is the Sejm term number. Because each entity instance is term-scoped, the
+ * entity state intentionally tracks only the latest snapshot for that term.
+ */
 @Component
 @RequiredArgsConstructor
-public final class SejmTermSnapshotEntityFunctions {
+public final class SejmTermSnapshotEntityFunction {
 
     private final ObjectProvider<SejmTermSnapshotEntity> providerOfSejmTermSnapshotEntity;
 
@@ -36,6 +43,9 @@ final class SejmTermSnapshotState implements SejmTermSnapshotEntityState {
     public SejmTermSnapshotState() {
     }
 
+    /**
+     * Stores the most recent snapshot for the term represented by the durable entity key.
+     */
     public @Nullable TermSnapshotPayload getLatestSnapshot() {
         return this.latestSnapshot;
     }

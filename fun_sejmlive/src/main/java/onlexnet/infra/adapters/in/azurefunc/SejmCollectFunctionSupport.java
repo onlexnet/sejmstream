@@ -364,7 +364,7 @@ public class SejmCollectFunctionSupport {
     }
 
     private static EntityInstanceId termSnapshotEntityId(int termNum) {
-        return new EntityInstanceId(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME, String.valueOf(termNum));
+        return new EntityInstanceId(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME, "term" + termNum);
     }
 
     private static int requireCount(CollectActivityResult result) {

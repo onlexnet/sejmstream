@@ -13,9 +13,9 @@ import onlexnet.app.usecases.CollectCoordinatorDecider;
 
 @Component
 @RequiredArgsConstructor
-public final class SejmCollectCoordinatorEntityFunctions {
+public final class SejmCollectCoordinatorEntityFunction {
 
-    private final ObjectProvider<CollectCoordinatorEntity> providerOfCollectCoordinatorEntity;
+    private final ObjectProvider<CollectCoordinatorEntity> entityProvider;
 
     @FunctionName(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME)
     public String runCollectCoordinatorEntity(
@@ -23,7 +23,7 @@ public final class SejmCollectCoordinatorEntityFunctions {
         ExecutionContext execCtx) {
 
         Log.info(execCtx, "Processing collect coordinator entity batch");
-        return EntityRunner.loadAndRun(entityBatchRequest, () -> providerOfCollectCoordinatorEntity.getObject());
+        return EntityRunner.loadAndRun(entityBatchRequest, () -> entityProvider.getObject());
     }
 
 }
