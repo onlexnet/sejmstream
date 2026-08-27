@@ -3,7 +3,11 @@ package onlexnet.infra.adapters.in.azurefunc;
 import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations.COLLECT_COMPLETED;
 import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations.COLLECT_FAILED;
 import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations.REQUEST_COLLECT;
+import static onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.Collections;
@@ -12,7 +16,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import com.microsoft.azure.functions.ExecutionContext;
@@ -30,6 +37,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
+import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.TermSnapshotCollectedEvent;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
@@ -57,6 +66,7 @@ public class SejmCollectFunctionSupport {
 
     private final SejmCollectOperations collectService;
     private final SejmApiClient sejmApiClient;
+    private final SejmDailyDigestPersistence dailyDigestPersistence;
     private final JsonValidator jsonValidator;
     private CachedTerm cachedTermNum = CachedTerm.NONE;
 
@@ -149,13 +159,22 @@ public class SejmCollectFunctionSupport {
         }
 
         try {
+            var votingResult = awaitActivityWithFailureContext(votingTask, SejmCollectFunctions.ACTIVITY_VOTINGS);
+            var committeesResult = awaitActivityWithFailureContext(committeesTask, SejmCollectFunctions.ACTIVITY_COMMITTEES);
+            var printsResult = awaitActivityWithFailureContext(printsTask, SejmCollectFunctions.ACTIVITY_PRINTS);
+            var interpellationsResult = awaitActivityWithFailureContext(interpellationsTask, SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
+            var questionsResult = awaitActivityWithFailureContext(questionsTask, SejmCollectFunctions.ACTIVITY_QUESTIONS);
+            var billsResult = awaitActivityWithFailureContext(billsTask, SejmCollectFunctions.ACTIVITY_BILLS);
+
             var counts = new HashMap<String, Integer>();
-            counts.put("VOTING", awaitActivityWithFailureContext(votingTask, SejmCollectFunctions.ACTIVITY_VOTINGS));
-            counts.put("COMMITTEE_SITTING", awaitActivityWithFailureContext(committeesTask, SejmCollectFunctions.ACTIVITY_COMMITTEES));
-            counts.put("PRINT", awaitActivityWithFailureContext(printsTask, SejmCollectFunctions.ACTIVITY_PRINTS));
-            counts.put("INTERPELLATION", awaitActivityWithFailureContext(interpellationsTask, SejmCollectFunctions.ACTIVITY_INTERPELLATIONS));
-            counts.put("WRITTEN_QUESTION", awaitActivityWithFailureContext(questionsTask, SejmCollectFunctions.ACTIVITY_QUESTIONS));
-            counts.put("BILL", awaitActivityWithFailureContext(billsTask, SejmCollectFunctions.ACTIVITY_BILLS));
+            counts.put("VOTING", requireCount(votingResult));
+            counts.put("COMMITTEE_SITTING", requireCount(committeesResult));
+            counts.put("PRINT", requireCount(printsResult));
+            counts.put("INTERPELLATION", requireCount(interpellationsResult));
+            counts.put("WRITTEN_QUESTION", requireCount(questionsResult));
+            counts.put("BILL", requireCount(billsResult));
+
+            reconcileTermSnapshot(orchestrationContext, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
 
             var result = new CollectResult();
             result.setCountsByType(Collections.unmodifiableMap(new HashMap<>(counts)));
@@ -181,7 +200,7 @@ public class SejmCollectFunctionSupport {
             var count = collectService.collectVotings(termNum, date);
             Log.info(execCtx, "Completed votings collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectVotings completed: {} items", count);
-            return buildActivityResult(count);
+            return buildActivityResult(count, termNum, date, List.of(), Map.of());
         } catch (Exception e) {
             log.error("Activity collectVotings failed", e);
             execCtx.getLogger().severe("Activity collectVotings failed: " + buildFailureMessage(e));
@@ -199,7 +218,7 @@ public class SejmCollectFunctionSupport {
             var count = collectService.collectCommitteeSittings(termNum, date);
             Log.info(execCtx, "Completed committees collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectCommittees completed: {} items", count);
-            return buildActivityResult(count);
+            return buildActivityResult(count, termNum, date, List.of(), Map.of());
         } catch (Exception e) {
             log.error("Activity collectCommittees failed", e);
             execCtx.getLogger().severe("Activity collectCommittees failed: " + buildFailureMessage(e));
@@ -217,7 +236,7 @@ public class SejmCollectFunctionSupport {
             var count = collectService.collectPrints(termNum, date);
             Log.info(execCtx, "Completed prints collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectPrints completed: {} items", count);
-            return buildActivityResult(count);
+            return buildActivityResult(count, termNum, date, loadKeysByType(date, "PRINT"), Map.of());
         } catch (Exception e) {
             log.error("Activity collectPrints failed", e);
             execCtx.getLogger().severe("Activity collectPrints failed: " + buildFailureMessage(e));
@@ -235,7 +254,13 @@ public class SejmCollectFunctionSupport {
             var count = collectService.collectInterpellations(termNum, date);
             Log.info(execCtx, "Completed interpellations collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectInterpellations completed: {} items", count);
-            return buildActivityResult(count);
+                var interpellationFingerprints = loadInterpellationFingerprints(date);
+                return buildActivityResult(
+                    count,
+                    termNum,
+                    date,
+                        List.copyOf(new TreeSet<>(interpellationFingerprints.keySet())),
+                    interpellationFingerprints);
         } catch (Exception e) {
             log.error("Activity collectInterpellations failed", e);
             execCtx.getLogger().severe("Activity collectInterpellations failed: " + buildFailureMessage(e));
@@ -253,7 +278,7 @@ public class SejmCollectFunctionSupport {
             var count = collectService.collectWrittenQuestions(termNum, date);
             Log.info(execCtx, "Completed written questions collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectQuestions completed: {} items", count);
-            return buildActivityResult(count);
+            return buildActivityResult(count, termNum, date, loadKeysByType(date, "WRITTEN_QUESTION"), Map.of());
         } catch (Exception e) {
             log.error("Activity collectQuestions failed", e);
             execCtx.getLogger().severe("Activity collectQuestions failed: " + buildFailureMessage(e));
@@ -271,12 +296,12 @@ public class SejmCollectFunctionSupport {
             var count = collectService.collectBills(termNum, date);
             Log.info(execCtx, "Completed bills collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectBills completed: {} items", count);
-            return buildActivityResult(count);
+            return buildActivityResult(count, termNum, date, loadKeysByType(date, "BILL"), Map.of());
         } catch (Exception e) {
             var failure = buildFailureMessage(e);
             log.warn("Activity collectBills failed, continuing with partial result: {}", failure, e);
             execCtx.getLogger().warning("Activity collectBills failed, continuing with count=0: " + failure);
-            return buildActivityResult(0);
+            return buildActivityResult(0, getCurrentTermNum(), LocalDate.now(), List.of(), Map.of());
         }
     }
 
@@ -302,10 +327,9 @@ public class SejmCollectFunctionSupport {
                 CollectActivityResult.class);
     }
 
-    private int awaitActivityWithFailureContext(Task<CollectActivityResult> task, String activityName) {
+    private CollectActivityResult awaitActivityWithFailureContext(Task<CollectActivityResult> task, String activityName) {
         try {
-            var activityResult = this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_RESULT, task.await());
-            return Objects.requireNonNull(activityResult.getCount(), "Activity result count must not be null");
+            return this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_RESULT, task.await());
         } catch (TaskFailedException e) {
             var details = e.getErrorDetails();
             var errorType = details == null ? "unknown" : details.getErrorType();
@@ -316,14 +340,138 @@ public class SejmCollectFunctionSupport {
         }
     }
 
+        private void reconcileTermSnapshot(
+            TaskOrchestrationContext orchestrationContext,
+            String activitySource,
+            CollectActivityResult interpellationsResult,
+            CollectActivityResult questionsResult,
+            CollectActivityResult printsResult,
+            CollectActivityResult billsResult) {
+            var termNum = requireSnapshotTermNum(interpellationsResult);
+            var date = requireSnapshotDate(interpellationsResult);
+            var event = new TermSnapshotCollectedEvent(
+                date,
+                    activitySource,
+                    orchestrationContext.getInstanceId(),
+                Map.copyOf(orEmptyMap(interpellationsResult.getInterpellationFingerprints())),
+                List.copyOf(orEmptyList(questionsResult.getItemKeys())),
+                List.copyOf(orEmptyList(printsResult.getItemKeys())),
+                List.copyOf(orEmptyList(billsResult.getItemKeys())));
+            orchestrationContext.signalEntity(
+                termSnapshotEntityId(termNum),
+                    TERM_SNAPSHOT_COLLECTED.methodName(),
+                    event);
+    }
+
+    private static EntityInstanceId termSnapshotEntityId(int termNum) {
+        return new EntityInstanceId(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME, String.valueOf(termNum));
+    }
+
+    private static int requireCount(CollectActivityResult result) {
+        return Objects.requireNonNull(result.getCount(), "Activity result count must not be null");
+    }
+
+    private static int requireSnapshotTermNum(CollectActivityResult result) {
+        return Objects.requireNonNull(result.getTermNum(), "Activity result termNum must not be null");
+    }
+
+    private static LocalDate requireSnapshotDate(CollectActivityResult result) {
+        return Objects.requireNonNull(result.getCollectionDate(), "Activity result collectionDate must not be null");
+    }
+
+    private static List<String> orEmptyList(@Nullable List<String> value) {
+        return value == null ? List.of() : value;
+    }
+
+    private static Map<String, String> orEmptyMap(@Nullable Map<String, String> value) {
+        return value == null ? Map.of() : value;
+    }
+
+    private Map<String, String> loadInterpellationFingerprints(LocalDate date) {
+        var rows = this.dailyDigestPersistence.findByDateAndType(date, "INTERPELLATION");
+        var byKey = new TreeMap<String, String>();
+        for (var row : rows) {
+            var key = extractStringColumn(row, "item_key");
+            var json = extractJsonColumn(row, "item_json");
+            byKey.put(key, sha256Hex(json));
+        }
+        return Map.copyOf(byKey);
+    }
+
+    private List<String> loadKeysByType(LocalDate date, String dataType) {
+        var rows = this.dailyDigestPersistence.findByDateAndType(date, dataType);
+        var keys = new TreeSet<String>();
+        for (var row : rows) {
+            keys.add(extractStringColumn(row, "item_key"));
+        }
+        return List.copyOf(keys);
+    }
+
+    private static String extractStringColumn(Map<String, Object> row, String key) {
+        var value = row.get(key);
+        if (value == null) {
+            value = row.get(key.toUpperCase());
+        }
+        if (value == null) {
+            throw new IllegalStateException("Missing required column '" + key + "' in digest row");
+        }
+        return String.valueOf(value);
+    }
+
+    private static String extractJsonColumn(Map<String, Object> row, String key) {
+        var value = row.get(key);
+        if (value == null) {
+            value = row.get(key.toUpperCase());
+        }
+        if (value == null) {
+            throw new IllegalStateException("Missing required column '" + key + "' in digest row");
+        }
+        if (value instanceof CharSequence sequence) {
+            return sequence.toString();
+        }
+        if (!"org.postgresql.util.PGobject".equals(value.getClass().getName())) {
+            return String.valueOf(value);
+        }
+        try {
+            var getValueMethod = value.getClass().getMethod("getValue");
+            var extracted = getValueMethod.invoke(value);
+            return extracted == null ? "" : String.valueOf(extracted);
+        } catch (ReflectiveOperationException exception) {
+            return String.valueOf(value);
+        }
+    }
+
+    private static String sha256Hex(String value) {
+        try {
+            var digest = MessageDigest.getInstance("SHA-256");
+            var hash = digest.digest(value.getBytes(StandardCharsets.UTF_8));
+            var hex = new StringBuilder(hash.length * 2);
+            for (byte b : hash) {
+                hex.append(String.format("%02x", b));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 is not available", e);
+        }
+    }
+
     private void validateActivityRequest(CollectActivityRequest request) {
         var normalizedRequest = request == null ? new CollectActivityRequest() : request;
         this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, normalizedRequest);
     }
 
-    private CollectActivityResult buildActivityResult(int count) {
+    private CollectActivityResult buildActivityResult(
+            int count,
+            int termNum,
+            LocalDate date,
+            List<String> itemKeys,
+            Map<String, String> interpellationFingerprints) {
         var result = new CollectActivityResult();
         result.setCount(count);
+        result.setTermNum(termNum);
+        result.setCollectionDate(date);
+        result.setItemKeys(List.copyOf(itemKeys));
+        result.setInterpellationFingerprints(Map.copyOf(interpellationFingerprints));
         return this.jsonValidator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, result);
     }
 

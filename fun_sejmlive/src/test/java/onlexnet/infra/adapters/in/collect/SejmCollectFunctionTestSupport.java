@@ -5,6 +5,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.net.URI;
+import java.time.LocalDate;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +13,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
@@ -37,6 +39,7 @@ import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctionSupport;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
@@ -50,11 +53,22 @@ final class SejmCollectFunctionTestSupport {
     static SejmCollectFunctionSupport newSupport(
             SejmCollectOperations collectService,
             SejmApiClient sejmApiClient) {
-        return new SejmCollectFunctionSupport(collectService, sejmApiClient, newJsonValidator());
+        var digestPersistence = mock(SejmDailyDigestPersistence.class);
+        return new SejmCollectFunctionSupport(collectService, sejmApiClient, digestPersistence, newJsonValidator());
+    }
+
+    static SejmCollectFunctionSupport newSupport(
+            SejmCollectOperations collectService,
+            SejmApiClient sejmApiClient,
+            SejmDailyDigestPersistence digestPersistence) {
+        return new SejmCollectFunctionSupport(collectService, sejmApiClient, digestPersistence, newJsonValidator());
     }
 
     static JsonValidator newJsonValidator() {
-        var validator = new JsonValidator(new ObjectMapper().findAndRegisterModules());
+        var objectMapper = new ObjectMapper()
+                .findAndRegisterModules()
+                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        var validator = new JsonValidator(objectMapper);
         validator.init();
         return validator;
     }
@@ -62,6 +76,21 @@ final class SejmCollectFunctionTestSupport {
     static CollectActivityResult activityResult(int value) {
         var result = new CollectActivityResult();
         result.setCount(value);
+        return result;
+    }
+
+    static CollectActivityResult activityResultWithSnapshot(
+            int count,
+            int termNum,
+            LocalDate collectionDate,
+            List<String> itemKeys,
+            Map<String, String> interpellationFingerprints) {
+        var result = new CollectActivityResult();
+        result.setCount(count);
+        result.setTermNum(termNum);
+        result.setCollectionDate(collectionDate);
+        result.setItemKeys(itemKeys);
+        result.setInterpellationFingerprints(interpellationFingerprints);
         return result;
     }
 

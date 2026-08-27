@@ -8,6 +8,7 @@ Azure Functions (Java + Spring Boot) application that collects daily Sejm activi
 - Stores digest items and publish state in PostgreSQL (Liquibase-managed schema).
 - Publishes daily digest to Facebook (timer + manual HTTP trigger).
 - Processes INTERPELLATION publish jobs from Azure Storage Queue with retry and dead-letter handling.
+- Maintains a dedicated durable term snapshot entity that compares current and previous term state and raises recognized change events.
 - Exposes Telegram webhook for admin commands (`/help`, `/data`, `/collect`, `/publish`, `/version`).
 
 ## Architecture
@@ -29,6 +30,8 @@ Main boundaries:
 - `Fun_CollectStart` - `HttpTrigger` `POST`, auth level `FUNCTION`.
 - `Fun_CollectOrchestrator` - durable orchestrator.
 - `Fun_CollectCoordinatorEntity` - durable entity to serialize collect requests.
+- `Fun_SejmTermSnapshotEntity` - durable entity to keep latest term snapshot and dispatch per-event handlers after diffing.
+- Orchestrator sends currently collected snapshot state (from activity outputs) directly to the term snapshot entity for diffing.
 - Activities:
    - `Intern_CollectVotings`
    - `Intern_CollectCommittees`

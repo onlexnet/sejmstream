@@ -40,6 +40,7 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectPrintsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectQuestionsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectTimerFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectVotingsActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotEntityFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
@@ -48,6 +49,7 @@ import onlexnet.testsupport.AppTest;
 class SejmCollectFunctionContractsTest {
 
     private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
+        private static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
 
     private static final List<String> COLLECT_COORDINATOR_OPERATIONS = CollectCoordinatorContractOperations.BUSINESS_OPERATIONS
             .stream()
@@ -61,9 +63,6 @@ class SejmCollectFunctionContractsTest {
     private ApplicationContext applicationContext;
 
     @Autowired
-    private SejmCollectFunctions sejmCollectFunctions;
-
-    @Autowired
     private SejmCollectService sejmCollectService;
 
     @Autowired
@@ -72,10 +71,8 @@ class SejmCollectFunctionContractsTest {
     @Test
     void givenSpringBootContext_whenResolvingCollectFunctions_thenRequiredDependenciesAreInjected() {
         assertThat(this.applicationContext).isNotNull();
-        assertThat(this.sejmCollectFunctions).isNotNull();
         assertThat(this.sejmCollectService).isNotNull();
         assertThat(this.sejmApiClient).isNotNull();
-        assertThat(this.applicationContext.getBean(SejmCollectFunctions.class)).isSameAs(this.sejmCollectFunctions);
         assertThat(this.applicationContext.getBean(SejmCollectService.class)).isSameAs(this.sejmCollectService);
         assertThat(this.applicationContext.getBean(SejmApiClient.class)).isSameAs(this.sejmApiClient);
     }
@@ -149,6 +146,24 @@ class SejmCollectFunctionContractsTest {
         assertThat(trigger.name()).isEqualTo("entityRequest");
         assertThat(trigger.entityName()).isEqualTo(COORDINATOR_ENTITY_NAME);
     }
+
+        @Test
+        void givenTermSnapshotEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
+                        throws NoSuchMethodException {
+                var method = SejmTermSnapshotEntityFunctions.class.getDeclaredMethod(
+                                "runSejmTermSnapshotEntity",
+                                String.class,
+                                ExecutionContext.class);
+
+                var functionName = method.getAnnotation(FunctionName.class);
+                var trigger = method.getParameters()[0].getAnnotation(DurableEntityTrigger.class);
+
+                assertThat(functionName).isNotNull();
+                assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_FUNCTION_NAME);
+                assertThat(trigger).isNotNull();
+                assertThat(trigger.name()).isEqualTo("entityRequest");
+                assertThat(trigger.entityName()).isEqualTo(TERM_SNAPSHOT_ENTITY_NAME);
+        }
 
     @Test
     void givenActivities_whenCheckingTriggerContract_thenFunctionAndActivityTriggersAreConfigured()

@@ -24,6 +24,7 @@ import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 
@@ -31,6 +32,7 @@ class SejmCollectOrchestratorFunctionTest {
 
     private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
     private static final String COORDINATOR_ENTITY_KEY = "singleton";
+        private static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
 
     @Test
     void givenOrchestrator_whenInvoked_thenCallsActivitiesWithRetryAndAggregatesCounts() {
@@ -38,12 +40,49 @@ class SejmCollectOrchestratorFunctionTest {
         var sejmApiClient = mock(SejmApiClient.class);
         var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
         var orchestrationContext = mock(TaskOrchestrationContext.class);
-        var votingTask = SejmCollectFunctionTestSupport.completedTask(SejmCollectFunctionTestSupport.activityResult(1));
-        var committeesTask = SejmCollectFunctionTestSupport.completedTask(SejmCollectFunctionTestSupport.activityResult(2));
-        var printsTask = SejmCollectFunctionTestSupport.completedTask(SejmCollectFunctionTestSupport.activityResult(3));
-        var interpellationsTask = SejmCollectFunctionTestSupport.completedTask(SejmCollectFunctionTestSupport.activityResult(4));
-        var questionsTask = SejmCollectFunctionTestSupport.completedTask(SejmCollectFunctionTestSupport.activityResult(5));
-        var billsTask = SejmCollectFunctionTestSupport.completedTask(SejmCollectFunctionTestSupport.activityResult(6));
+        var collectionDate = java.time.LocalDate.of(2026, 8, 27);
+        var votingTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
+                        1,
+                        10,
+                        collectionDate,
+                        List.of(),
+                        java.util.Map.of()));
+        var committeesTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
+                        2,
+                        10,
+                        collectionDate,
+                        List.of(),
+                        java.util.Map.of()));
+        var printsTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
+                        3,
+                        10,
+                        collectionDate,
+                        java.util.List.of("401"),
+                        java.util.Map.of()));
+        var interpellationsTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
+                        4,
+                        10,
+                        collectionDate,
+                        java.util.List.of("77"),
+                        java.util.Map.of("77", "abc")));
+        var questionsTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
+                        5,
+                        10,
+                        collectionDate,
+                        java.util.List.of("301"),
+                        java.util.Map.of()));
+        var billsTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
+                        6,
+                        10,
+                        collectionDate,
+                        java.util.List.of("501"),
+                        java.util.Map.of()));
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-1");
 
         when(orchestrationContext.callActivity(
@@ -78,12 +117,12 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(CollectActivityResult.class))).thenReturn(billsTask);
         when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
                 .thenReturn(new com.microsoft.durabletask.CompletedTask<>(List.of(
-                        SejmCollectFunctionTestSupport.activityResult(1),
-                        SejmCollectFunctionTestSupport.activityResult(2),
-                        SejmCollectFunctionTestSupport.activityResult(3),
-                        SejmCollectFunctionTestSupport.activityResult(4),
-                        SejmCollectFunctionTestSupport.activityResult(5),
-                        SejmCollectFunctionTestSupport.activityResult(6))));
+                        SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of(), java.util.Map.of()),
+                        SejmCollectFunctionTestSupport.activityResultWithSnapshot(2, 10, collectionDate, List.of(), java.util.Map.of()),
+                        SejmCollectFunctionTestSupport.activityResultWithSnapshot(3, 10, collectionDate, java.util.List.of("401"), java.util.Map.of()),
+                        SejmCollectFunctionTestSupport.activityResultWithSnapshot(4, 10, collectionDate, java.util.List.of("77"), java.util.Map.of("77", "abc")),
+                        SejmCollectFunctionTestSupport.activityResultWithSnapshot(5, 10, collectionDate, java.util.List.of("301"), java.util.Map.of()),
+                        SejmCollectFunctionTestSupport.activityResultWithSnapshot(6, 10, collectionDate, java.util.List.of("501"), java.util.Map.of()))));
 
         var result = support.runOrchestrator(orchestrationContext);
 
@@ -102,6 +141,10 @@ class SejmCollectOrchestratorFunctionTest {
         verify(orchestrationContext).signalEntity(
                 eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
                 eq(CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()),
+                any());
+        verify(orchestrationContext).signalEntity(
+                eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "10")),
+                eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
                 any());
     }
 
@@ -151,6 +194,48 @@ class SejmCollectOrchestratorFunctionTest {
         assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Collect orchestrator failed while waiting for activity completion");
+
+        verify(orchestrationContext).signalEntity(
+                any(),
+                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
+                any());
+    }
+
+    @Test
+    void givenSnapshotSignalFails_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
+        var collectService = mock(SejmCollectOperations.class);
+        var sejmApiClient = mock(SejmApiClient.class);
+        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+        var collectionDate = java.time.LocalDate.of(2026, 8, 27);
+        var activityTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
+                        1,
+                        10,
+                        collectionDate,
+                        List.of("k"),
+                        java.util.Map.of("k", "fp")));
+
+        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-3");
+        when(orchestrationContext.callActivity(
+                any(String.class),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(activityTask);
+        when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
+                .thenReturn(new com.microsoft.durabletask.CompletedTask<>(List.of(
+                        SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")))));
+
+        org.mockito.Mockito.doThrow(new IllegalStateException("snapshot signal failed"))
+                .when(orchestrationContext)
+                .signalEntity(
+                        eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "10")),
+                        eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
+                        any());
+
+        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("snapshot signal failed");
 
         verify(orchestrationContext).signalEntity(
                 any(),

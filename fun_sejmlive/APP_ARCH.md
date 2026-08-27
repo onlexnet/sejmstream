@@ -76,6 +76,12 @@ This application follows Hexagonal Architecture (Ports and Adapters).
 4. Output ports are fulfilled by output adapters.
 5. The input adapter maps the result back to channel-specific response behavior.
 
+For the collect pipeline, runtime coordination now uses two separate durable entities:
+- `CollectCoordinator` serializes collect-run requests.
+- `SejmTermSnapshot` stores latest per-term snapshot state and dispatches recognized
+	events (new/updated interpellations, new questions/prints/bills, term switch)
+	after comparing current snapshot with previous state.
+
 ## Dynamic C4 Runtime View
 
 For an end-to-end dynamic view of runtime behavior (collect orchestration, daily publish,

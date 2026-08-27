@@ -11,6 +11,26 @@
     "count": {
       "type": "integer",
       "minimum": 0
+    },
+    "termNum": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "collectionDate": {
+      "type": "string",
+      "format": "date"
+    },
+    "itemKeys": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "interpellationFingerprints": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
     }
   }
 }

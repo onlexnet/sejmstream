@@ -18,7 +18,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.restfb.FacebookClient;
 
-import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.facebook.FacebookPublishingFunctions;
 import onlexnet.infra.adapters.in.facebook.FacebookPublishingHttpFunction;
 import onlexnet.infra.adapters.in.facebook.FacebookPublishingTimerFunction;
@@ -73,9 +72,6 @@ class ApplicationContextTest {
 
     @Test
     void givenAllRequiredPropertiesConfigured_whenContextStartsLikeAzureFunctions_thenAllPrimaryFunctionBeansAreResolvable() {
-        assertThat(this.applicationContext.getBean(SejmCollectFunctions.class))
-                .as("SejmCollectFunctions must be available for Azure Functions invocation")
-                .isNotNull();
         assertThat(this.applicationContext.getBean(FacebookPublishingFunctions.class))
                 .as("FacebookPublishingFunctions must be available when FB_TOKEN is configured")
                 .isNotNull();

@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.restfb.FacebookClient;
 
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
-import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
 
@@ -25,9 +24,6 @@ class SejmCollectFunctionsSpringBootBeansPresenceTest {
     private ApplicationContext applicationContext;
 
     @Autowired
-    private SejmCollectFunctions sejmCollectFunctions;
-
-    @Autowired
     private SejmCollectService sejmCollectService;
 
     @Autowired
@@ -39,7 +35,6 @@ class SejmCollectFunctionsSpringBootBeansPresenceTest {
     @Test
     void givenSpringBootContext_whenResolvingCollectBeans_thenAllRequiredBeansAreAvailable() {
         assertThat(this.applicationContext).isNotNull();
-        assertThat(this.sejmCollectFunctions).isNotNull();
         assertThat(this.sejmCollectService).isNotNull();
         assertThat(this.objectMapper).isNotNull();
         assertThat(this.jsonValidator).isNotNull();

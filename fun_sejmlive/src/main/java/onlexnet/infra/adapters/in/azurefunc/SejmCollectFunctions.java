@@ -1,14 +1,11 @@
 package onlexnet.infra.adapters.in.azurefunc;
 
-import org.springframework.stereotype.Component;
-
 /**
- * Function name constants and compatibility Spring bean for collect-related Azure Functions.
+ * Function name constants for collect-related Azure Functions.
  *
  * <p>Runtime entry points are intentionally split into dedicated classes:
  * timer, http starter, orchestrator, and one class per activity function.
  */
-@Component
 public final class SejmCollectFunctions {
 
     /** Timer trigger function name. */
@@ -23,6 +20,11 @@ public final class SejmCollectFunctions {
     static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
     /** Durable entity singleton key for collect coordination. */
     static final String COORDINATOR_ENTITY_KEY = "singleton";
+    /** Durable entity function name for term snapshot state and diffing. */
+    public static final String TERM_SNAPSHOT_ENTITY_FUNCTION_NAME = "Fun_SejmTermSnapshotEntity";
+    /** Durable entity logical name used by the runtime for term snapshots. */
+    public static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
+    /** Durable entity key for term snapshot state is dynamic: String.valueOf(termNum). */
     /** Activity function name for collecting votings. */
     public static final String ACTIVITY_VOTINGS = "Intern_CollectVotings";
     /** Activity function name for collecting committee sittings. */
