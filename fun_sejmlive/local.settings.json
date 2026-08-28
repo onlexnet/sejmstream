@@ -7,6 +7,7 @@
     "APPLICATIONINSIGHTS_CONNECTION_STRING": "",
     "APPINSIGHTS_INSTRUMENTATIONKEY": "",
     "JAVA_HOME": "/usr/local/sdkman/candidates/java/current",
+    "languageWorkers__java__arguments": "--add-opens=java.base/java.time=ALL-UNNAMED",
     "facebook_token": "",
     "TZ": "Europe/Warsaw",
     "WEBSITE_TIME_ZONE": "Europe/Warsaw"

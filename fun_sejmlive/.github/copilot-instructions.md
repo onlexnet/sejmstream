@@ -3,7 +3,7 @@
 ## Docs-First Execution Policy (Mandatory)
 
 Before any implementation:
-- Review relevant docs under docs/ (domain model, ports/contracts, runbook, ADRs, C4, sequences).
+- Review relevant docs under docs/ and ../docs/ (domain model, ports/contracts, runbook, ADRs, C4, sequences).
 - Treat docs as authoritative for behavior and architecture.
 
 During implementation:

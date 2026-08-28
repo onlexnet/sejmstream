@@ -9,6 +9,7 @@
     "APPLICATIONINSIGHTS_CONNECTION_STRING": "<APPLICATIONINSIGHTS_CONNECTION_STRING>",
     "APPINSIGHTS_INSTRUMENTATIONKEY": "<APPINSIGHTS_INSTRUMENTATIONKEY_OPTIONAL>",
     "JAVA_HOME": "<JAVA_21_HOME_PATH>",
+    "languageWorkers__java__arguments": "--add-opens=java.base/java.time=ALL-UNNAMED",
     "SejmApiDemo_HttpStart": "<FUNCTION_KEY_PLACEHOLDER>",
     "INTERPELLATION_PUBLISH_QUEUE_NAME": "sejm-interpellations-publish",
     "INTERPELLATION_PUBLISH_DEAD_LETTER_QUEUE_NAME": "sejm-interpellations-publish-deadletter",
