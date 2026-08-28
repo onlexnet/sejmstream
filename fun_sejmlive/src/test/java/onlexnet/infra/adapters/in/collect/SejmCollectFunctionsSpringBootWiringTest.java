@@ -29,8 +29,15 @@ class SejmCollectFunctionsSpringBootWiringTest {
     private JsonValidator jsonValidator;
 
     @Test
-    void givenSpringBootContext_whenResolvingCoreInfraBeans_thenContextReturnsSameSingletons() {
+    void shouldResolveCoreInfraBeansAsSameSingletons() {
         assertThat(this.applicationContext.getBean(ObjectMapper.class)).isSameAs(this.objectMapper);
         assertThat(this.applicationContext.getBean(JsonValidator.class)).isSameAs(this.jsonValidator);
+    }
+
+    @Test
+    void shouldSerializeLocalDateAsIsoDateString() throws Exception {
+        var payload = this.objectMapper.writeValueAsString(java.time.LocalDate.of(2026, 8, 28));
+
+        assertThat(payload).isEqualTo("\"2026-08-28\"");
     }
 }

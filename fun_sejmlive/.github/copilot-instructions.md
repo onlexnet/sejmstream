@@ -45,6 +45,7 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Mock external dependencies (APIs, databases) in unit tests.
 - Use `@AppTest` for integration tests.
 - Aim for high test coverage on business logic.
+- Name test methods with the `should...` pattern to make intent explicit (for example `shouldSerializeLocalDateAsIsoDateString`).
 - Follow the Java naming conventions in [Java instructions](instructions/java.instructions.md) for test method names.
 
 ### Error Handling

@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 import onlexnet.app.AppModuleConfigurer;
 import onlexnet.app.ports.out.TelegramNotifier;
@@ -25,7 +26,9 @@ public class StartersConfiguration {
 
 	@Bean
 	public ObjectMapper objectMapper() {
-		return new ObjectMapper().findAndRegisterModules();
+		return new ObjectMapper()
+				.findAndRegisterModules()
+				.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 	}
 
 	/**
