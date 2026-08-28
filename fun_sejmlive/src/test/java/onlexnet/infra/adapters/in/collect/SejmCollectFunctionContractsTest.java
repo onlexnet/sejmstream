@@ -27,11 +27,8 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 import com.restfb.FacebookClient;
 
 import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations;
-import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractV1;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectBillsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectCommitteesActivityFunction;
-import onlexnet.infra.adapters.in.azurefunc.SejmCollectCoordinatorEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectHttpStarterFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectInterpellationsActivityFunction;
@@ -40,6 +37,9 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectPrintsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectQuestionsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectTimerFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectVotingsActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractV1;
+import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.SejmCollectCoordinatorEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.out.SejmCollectService;
@@ -203,7 +203,8 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     @Test
     void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
         var objectMapper = new ObjectMapper();
-        var stateClass = Class.forName("onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorState");
+                var stateClassName = SejmCollectCoordinatorEntityFunction.class.getPackageName() + ".CollectCoordinatorState";
+                var stateClass = Class.forName(stateClassName);
         var constructor = stateClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         var state = constructor.newInstance();

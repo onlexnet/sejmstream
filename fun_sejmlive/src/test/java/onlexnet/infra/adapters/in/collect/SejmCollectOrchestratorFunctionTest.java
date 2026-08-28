@@ -22,8 +22,8 @@ import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
-import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;

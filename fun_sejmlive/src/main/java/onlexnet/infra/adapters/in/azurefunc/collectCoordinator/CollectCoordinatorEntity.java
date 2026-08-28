@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc;
+package onlexnet.infra.adapters.in.azurefunc.collectCoordinator;
 
 import java.util.Objects;
 
@@ -12,6 +12,9 @@ import com.microsoft.durabletask.TaskEntityOperation;
 
 import lombok.RequiredArgsConstructor;
 import onlexnet.app.usecases.CollectCoordinatorDecider;
+import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
+import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;

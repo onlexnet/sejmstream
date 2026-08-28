@@ -1,5 +1,6 @@
-package onlexnet.infra.adapters.in.azurefunc;
+package onlexnet.infra.adapters.in.azurefunc.collectCoordinator;
 
+import onlexnet.infra.adapters.in.azurefunc.DurableEntityContract;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 

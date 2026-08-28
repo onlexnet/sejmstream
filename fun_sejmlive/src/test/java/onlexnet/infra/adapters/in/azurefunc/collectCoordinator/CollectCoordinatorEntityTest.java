@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc;
+package onlexnet.infra.adapters.in.azurefunc.collectCoordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import com.microsoft.durabletask.TaskEntityOperation;
 
+import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 

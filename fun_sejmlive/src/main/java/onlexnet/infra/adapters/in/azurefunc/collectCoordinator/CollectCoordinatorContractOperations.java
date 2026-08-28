@@ -1,7 +1,9 @@
-package onlexnet.infra.adapters.in.azurefunc;
+package onlexnet.infra.adapters.in.azurefunc.collectCoordinator;
 
 import java.util.List;
 
+import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
+import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationRouter;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 

@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc;
+package onlexnet.infra.adapters.in.azurefunc.collectCoordinator;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -10,6 +10,8 @@ import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 
 import lombok.RequiredArgsConstructor;
 import onlexnet.app.usecases.CollectCoordinatorDecider;
+import onlexnet.infra.adapters.in.azurefunc.Log;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 
 @Component
 @RequiredArgsConstructor

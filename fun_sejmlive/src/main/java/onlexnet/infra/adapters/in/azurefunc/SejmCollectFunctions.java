@@ -17,9 +17,9 @@ public final class SejmCollectFunctions {
     /** Durable entity function name coordinating collect runs. */
     public static final String COORDINATOR_ENTITY_FUNCTION_NAME = "Fun_CollectCoordinatorEntity";
     /** Durable entity logical name used by the runtime. */
-    static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
+    public static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
     /** Durable entity singleton key for collect coordination. */
-    static final String COORDINATOR_ENTITY_KEY = "singleton";
+    public static final String COORDINATOR_ENTITY_KEY = "singleton";
     /** Durable entity function name for term snapshot state and diffing. */
     public static final String TERM_SNAPSHOT_ENTITY_FUNCTION_NAME = "Fun_SejmTermSnapshotEntity";
     /** Durable entity logical name used by the runtime for term snapshots. */

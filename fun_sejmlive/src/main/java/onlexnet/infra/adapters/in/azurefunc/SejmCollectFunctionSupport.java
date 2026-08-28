@@ -1,8 +1,8 @@
 package onlexnet.infra.adapters.in.azurefunc;
 
-import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations.COLLECT_COMPLETED;
-import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations.COLLECT_FAILED;
-import static onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations.REQUEST_COLLECT;
+import static onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations.COLLECT_COMPLETED;
+import static onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations.COLLECT_FAILED;
+import static onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations.REQUEST_COLLECT;
 import static onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED;
 
 import java.nio.charset.StandardCharsets;

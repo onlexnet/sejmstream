@@ -14,7 +14,7 @@ import com.microsoft.durabletask.EntityInstanceId;
 
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
-import onlexnet.infra.adapters.in.azurefunc.CollectCoordinatorContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations;
 
 class SejmCollectTimerAndHttpFunctionTest {
 
