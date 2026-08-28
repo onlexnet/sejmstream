@@ -13,9 +13,10 @@ import com.restfb.FacebookClient;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
+import onlexnet.testsupport.PostgresIntegrationTestSupport;
 
 @AppTest
-class SejmCollectFunctionsSpringBootBeansPresenceTest {
+class SejmCollectFunctionsSpringBootBeansPresenceTest extends PostgresIntegrationTestSupport {
 
     @MockitoBean
     FacebookClient facebookClient;

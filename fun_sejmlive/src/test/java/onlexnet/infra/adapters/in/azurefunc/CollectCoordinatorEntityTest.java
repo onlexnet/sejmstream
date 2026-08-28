@@ -30,6 +30,9 @@ class CollectCoordinatorEntityTest {
                 assertThat(CollectCoordinatorEntity.resolveContractOperation(
                                 CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()))
                                 .isEqualTo(CollectCoordinatorContractOperations.COLLECT_FAILED);
+                assertThat(CollectCoordinatorEntity.resolveContractOperation(
+                                CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName()))
+                                .isEqualTo(CollectCoordinatorContractOperations.FORCE_START_NEXT);
     }
 
     @Test
@@ -96,5 +99,16 @@ class CollectCoordinatorEntityTest {
                 CollectCoordinatorContractOperations.COLLECT_FAILED.invoke(target, operation);
 
                 verify(target).collectFailed(failure);
+        }
+
+        @Test
+        void givenIncomingDurableRequestForForceStartNext_whenInvoked_thenCallsContractMethod() {
+                var target = mock(CollectCoordinatorContractV1.class);
+                var operation = mock(TaskEntityOperation.class);
+                when(operation.getInput(String.class)).thenReturn("manual-recovery");
+
+                CollectCoordinatorContractOperations.FORCE_START_NEXT.invoke(target, operation);
+
+                verify(target).forceStartNext("manual-recovery");
         }
 }

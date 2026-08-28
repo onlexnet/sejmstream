@@ -11,6 +11,7 @@ public final class CollectCoordinatorDecider {
             case RequestCollect requestCollect -> onRequestCollect(state, requestCollect);
             case CollectCompleted _ -> onCollectFinished(state);
             case CollectFailed _ -> onCollectFinished(state);
+            case ForceStartNext forceStartNext -> onForceStartNext(state, forceStartNext);
         };
     }
 
@@ -32,13 +33,23 @@ public final class CollectCoordinatorDecider {
         return new Decision(new State(false, state.pendingRequests()), Effect.none());
     }
 
+    private Decision onForceStartNext(State state, ForceStartNext forceStartNext) {
+        if (state.pendingRequests() > 0) {
+            return new Decision(
+                    new State(true, state.pendingRequests() - 1),
+                    new Effect.StartCollectRun(forceStartNext.source()));
+        }
+
+        return new Decision(new State(true, 0), new Effect.StartCollectRun(forceStartNext.source()));
+    }
+
     public record State(boolean running, int pendingRequests) {
         public static State idle() {
             return new State(false, 0);
         }
     }
 
-    public sealed interface Command permits RequestCollect, CollectCompleted, CollectFailed {
+    public sealed interface Command permits RequestCollect, CollectCompleted, CollectFailed, ForceStartNext {
     }
 
     public record RequestCollect(String source) implements Command {
@@ -48,6 +59,9 @@ public final class CollectCoordinatorDecider {
     }
 
     public record CollectFailed(String orchestrationInstanceId, String message) implements Command {
+    }
+
+    public record ForceStartNext(String source) implements Command {
     }
 
     public record Decision(State state, Effect effect) {

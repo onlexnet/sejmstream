@@ -44,9 +44,10 @@ import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotEnt
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
+import onlexnet.testsupport.PostgresIntegrationTestSupport;
 
 @AppTest
-class SejmCollectFunctionContractsTest {
+class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
 
     private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
         private static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";

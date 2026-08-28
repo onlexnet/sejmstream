@@ -22,4 +22,10 @@ public interface CollectCoordinatorContractV1 extends DurableEntityContract {
      * Reports orchestration failure details.
      */
     void collectFailed(CollectFailure failure);
+
+    /**
+     * Administrative recovery operation that forces starting the next collect run.
+     * Use only when runtime diagnostics confirm there is no active collect orchestrator.
+     */
+    void forceStartNext(String source);
 }

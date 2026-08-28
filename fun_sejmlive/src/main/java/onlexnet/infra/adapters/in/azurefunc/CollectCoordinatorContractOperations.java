@@ -28,8 +28,14 @@ public final class CollectCoordinatorContractOperations {
                     CollectFailure.class,
                     CollectCoordinatorContractV1::collectFailed);
 
+    public static final DurableEntityOperationBinding<CollectCoordinatorContractV1, String> FORCE_START_NEXT =
+            DurableEntityOperationBinding.of(
+                    "forceStartNext",
+                    String.class,
+                    CollectCoordinatorContractV1::forceStartNext);
+
     public static final List<DurableEntityOperationBinding<CollectCoordinatorContractV1, ?>> BUSINESS_OPERATIONS =
-            List.of(REQUEST_COLLECT, COLLECT_COMPLETED, COLLECT_FAILED);
+            List.of(REQUEST_COLLECT, COLLECT_COMPLETED, COLLECT_FAILED, FORCE_START_NEXT);
 
     private CollectCoordinatorContractOperations() {
     }

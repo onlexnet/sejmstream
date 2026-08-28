@@ -19,9 +19,10 @@ import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.infra.adapters.out.sejm.generated.api.InterpellationsApi;
 import onlexnet.infra.adapters.out.sejm.generated.core.ApiClient;
 import onlexnet.testsupport.AppTest;
+import onlexnet.testsupport.PostgresIntegrationTestSupport;
 
 @AppTest
-class SejmApiClientITest {
+class SejmApiClientITest extends PostgresIntegrationTestSupport {
 
     private static final int MAX_ATTEMPTS = 3;
     private static final int TERM_9 = 9;

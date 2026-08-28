@@ -49,4 +49,26 @@ class CollectCoordinatorDeciderTest {
         assertThat(decision.state()).isEqualTo(CollectCoordinatorDecider.State.idle());
         assertThat(decision.effect()).isEqualTo(CollectCoordinatorDecider.Effect.none());
     }
+
+    @Test
+    void givenStuckRunningStateWithPending_whenForceStartNext_thenStartsRunAndPreservesQueue() {
+        var decision = this.decider.decide(
+                new CollectCoordinatorDecider.State(true, 17),
+                new CollectCoordinatorDecider.ForceStartNext("manual-recovery"));
+
+        assertThat(decision.state()).isEqualTo(new CollectCoordinatorDecider.State(true, 16));
+        assertThat(decision.effect())
+                .isEqualTo(new CollectCoordinatorDecider.Effect.StartCollectRun("manual-recovery"));
+    }
+
+    @Test
+    void givenRunningStateWithoutPending_whenForceStartNext_thenStartsRun() {
+        var decision = this.decider.decide(
+                new CollectCoordinatorDecider.State(true, 0),
+                new CollectCoordinatorDecider.ForceStartNext("manual-recovery"));
+
+        assertThat(decision.state()).isEqualTo(new CollectCoordinatorDecider.State(true, 0));
+        assertThat(decision.effect())
+                .isEqualTo(new CollectCoordinatorDecider.Effect.StartCollectRun("manual-recovery"));
+    }
 }

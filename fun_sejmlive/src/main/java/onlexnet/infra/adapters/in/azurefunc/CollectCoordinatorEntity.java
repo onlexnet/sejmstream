@@ -90,6 +90,15 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
         applyDecision(decision);
     }
 
+        @Override
+        public void forceStartNext(String source) {
+        var normalizedSource = source == null || source.isBlank() ? "manual-recovery" : source;
+        var decision = DECIDER.decide(
+            requireState().toDeciderState(),
+            new CollectCoordinatorDecider.ForceStartNext(normalizedSource));
+        applyDecision(decision);
+        }
+
     private void applyDecision(CollectCoordinatorDecider.Decision decision) {
         requireState().apply(decision.state());
         if (decision.effect() instanceof CollectCoordinatorDecider.Effect.StartCollectRun startCollectRun) {
