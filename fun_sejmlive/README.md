@@ -62,6 +62,9 @@ Required at runtime:
 - `FUNCTIONS_WORKER_RUNTIME=java`
 - `AzureWebJobsStorage` (Functions host storage; for local use `UseDevelopmentStorage=true`)
 - `DomainStorage` (domain queue storage; can also be `UseDevelopmentStorage=true` locally)
+- `DB_URL` (PostgreSQL JDBC URL)
+- `DB_USERNAME`
+- `DB_PASSWORD`
 - `FB_TOKEN`
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_ALLOWED_CHAT_ID`
@@ -70,7 +73,6 @@ Common optional settings:
 
 - `APPLICATIONINSIGHTS_CONNECTION_STRING`
 - `APPINSIGHTS_INSTRUMENTATIONKEY` (legacy)
-- `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`
 - `LIQUIBASE_ENABLED` (defaults to `false` via `application.properties`)
 - `sejm.api.base-path` (defaults to `https://api.sejm.gov.pl`)
 - `INTERPELLATION_PUBLISH_QUEUE_NAME` (default `sejm-interpellations-publish`)

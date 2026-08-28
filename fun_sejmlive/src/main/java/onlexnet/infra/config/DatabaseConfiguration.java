@@ -17,6 +17,18 @@ public class DatabaseConfiguration {
     public DataSource dataSource(@Value("${spring.datasource.url:}") String url,
             @Value("${spring.datasource.username:}") String username,
             @Value("${spring.datasource.password:}") String password) {
+        if (url.isBlank()) {
+            throw new IllegalStateException(
+                    "Missing required DB_URL / spring.datasource.url. Configure a PostgreSQL JDBC URL before starting the Function App.");
+        }
+        if (username.isBlank()) {
+            throw new IllegalStateException(
+                    "Missing required DB_USERNAME / spring.datasource.username. Configure database credentials before starting the Function App.");
+        }
+        if (password.isBlank()) {
+            throw new IllegalStateException(
+                    "Missing required DB_PASSWORD / spring.datasource.password. Configure database credentials before starting the Function App.");
+        }
         if (url.startsWith("@Microsoft.KeyVault")) {
             throw new IllegalStateException(
                     "spring.datasource.url contains an unresolved Key Vault reference. " +
@@ -37,11 +49,11 @@ public class DatabaseConfiguration {
 
     @Bean
     public SpringLiquibase springLiquibase(DataSource dataSource,
-            @Value("${spring.datasource.url:}") String url) {
+            @Value("${spring.liquibase.enabled:true}") boolean liquibaseEnabled) {
         var liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog("classpath:db/changelog/db.changelog-master.yaml");
-        liquibase.setShouldRun(!url.isBlank());
+        liquibase.setShouldRun(liquibaseEnabled);
         return liquibase;
     }
 }
