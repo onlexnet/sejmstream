@@ -32,6 +32,7 @@ import com.microsoft.durabletask.Task;
 import com.microsoft.durabletask.TaskFailedException;
 import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
+import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -305,9 +306,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    private String enqueueCollectRequest(
-            com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
-            String source) {
+    private String enqueueCollectRequest(DurableClientContext clientCtx, String source) {
         var client = clientCtx.getClient().getEntities();
         client.signalEntity(COLLECT_COORDINATOR_ENTITY_ID, REQUEST_COLLECT.methodName(), source);
         return COLLECT_COORDINATOR_ENTITY_ID.toString();

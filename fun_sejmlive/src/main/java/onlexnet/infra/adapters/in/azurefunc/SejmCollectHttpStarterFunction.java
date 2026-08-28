@@ -24,9 +24,7 @@ public final class SejmCollectHttpStarterFunction {
 
     @FunctionName(SejmCollectFunctions.HTTP_STARTER_FUNCTION_NAME)
     public HttpResponseMessage httpStart(
-            @HttpTrigger(name = "request", methods = {
-                    HttpMethod.POST
-            }, authLevel = AuthorizationLevel.FUNCTION) HttpRequestMessage<Optional<String>> request,
+            @HttpTrigger(name = "req", methods = {HttpMethod.POST}, authLevel = AuthorizationLevel.FUNCTION) HttpRequestMessage<Optional<String>> request,
             @DurableClientInput(name = "durableContext") DurableClientContext clientCtx,
             ExecutionContext execCtx) {
         return this.support.httpStart(request, clientCtx, execCtx);
