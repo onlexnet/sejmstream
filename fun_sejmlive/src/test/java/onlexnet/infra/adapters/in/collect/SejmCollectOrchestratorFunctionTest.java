@@ -393,7 +393,7 @@ class SejmCollectOrchestratorFunctionTest {
     }
 
     @Test
-    void givenAnyOfReturnsUnexpectedWinner_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
+        void givenAnyOfReturnsTaskOutsideCandidates_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
         var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
@@ -411,6 +411,7 @@ class SejmCollectOrchestratorFunctionTest {
 
         @SuppressWarnings("unchecked")
         Task<?> unknownWinnerTask = mock(Task.class);
+        when(unknownWinnerTask.await()).thenReturn("not-a-CollectActivityResult");
         @SuppressWarnings("unchecked")
         Task<Task<?>> winnerTask = mock(Task.class);
         doReturn(unknownWinnerTask).when(winnerTask).await();
@@ -418,7 +419,7 @@ class SejmCollectOrchestratorFunctionTest {
 
         assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("unexpected winner task from anyOf");
+                .hasMessageContaining("winner task that was not an anyOf candidate");
 
         verify(orchestrationContext).signalEntity(
                 any(),

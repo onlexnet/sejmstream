@@ -194,9 +194,10 @@ public final class SejmCollectOrchestratorFunction {
             String activityName) {
         var firstCompletedTask = orchestrationContext.anyOf(List.of(activityTask, cancelRequestedTask)).await();
 
-        if (firstCompletedTask != cancelRequestedTask && firstCompletedTask != activityTask) {
+        if (firstCompletedTask != activityTask && firstCompletedTask != cancelRequestedTask) {
             var failure = new IllegalStateException(
-                    "Collect orchestrator received unexpected winner task from anyOf for activity " + activityName);
+                    "Collect orchestrator received a winner task that was not an anyOf candidate for activity "
+                            + activityName);
             signalCollectFailed(orchestrationContext, coordinatorEntityId, failure);
             throw failure;
         }
@@ -213,7 +214,15 @@ public final class SejmCollectOrchestratorFunction {
         }
 
         try {
-            return awaitActivityWithFailureContext(activityTask, activityName);
+            @SuppressWarnings("unchecked")
+            var completedActivityTask = (Task<CollectActivityResult>) firstCompletedTask;
+            return awaitActivityWithFailureContext(completedActivityTask, activityName);
+        } catch (ClassCastException e) {
+            var failure = new IllegalStateException(
+                    "Collect orchestrator received unexpected winner task type for activity " + activityName,
+                    e);
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, failure);
+            throw failure;
         } catch (IllegalStateException e) {
             signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
             throw e;
