@@ -29,6 +29,7 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations;
 
 class SejmCollectOrchestratorFunctionTest {
@@ -311,4 +312,28 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()),
                 any());
     }
+
+        @Test
+        void givenInvalidOrchestratorInput_whenOrchestratorRuns_thenSignalsFailureToDefaultCoordinator() {
+                var collectService = mock(SejmCollectOperations.class);
+                var sejmApiClient = mock(SejmApiClient.class);
+                var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+                var orchestrationContext = mock(TaskOrchestrationContext.class);
+
+                var invalidInput = new CollectOrchestrationInput();
+                invalidInput.setCoordinatorEntityId("");
+                invalidInput.setSource("telegram-recovery");
+
+                when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-invalid-input");
+                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(invalidInput);
+
+                assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
+                                .isInstanceOf(IllegalArgumentException.class)
+                                .hasMessageContaining("collect-orchestration-input.schema.json");
+
+                verify(orchestrationContext).signalEntity(
+                                eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
+                                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
+                                any());
+        }
 }

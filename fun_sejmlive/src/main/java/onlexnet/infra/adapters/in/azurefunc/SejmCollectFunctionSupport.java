@@ -126,15 +126,22 @@ public class SejmCollectFunctionSupport {
     }
 
     public CollectResult runOrchestrator(TaskOrchestrationContext orchestrationContext) {
-        var input = this.jsonValidator.validateReceivedIfPresent(
+        EntityInstanceId coordinatorEntityId = COLLECT_COORDINATOR_ENTITY_ID;
+        String activitySource = "orchestrator";
+
+        try {
+            var input = this.jsonValidator.validateReceivedIfPresent(
                 JsonValidator.COLLECT_ORCHESTRATION_INPUT,
                 orchestrationContext.getInput(CollectOrchestrationInput.class));
-        var coordinatorEntityId = input == null
-                ? COLLECT_COORDINATOR_ENTITY_ID
-                : EntityInstanceId.fromString(input.getCoordinatorEntityId());
-        var activitySource = input == null
-                ? "orchestrator"
-                : Guards.orDefaultIfNullOrEmpty(input.getSource(), "orchestrator");
+            if (input != null) {
+            coordinatorEntityId = EntityInstanceId.fromString(input.getCoordinatorEntityId());
+            activitySource = Guards.orDefaultIfNullOrEmpty(input.getSource(), "orchestrator");
+            }
+        } catch (RuntimeException e) {
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
+            throw e;
+        }
+
         var cancelRequestedTask = orchestrationContext.waitForExternalEvent(COLLECT_CANCEL_EVENT_NAME, String.class);
 
         var votingTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_VOTINGS, activitySource);
