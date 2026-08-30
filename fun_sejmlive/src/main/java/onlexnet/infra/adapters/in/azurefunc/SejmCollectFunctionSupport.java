@@ -390,16 +390,16 @@ public class SejmCollectFunctionSupport {
             throw cancellationFailure;
         }
 
-        if (firstCompletedTask != activityTask) {
+        try {
+            @SuppressWarnings("unchecked")
+            var completedActivityTask = (Task<CollectActivityResult>) firstCompletedTask;
+            return awaitActivityWithFailureContext(completedActivityTask, activityName);
+        } catch (ClassCastException e) {
             var failure = new IllegalStateException(
-                    "Collect orchestrator received unexpected completed task before activity " + activityName);
+                    "Collect orchestrator received unexpected winner task type for activity " + activityName,
+                    e);
             signalCollectFailed(orchestrationContext, coordinatorEntityId, failure);
             throw failure;
-        }
-
-        try {
-            // Consume the winning activity task exactly once to avoid replay-side await issues.
-            return awaitActivityWithFailureContext(activityTask, activityName);
         } catch (IllegalStateException e) {
             signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
             throw e;
