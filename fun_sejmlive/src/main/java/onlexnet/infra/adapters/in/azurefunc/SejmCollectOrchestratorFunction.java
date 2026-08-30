@@ -51,70 +51,70 @@ public final class SejmCollectOrchestratorFunction {
         return runOrchestratorInter(new OrchestrationContext(orchestrationContext));
     }
 
-    CollectResult runOrchestratorInter(OrchestrationContext orchestrationContext) {
+    CollectResult runOrchestratorInter(OrchestrationContext ctx) {
         EntityInstanceId coordinatorEntityId = COLLECT_COORDINATOR_ENTITY_ID;
         String activitySource;
 
         try {
             var input = this.jsonValidator.validateReceived(
                     JsonValidator.COLLECT_ORCHESTRATION_INPUT,
-                    orchestrationContext.getInput(CollectOrchestrationInput.class));
+                    ctx.getInput(CollectOrchestrationInput.class));
             coordinatorEntityId = EntityInstanceId.fromString(input.getCoordinatorEntityId());
             activitySource = input.getSource();
         } catch (RuntimeException e) {
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
+            signalCollectFailed(ctx, coordinatorEntityId, e);
             throw e;
         }
 
-        var cancelRequestedTask = orchestrationContext.waitForExternalEvent(COLLECT_CANCEL_EVENT_NAME, String.class);
+        var cancelRequestedTask = ctx.waitForExternalEvent(COLLECT_CANCEL_EVENT_NAME, String.class);
 
-        var votingTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_VOTINGS, activitySource);
+        var votingTask = startActivityWithRetry(ctx, SejmCollectFunctions.ACTIVITY_VOTINGS, activitySource);
         var votingResult = awaitActivityOrCancel(
-                orchestrationContext,
+                ctx,
                 coordinatorEntityId,
                 cancelRequestedTask,
                 votingTask,
                 SejmCollectFunctions.ACTIVITY_VOTINGS);
 
         var committeesTask =
-                startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_COMMITTEES, activitySource);
+                startActivityWithRetry(ctx, SejmCollectFunctions.ACTIVITY_COMMITTEES, activitySource);
         var committeesResult = awaitActivityOrCancel(
-                orchestrationContext,
+                ctx,
                 coordinatorEntityId,
                 cancelRequestedTask,
                 committeesTask,
                 SejmCollectFunctions.ACTIVITY_COMMITTEES);
 
-        var printsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_PRINTS, activitySource);
+        var printsTask = startActivityWithRetry(ctx, SejmCollectFunctions.ACTIVITY_PRINTS, activitySource);
         var printsResult = awaitActivityOrCancel(
-                orchestrationContext,
+                ctx,
                 coordinatorEntityId,
                 cancelRequestedTask,
                 printsTask,
                 SejmCollectFunctions.ACTIVITY_PRINTS);
 
         var interpellationsTask = startActivityWithRetry(
-                orchestrationContext,
+                ctx,
                 SejmCollectFunctions.ACTIVITY_INTERPELLATIONS,
                 activitySource);
         var interpellationsResult = awaitActivityOrCancel(
-                orchestrationContext,
+                ctx,
                 coordinatorEntityId,
                 cancelRequestedTask,
                 interpellationsTask,
                 SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
 
-        var questionsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_QUESTIONS, activitySource);
+        var questionsTask = startActivityWithRetry(ctx, SejmCollectFunctions.ACTIVITY_QUESTIONS, activitySource);
         var questionsResult = awaitActivityOrCancel(
-                orchestrationContext,
+                ctx,
                 coordinatorEntityId,
                 cancelRequestedTask,
                 questionsTask,
                 SejmCollectFunctions.ACTIVITY_QUESTIONS);
 
-        var billsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_BILLS, activitySource);
+        var billsTask = startActivityWithRetry(ctx, SejmCollectFunctions.ACTIVITY_BILLS, activitySource);
         var billsResult = awaitActivityOrCancel(
-                orchestrationContext,
+                ctx,
                 coordinatorEntityId,
                 cancelRequestedTask,
                 billsTask,
@@ -129,20 +129,20 @@ public final class SejmCollectOrchestratorFunction {
             counts.put("WRITTEN_QUESTION", requireCount(questionsResult));
             counts.put("BILL", requireCount(billsResult));
 
-            reconcileTermSnapshot(orchestrationContext, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
+            reconcileTermSnapshot(ctx, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
 
             var result = new CollectResult();
             result.setCountsByType(Collections.unmodifiableMap(new HashMap<>(counts)));
             this.jsonValidator.validateToSend(JsonValidator.COLLECT_RESULT, result);
             var completion = new CollectCompletion();
-            completion.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
+            completion.setOrchestrationInstanceId(ctx.getInstanceId());
             this.jsonValidator.validateToSend(JsonValidator.COLLECT_COMPLETION, completion);
-            orchestrationContext.signalEntity(coordinatorEntityId, COLLECT_COMPLETED.methodName(), completion);
+            ctx.signalEntity(coordinatorEntityId, COLLECT_COMPLETED.methodName(), completion);
             return result;
         } catch (OrchestratorBlockedException e) {
             throw e;
         } catch (RuntimeException e) {
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
+            signalCollectFailed(ctx, coordinatorEntityId, e);
             throw e;
         }
     }
