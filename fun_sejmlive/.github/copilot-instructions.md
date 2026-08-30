@@ -98,6 +98,10 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Keep Azure Function triggers split by responsibility:
   - one entrypoint class per trigger/orchestrator/activity.
   - shared behavior in a dedicated support class (for example `...FunctionSupport`).
+- Durable job orchestrations (batch/collect/publish flows) must guarantee a terminal durable runtime state:
+  - success path ends with method return (`ExecutionCompleted`),
+  - failure path ends with an unhandled exception from orchestrator code (`ExecutionFailed`).
+  Avoid patterns that can leave an instance indefinitely `Running` without an explicit long-lived design.
 - Durable orchestrators must never catch `com.microsoft.durabletask.interruption.OrchestratorBlockedException`.
   Since it extends `RuntimeException`, do not place blocking `Task.await()` calls inside broad `RuntimeException` or
   `Exception` catches. Keep failure-reporting catches around only post-await processing, or otherwise ensure the blocking

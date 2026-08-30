@@ -159,14 +159,26 @@ public class SejmCollectFunctionSupport {
             throw wrapped;
         }
 
-        try {
-            var votingResult = awaitActivityWithFailureContext(votingTask, SejmCollectFunctions.ACTIVITY_VOTINGS);
-            var committeesResult = awaitActivityWithFailureContext(committeesTask, SejmCollectFunctions.ACTIVITY_COMMITTEES);
-            var printsResult = awaitActivityWithFailureContext(printsTask, SejmCollectFunctions.ACTIVITY_PRINTS);
-            var interpellationsResult = awaitActivityWithFailureContext(interpellationsTask, SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
-            var questionsResult = awaitActivityWithFailureContext(questionsTask, SejmCollectFunctions.ACTIVITY_QUESTIONS);
-            var billsResult = awaitActivityWithFailureContext(billsTask, SejmCollectFunctions.ACTIVITY_BILLS);
+        CollectActivityResult votingResult;
+        CollectActivityResult committeesResult;
+        CollectActivityResult printsResult;
+        CollectActivityResult interpellationsResult;
+        CollectActivityResult questionsResult;
+        CollectActivityResult billsResult;
 
+        try {
+            votingResult = awaitActivityWithFailureContext(votingTask, SejmCollectFunctions.ACTIVITY_VOTINGS);
+            committeesResult = awaitActivityWithFailureContext(committeesTask, SejmCollectFunctions.ACTIVITY_COMMITTEES);
+            printsResult = awaitActivityWithFailureContext(printsTask, SejmCollectFunctions.ACTIVITY_PRINTS);
+            interpellationsResult = awaitActivityWithFailureContext(interpellationsTask, SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
+            questionsResult = awaitActivityWithFailureContext(questionsTask, SejmCollectFunctions.ACTIVITY_QUESTIONS);
+            billsResult = awaitActivityWithFailureContext(billsTask, SejmCollectFunctions.ACTIVITY_BILLS);
+        } catch (IllegalStateException e) {
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
+            throw e;
+        }
+
+        try {
             var counts = new HashMap<String, Integer>();
             counts.put("VOTING", requireCount(votingResult));
             counts.put("COMMITTEE_SITTING", requireCount(committeesResult));
