@@ -293,6 +293,7 @@ func durable terminate --id <instance-id> --reason "Manual termination"
 | `/help` | Show available commands |
 | `/data` | Show current Sejm term info |
 | `/collect` | Trigger immediate data collection |
+| `/collect_recover` | Force `CollectCoordinator` to start next collect run (`forceStartNext`) |
 | `/publish` | Trigger immediate digest publishing |
 
 ### Authorization

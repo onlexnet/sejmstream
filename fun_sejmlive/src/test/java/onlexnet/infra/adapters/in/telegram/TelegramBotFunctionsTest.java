@@ -28,12 +28,18 @@ import com.microsoft.azure.functions.HttpStatusType;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
+import com.microsoft.durabletask.DurableEntityClient;
+import com.microsoft.durabletask.DurableTaskClient;
+import com.microsoft.durabletask.EntityInstanceId;
+import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 
 import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.in.admin.AdminUseCase;
+import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.TelegramNotifier;
+import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations;
 
 @NullUnmarked
 class TelegramBotFunctionsTest {
@@ -44,6 +50,7 @@ class TelegramBotFunctionsTest {
         var method = TelegramBotFunctions.class.getDeclaredMethod(
                 "telegramWebhook",
                 HttpRequestMessage.class,
+            DurableClientContext.class,
                 ExecutionContext.class);
 
         var functionName = method.getAnnotation(FunctionName.class);
@@ -63,8 +70,10 @@ class TelegramBotFunctionsTest {
         var actionParser = new TelegramAdminActionParser();
         var outcomePresenter = new TelegramAdminOutcomePresenter();
         var telegramNotifier = mock(TelegramNotifier.class);
+        var accessPolicy = allowAll();
         var functions = new TelegramBotFunctions(
             adminUseCase,
+            accessPolicy,
             actionParser,
             outcomePresenter,
             telegramNotifier,
@@ -89,6 +98,7 @@ class TelegramBotFunctionsTest {
 
         var response = functions.telegramWebhook(
                 new FakeHttpRequestMessage<>(Optional.of(payload)),
+            mock(DurableClientContext.class),
                 new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
@@ -107,8 +117,10 @@ class TelegramBotFunctionsTest {
         var actionParser = new TelegramAdminActionParser();
         var outcomePresenter = new TelegramAdminOutcomePresenter();
         var telegramNotifier = mock(TelegramNotifier.class);
+        var accessPolicy = allowAll();
         var functions = new TelegramBotFunctions(
             adminUseCase,
+            accessPolicy,
             actionParser,
             outcomePresenter,
             telegramNotifier,
@@ -133,6 +145,7 @@ class TelegramBotFunctionsTest {
 
         var response = functions.telegramWebhook(
                 new FakeHttpRequestMessage<>(Optional.of(payload)),
+            mock(DurableClientContext.class),
                 new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
@@ -147,8 +160,10 @@ class TelegramBotFunctionsTest {
         var actionParser = new TelegramAdminActionParser();
         var outcomePresenter = new TelegramAdminOutcomePresenter();
         var telegramNotifier = mock(TelegramNotifier.class);
+        var accessPolicy = allowAll();
         var functions = new TelegramBotFunctions(
                                 adminUseCase,
+                    accessPolicy,
                                 actionParser,
                                 outcomePresenter,
                                 telegramNotifier,
@@ -173,6 +188,7 @@ class TelegramBotFunctionsTest {
 
         var response = functions.telegramWebhook(
                                 new FakeHttpRequestMessage<>(Optional.of(payload)),
+                                mock(DurableClientContext.class),
                                 new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
@@ -186,8 +202,10 @@ class TelegramBotFunctionsTest {
         var actionParser = new TelegramAdminActionParser();
         var outcomePresenter = new TelegramAdminOutcomePresenter();
         var telegramNotifier = mock(TelegramNotifier.class);
+        var accessPolicy = allowAll();
         var functions = new TelegramBotFunctions(
             adminUseCase,
+            accessPolicy,
             actionParser,
             outcomePresenter,
             telegramNotifier,
@@ -195,6 +213,7 @@ class TelegramBotFunctionsTest {
 
         var response = functions.telegramWebhook(
                 new FakeHttpRequestMessage<>(Optional.of("{broken-json")),
+            mock(DurableClientContext.class),
                 new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
@@ -202,6 +221,104 @@ class TelegramBotFunctionsTest {
         verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
         verify(telegramNotifier, never()).sendMessage(eq(1001L), any(String.class));
     }
+
+        @Test
+        void givenCollectRecoverCommand_whenAuthorized_thenSignalsCoordinatorAndSkipsUseCase() {
+        var adminUseCase = mock(AdminUseCase.class);
+        var actionParser = new TelegramAdminActionParser();
+        var outcomePresenter = new TelegramAdminOutcomePresenter();
+        var telegramNotifier = mock(TelegramNotifier.class);
+        var accessPolicy = allowAll();
+        var durableClientContext = mock(DurableClientContext.class);
+        var durableTaskClient = mock(DurableTaskClient.class);
+        var entityClient = mock(DurableEntityClient.class);
+        when(durableClientContext.getClient()).thenReturn(durableTaskClient);
+        when(durableTaskClient.getEntities()).thenReturn(entityClient);
+
+        var functions = new TelegramBotFunctions(
+            adminUseCase,
+            accessPolicy,
+            actionParser,
+            outcomePresenter,
+            telegramNotifier,
+            new ObjectMapper());
+
+        var payload = """
+            {
+              "update_id": 2,
+              "message": {
+                "message_id": 33,
+                "chat": {
+                  "id": 1001,
+                  "type": "private"
+                },
+                "text": "/collect_recover"
+              }
+            }
+            """;
+
+        var response = functions.telegramWebhook(
+            new FakeHttpRequestMessage<>(Optional.of(payload)),
+            durableClientContext,
+            new FakeExecutionContext());
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
+        verify(entityClient).signalEntity(
+            eq(new EntityInstanceId("CollectCoordinator", "singleton")),
+            eq(CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName()),
+            eq("telegram-recovery"));
+        verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
+        verify(telegramNotifier).sendMessage(eq(1001L), contains("forceStartNext"));
+        }
+
+        @Test
+        void givenCollectRecoverCommand_whenUnauthorized_thenDoesNotSignalCoordinator() {
+        var adminUseCase = mock(AdminUseCase.class);
+        var actionParser = new TelegramAdminActionParser();
+        var outcomePresenter = new TelegramAdminOutcomePresenter();
+        var telegramNotifier = mock(TelegramNotifier.class);
+        var accessPolicy = denyAll();
+        var durableClientContext = mock(DurableClientContext.class);
+
+        var functions = new TelegramBotFunctions(
+            adminUseCase,
+            accessPolicy,
+            actionParser,
+            outcomePresenter,
+            telegramNotifier,
+            new ObjectMapper());
+
+        var payload = """
+            {
+              "update_id": 3,
+              "message": {
+                "message_id": 44,
+                "chat": {
+                  "id": 2002,
+                  "type": "private"
+                },
+                "text": "/collect_recover"
+              }
+            }
+            """;
+
+        var response = functions.telegramWebhook(
+            new FakeHttpRequestMessage<>(Optional.of(payload)),
+            durableClientContext,
+            new FakeExecutionContext());
+
+        assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
+        verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
+        verify(telegramNotifier).sendMessage(eq(2002L), contains("Brak uprawnień"));
+        }
+
+        private static AdminAccessPolicy allowAll() {
+        return (actor, action) -> true;
+        }
+
+        private static AdminAccessPolicy denyAll() {
+        return (actor, action) -> false;
+        }
 
     private static final class FakeExecutionContext implements ExecutionContext {
 

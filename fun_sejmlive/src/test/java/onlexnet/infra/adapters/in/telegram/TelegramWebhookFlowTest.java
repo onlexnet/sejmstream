@@ -21,6 +21,7 @@ import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.HttpResponseMessage;
 import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.azure.functions.HttpStatusType;
+import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 
 import onlexnet.app.ports.in.collect.CollectDailyDigestUseCase;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
@@ -48,6 +49,7 @@ class TelegramWebhookFlowTest {
         var notifier = mock(TelegramNotifier.class);
         var functions = new TelegramBotFunctions(
                 useCase,
+            allowAllPolicy,
                 new TelegramAdminActionParser(),
                 new TelegramAdminOutcomePresenter(),
                 notifier,
@@ -69,6 +71,7 @@ class TelegramWebhookFlowTest {
 
         var response = functions.telegramWebhook(
                 new FakeHttpRequestMessage<>(Optional.of(payload)),
+            mock(DurableClientContext.class),
                 new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);

@@ -56,6 +56,7 @@ public final class TelegramAdminOutcomePresenter {
                 + "/help - lista komend\n"
                 + "/data - aktualna kadencja Sejmu\n"
                 + "/collect - zbierz dzisiejsze dane sejmowe\n"
+            + "/collect_recover - wymuś start kolejnego collecta w coordinatorze\n"
                 + "/publish - opublikuj dzisiejszy digest na Facebooku\n"
                 + "/version - numer builda wrzuconego na produkcję";
     }

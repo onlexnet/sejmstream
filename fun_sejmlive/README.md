@@ -9,7 +9,7 @@ Azure Functions (Java + Spring Boot) application that collects daily Sejm activi
 - Publishes daily digest to Facebook (timer + manual HTTP trigger).
 - Processes INTERPELLATION publish jobs from Azure Storage Queue with retry and dead-letter handling.
 - Maintains a dedicated durable term snapshot entity that compares current and previous term state and raises recognized change events.
-- Exposes Telegram webhook for admin commands (`/help`, `/data`, `/collect`, `/publish`, `/version`).
+- Exposes Telegram webhook for admin commands (`/help`, `/data`, `/collect`, `/collect_recover`, `/publish`, `/version`).
 
 ## Architecture
 
