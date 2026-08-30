@@ -32,21 +32,21 @@ import com.microsoft.durabletask.Task;
 import com.microsoft.durabletask.TaskFailedException;
 import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
-import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
+import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
-import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.TermSnapshotCollectedEvent;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
+import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.TermSnapshotCollectedEvent;
 import onlexnet.shared.Guards;
 
 /**
@@ -87,7 +87,7 @@ public class SejmCollectFunctionSupport {
 
     public void runTimer(
             String timerInfo,
-            com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
+            DurableClientContext clientCtx,
             ExecutionContext execCtx) {
 
         try {
@@ -103,7 +103,7 @@ public class SejmCollectFunctionSupport {
 
     public HttpResponseMessage httpStart(
             HttpRequestMessage<Optional<String>> request,
-            com.microsoft.durabletask.azurefunctions.DurableClientContext clientCtx,
+            DurableClientContext clientCtx,
             ExecutionContext execCtx) {
 
         try {
@@ -135,83 +135,69 @@ public class SejmCollectFunctionSupport {
         var activitySource = input == null
                 ? "orchestrator"
                 : Guards.orDefaultIfNullOrEmpty(input.getSource(), "orchestrator");
+        var cancelRequestedTask = orchestrationContext.waitForExternalEvent(COLLECT_CANCEL_EVENT_NAME, String.class);
 
         var votingTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_VOTINGS, activitySource);
+        var votingResult = awaitActivityOrCancel(
+                orchestrationContext,
+                coordinatorEntityId,
+                cancelRequestedTask,
+                votingTask,
+                SejmCollectFunctions.ACTIVITY_VOTINGS);
+
         var committeesTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_COMMITTEES, activitySource);
-        // var printsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_PRINTS, activitySource);
+        var committeesResult = awaitActivityOrCancel(
+                orchestrationContext,
+                coordinatorEntityId,
+                cancelRequestedTask,
+                committeesTask,
+                SejmCollectFunctions.ACTIVITY_COMMITTEES);
+
+        var printsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_PRINTS, activitySource);
+        var printsResult = awaitActivityOrCancel(
+                orchestrationContext,
+                coordinatorEntityId,
+                cancelRequestedTask,
+                printsTask,
+                SejmCollectFunctions.ACTIVITY_PRINTS);
+
         var interpellationsTask = startActivityWithRetry(
-            orchestrationContext,
-            SejmCollectFunctions.ACTIVITY_INTERPELLATIONS,
-            activitySource);
+                orchestrationContext,
+                SejmCollectFunctions.ACTIVITY_INTERPELLATIONS,
+                activitySource);
+        var interpellationsResult = awaitActivityOrCancel(
+                orchestrationContext,
+                coordinatorEntityId,
+                cancelRequestedTask,
+                interpellationsTask,
+                SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
+
         var questionsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_QUESTIONS, activitySource);
+        var questionsResult = awaitActivityOrCancel(
+                orchestrationContext,
+                coordinatorEntityId,
+                cancelRequestedTask,
+                questionsTask,
+                SejmCollectFunctions.ACTIVITY_QUESTIONS);
+
         var billsTask = startActivityWithRetry(orchestrationContext, SejmCollectFunctions.ACTIVITY_BILLS, activitySource);
-
-        var allActivitiesTask = orchestrationContext.allOf(List.of(
-            votingTask,
-            committeesTask,
-            // printsTask,
-            interpellationsTask,
-            questionsTask,
-            billsTask));
-        var cancelRequestedTask = orchestrationContext.waitForExternalEvent(COLLECT_CANCEL_EVENT_NAME, String.class);
-        var firstCompletedTask = orchestrationContext.anyOf(List.of(allActivitiesTask, cancelRequestedTask)).await();
-
-        if (firstCompletedTask == cancelRequestedTask) {
-            var cancelReason = cancelRequestedTask.await();
-            var normalizedCancelReason =
-                cancelReason == null || cancelReason.isBlank() ? "no-reason-provided" : cancelReason;
-            var cancellationFailure = new IllegalStateException(
-                "Collect orchestrator cancelled by external event '" + COLLECT_CANCEL_EVENT_NAME + "': "
-                    + normalizedCancelReason);
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, cancellationFailure);
-            throw cancellationFailure;
-        }
-
-        try {
-            allActivitiesTask.await();
-        } catch (TaskFailedException e) {
-            var wrapped = new IllegalStateException(
-                    "Collect orchestrator failed while waiting for activity completion: " + taskFailureSummary(e),
-                    e);
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, wrapped);
-            throw wrapped;
-        }
-
-        CollectActivityResult votingResult;
-        CollectActivityResult committeesResult;
-        CollectActivityResult interpellationsResult;
-        CollectActivityResult questionsResult;
-        CollectActivityResult billsResult;
-
-        try {
-            votingResult = awaitActivityWithFailureContext(votingTask, SejmCollectFunctions.ACTIVITY_VOTINGS);
-            committeesResult = awaitActivityWithFailureContext(committeesTask, SejmCollectFunctions.ACTIVITY_COMMITTEES);
-            // printsResult = awaitActivityWithFailureContext(printsTask, SejmCollectFunctions.ACTIVITY_PRINTS);
-            interpellationsResult = awaitActivityWithFailureContext(interpellationsTask, SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
-            questionsResult = awaitActivityWithFailureContext(questionsTask, SejmCollectFunctions.ACTIVITY_QUESTIONS);
-            billsResult = awaitActivityWithFailureContext(billsTask, SejmCollectFunctions.ACTIVITY_BILLS);
-        } catch (IllegalStateException e) {
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
-            throw e;
-        }
+        var billsResult = awaitActivityOrCancel(
+                orchestrationContext,
+                coordinatorEntityId,
+                cancelRequestedTask,
+                billsTask,
+                SejmCollectFunctions.ACTIVITY_BILLS);
 
         try {
             var counts = new HashMap<String, Integer>();
             counts.put("VOTING", requireCount(votingResult));
             counts.put("COMMITTEE_SITTING", requireCount(committeesResult));
-            counts.put("PRINT", 0);
+            counts.put("PRINT", requireCount(printsResult));
             counts.put("INTERPELLATION", requireCount(interpellationsResult));
             counts.put("WRITTEN_QUESTION", requireCount(questionsResult));
             counts.put("BILL", requireCount(billsResult));
 
-            reconcileTermSnapshot(
-                orchestrationContext,
-                activitySource,
-                interpellationsResult,
-                questionsResult,
-                // orEmptyList(printsResult.getItemKeys()),
-                List.of(),
-                billsResult);
+            reconcileTermSnapshot(orchestrationContext, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
 
             var result = new CollectResult();
             result.setCountsByType(Collections.unmodifiableMap(new HashMap<>(counts)));
@@ -293,12 +279,12 @@ public class SejmCollectFunctionSupport {
             var count = collectService.collectInterpellations(termNum, date);
             Log.info(execCtx, "Completed interpellations collection, count=" + count + ", term=" + termNum + ", date=" + date);
             log.debug("Activity collectInterpellations completed: {} items", count);
-                var interpellationFingerprints = loadInterpellationFingerprints(date);
-                return buildActivityResult(
+            var interpellationFingerprints = loadInterpellationFingerprints(date);
+            return buildActivityResult(
                     count,
                     termNum,
                     date,
-                        List.copyOf(new TreeSet<>(interpellationFingerprints.keySet())),
+                    List.copyOf(new TreeSet<>(interpellationFingerprints.keySet())),
                     interpellationFingerprints);
         } catch (Exception e) {
             log.error("Activity collectInterpellations failed", e);
@@ -385,27 +371,54 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-        private void reconcileTermSnapshot(
+    private CollectActivityResult awaitActivityOrCancel(
+            TaskOrchestrationContext orchestrationContext,
+            EntityInstanceId coordinatorEntityId,
+            Task<String> cancelRequestedTask,
+            Task<CollectActivityResult> activityTask,
+            String activityName) {
+        var firstCompletedTask = orchestrationContext.anyOf(List.of(activityTask, cancelRequestedTask)).await();
+
+        if (firstCompletedTask == cancelRequestedTask) {
+            var cancelReason = cancelRequestedTask.await();
+            var normalizedCancelReason =
+                    cancelReason == null || cancelReason.isBlank() ? "no-reason-provided" : cancelReason;
+            var cancellationFailure = new IllegalStateException(
+                    "Collect orchestrator cancelled by external event '" + COLLECT_CANCEL_EVENT_NAME + "': "
+                            + normalizedCancelReason);
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, cancellationFailure);
+            throw cancellationFailure;
+        }
+
+        try {
+            return awaitActivityWithFailureContext(activityTask, activityName);
+        } catch (IllegalStateException e) {
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
+            throw e;
+        }
+    }
+
+    private void reconcileTermSnapshot(
             TaskOrchestrationContext orchestrationContext,
             String activitySource,
             CollectActivityResult interpellationsResult,
             CollectActivityResult questionsResult,
-            List<String> printItemKeys,
+            CollectActivityResult printsResult,
             CollectActivityResult billsResult) {
-            var termNum = requireSnapshotTermNum(interpellationsResult);
-            var date = requireSnapshotDate(interpellationsResult);
-            var event = new TermSnapshotCollectedEvent(
+        var termNum = requireSnapshotTermNum(interpellationsResult);
+        var date = requireSnapshotDate(interpellationsResult);
+        var event = new TermSnapshotCollectedEvent(
                 date,
-                    activitySource,
-                    orchestrationContext.getInstanceId(),
+                activitySource,
+                orchestrationContext.getInstanceId(),
                 Map.copyOf(orEmptyMap(interpellationsResult.getInterpellationFingerprints())),
                 List.copyOf(orEmptyList(questionsResult.getItemKeys())),
-                List.copyOf(orEmptyList(printItemKeys)),
+                List.copyOf(orEmptyList(printsResult.getItemKeys())),
                 List.copyOf(orEmptyList(billsResult.getItemKeys())));
-            orchestrationContext.signalEntity(
+        orchestrationContext.signalEntity(
                 termSnapshotEntityId(termNum),
-                    TERM_SNAPSHOT_COLLECTED.methodName(),
-                    event);
+                TERM_SNAPSHOT_COLLECTED.methodName(),
+                event);
     }
 
     private static EntityInstanceId termSnapshotEntityId(int termNum) {
@@ -535,16 +548,6 @@ public class SejmCollectFunctionSupport {
             return exception.getClass().getSimpleName();
         }
         return message;
-    }
-
-    private static String taskFailureSummary(TaskFailedException exception) {
-        var details = exception.getErrorDetails();
-        if (details == null) {
-            return orchestrationFailureMessage(exception);
-        }
-        var errorType = details.getErrorType() == null ? "unknown" : details.getErrorType();
-        var errorMessage = details.getErrorMessage() == null ? "(no message)" : details.getErrorMessage();
-        return errorType + ": " + errorMessage;
     }
 
     private void signalCollectFailed(
