@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
@@ -311,6 +312,86 @@ class SejmCollectOrchestratorFunctionTest {
                 any(),
                 eq(CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()),
                 any());
+    }
+
+    @Test
+    void givenAnyOfReturnsWrapperTask_whenOrchestratorRuns_thenUsesOriginalActivityTaskAndSchedulesNextActivities() {
+        var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+        var collectionDate = LocalDate.of(2026, 8, 27);
+        when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+
+        var votingTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of(), java.util.Map.of()));
+        var committeesTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(2, 10, collectionDate, List.of(), java.util.Map.of()));
+        var printsTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(3, 10, collectionDate, List.of("401"), java.util.Map.of()));
+        var interpellationsTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(4, 10, collectionDate, List.of("77"), java.util.Map.of("77", "abc")));
+        var questionsTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(5, 10, collectionDate, List.of("301"), java.util.Map.of()));
+        var billsTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(6, 10, collectionDate, List.of("501"), java.util.Map.of()));
+
+        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-wrapper");
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(votingTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_COMMITTEES),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(committeesTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_PRINTS),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(printsTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(interpellationsTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_QUESTIONS),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(questionsTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_BILLS),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(billsTask);
+
+        var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
+        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
+
+        var activityTasks = List.of(votingTask, committeesTask, printsTask, interpellationsTask, questionsTask, billsTask);
+        var nextTask = new AtomicInteger(0);
+        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            var ignoredTasks = (List<Task<?>>) invocation.getArgument(0);
+            var wrappedWinner = activityTasks.get(nextTask.getAndIncrement());
+            return SejmCollectFunctionTestSupport.completedTask((Task<?>) wrappedWinner);
+        });
+
+        var result = orchestratorFunction.runOrchestrator(orchestrationContext);
+
+        assertThat(result.getCountsByType()).containsEntry("VOTING", 1);
+        assertThat(result.getCountsByType()).containsEntry("COMMITTEE_SITTING", 2);
+        assertThat(result.getCountsByType()).containsEntry("PRINT", 3);
+        assertThat(result.getCountsByType()).containsEntry("INTERPELLATION", 4);
+        assertThat(result.getCountsByType()).containsEntry("WRITTEN_QUESTION", 5);
+        assertThat(result.getCountsByType()).containsEntry("BILL", 6);
+
+        verify(orchestrationContext, times(6)).callActivity(
+                any(String.class),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class));
     }
 
         @Test

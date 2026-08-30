@@ -206,15 +206,7 @@ public final class SejmCollectOrchestratorFunction {
         }
 
         try {
-            @SuppressWarnings("unchecked")
-            var completedActivityTask = (Task<CollectActivityResult>) firstCompletedTask;
-            return awaitActivityWithFailureContext(completedActivityTask, activityName);
-        } catch (ClassCastException e) {
-            var failure = new IllegalStateException(
-                    "Collect orchestrator received unexpected winner task type for activity " + activityName,
-                    e);
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, failure);
-            throw failure;
+            return awaitActivityWithFailureContext(activityTask, activityName);
         } catch (IllegalStateException e) {
             signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
             throw e;
