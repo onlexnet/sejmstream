@@ -195,7 +195,7 @@ class SejmCollectOrchestratorFunctionTest {
     }
 
     @Test
-    void givenAllOfAwaitTaskFailure_whenOrchestratorRuns_thenSignalsFailureAndThrowsIllegalState() {
+        void givenAllOfAwaitTaskFailure_whenOrchestratorRuns_thenPropagatesTaskFailureWithoutFailureSignal() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
@@ -225,17 +225,16 @@ class SejmCollectOrchestratorFunctionTest {
                 .thenReturn(winnerAllOfFailureTask);
 
         assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Collect orchestrator failed while waiting for activity completion");
+                .isSameAs(allOfFailure);
 
-        verify(orchestrationContext).signalEntity(
+        verify(orchestrationContext, never()).signalEntity(
                 any(),
                 eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
                 any());
     }
 
     @Test
-    void givenSnapshotSignalFails_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
+        void givenSnapshotSignalFails_whenOrchestratorRuns_thenThrowsWithoutFailureSignal() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
@@ -279,7 +278,7 @@ class SejmCollectOrchestratorFunctionTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("snapshot signal failed");
 
-        verify(orchestrationContext).signalEntity(
+        verify(orchestrationContext, never()).signalEntity(
                 any(),
                 eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
                 any());

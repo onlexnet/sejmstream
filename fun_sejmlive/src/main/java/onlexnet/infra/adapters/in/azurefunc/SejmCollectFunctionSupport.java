@@ -32,7 +32,6 @@ import com.microsoft.durabletask.Task;
 import com.microsoft.durabletask.TaskFailedException;
 import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
-import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 
 import lombok.RequiredArgsConstructor;
@@ -167,15 +166,7 @@ public class SejmCollectFunctionSupport {
             throw cancellationFailure;
         }
 
-        try {
-            allActivitiesTask.await();
-        } catch (TaskFailedException e) {
-            var wrapped = new IllegalStateException(
-                    "Collect orchestrator failed while waiting for activity completion: " + taskFailureSummary(e),
-                    e);
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, wrapped);
-            throw wrapped;
-        }
+        allActivitiesTask.await();
 
         CollectActivityResult votingResult;
         CollectActivityResult committeesResult;
@@ -184,43 +175,31 @@ public class SejmCollectFunctionSupport {
         CollectActivityResult questionsResult;
         CollectActivityResult billsResult;
 
-        try {
-            votingResult = awaitActivityWithFailureContext(votingTask, SejmCollectFunctions.ACTIVITY_VOTINGS);
-            committeesResult = awaitActivityWithFailureContext(committeesTask, SejmCollectFunctions.ACTIVITY_COMMITTEES);
-            printsResult = awaitActivityWithFailureContext(printsTask, SejmCollectFunctions.ACTIVITY_PRINTS);
-            interpellationsResult = awaitActivityWithFailureContext(interpellationsTask, SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
-            questionsResult = awaitActivityWithFailureContext(questionsTask, SejmCollectFunctions.ACTIVITY_QUESTIONS);
-            billsResult = awaitActivityWithFailureContext(billsTask, SejmCollectFunctions.ACTIVITY_BILLS);
-        } catch (IllegalStateException e) {
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
-            throw e;
-        }
+        votingResult = awaitActivityWithFailureContext(votingTask, SejmCollectFunctions.ACTIVITY_VOTINGS);
+        committeesResult = awaitActivityWithFailureContext(committeesTask, SejmCollectFunctions.ACTIVITY_COMMITTEES);
+        printsResult = awaitActivityWithFailureContext(printsTask, SejmCollectFunctions.ACTIVITY_PRINTS);
+        interpellationsResult = awaitActivityWithFailureContext(interpellationsTask, SejmCollectFunctions.ACTIVITY_INTERPELLATIONS);
+        questionsResult = awaitActivityWithFailureContext(questionsTask, SejmCollectFunctions.ACTIVITY_QUESTIONS);
+        billsResult = awaitActivityWithFailureContext(billsTask, SejmCollectFunctions.ACTIVITY_BILLS);
 
-        try {
-            var counts = new HashMap<String, Integer>();
-            counts.put("VOTING", requireCount(votingResult));
-            counts.put("COMMITTEE_SITTING", requireCount(committeesResult));
-            counts.put("PRINT", requireCount(printsResult));
-            counts.put("INTERPELLATION", requireCount(interpellationsResult));
-            counts.put("WRITTEN_QUESTION", requireCount(questionsResult));
-            counts.put("BILL", requireCount(billsResult));
+        var counts = new HashMap<String, Integer>();
+        counts.put("VOTING", requireCount(votingResult));
+        counts.put("COMMITTEE_SITTING", requireCount(committeesResult));
+        counts.put("PRINT", requireCount(printsResult));
+        counts.put("INTERPELLATION", requireCount(interpellationsResult));
+        counts.put("WRITTEN_QUESTION", requireCount(questionsResult));
+        counts.put("BILL", requireCount(billsResult));
 
-            reconcileTermSnapshot(orchestrationContext, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
+        reconcileTermSnapshot(orchestrationContext, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
 
-            var result = new CollectResult();
-            result.setCountsByType(Collections.unmodifiableMap(new HashMap<>(counts)));
-            this.jsonValidator.validateToSend(JsonValidator.COLLECT_RESULT, result);
-            var completion = new CollectCompletion();
-            completion.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
-            this.jsonValidator.validateToSend(JsonValidator.COLLECT_COMPLETION, completion);
-            orchestrationContext.signalEntity(coordinatorEntityId, COLLECT_COMPLETED.methodName(), completion);
-            return result;
-        } catch (OrchestratorBlockedException e) {
-            throw e;
-        } catch (RuntimeException e) {
-            signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
-            throw e;
-        }
+        var result = new CollectResult();
+        result.setCountsByType(Collections.unmodifiableMap(new HashMap<>(counts)));
+        this.jsonValidator.validateToSend(JsonValidator.COLLECT_RESULT, result);
+        var completion = new CollectCompletion();
+        completion.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
+        this.jsonValidator.validateToSend(JsonValidator.COLLECT_COMPLETION, completion);
+        orchestrationContext.signalEntity(coordinatorEntityId, COLLECT_COMPLETED.methodName(), completion);
+        return result;
     }
 
     public CollectActivityResult collectVotings(CollectActivityRequest request, ExecutionContext execCtx) {
@@ -521,16 +500,6 @@ public class SejmCollectFunctionSupport {
             return exception.getClass().getSimpleName();
         }
         return message;
-    }
-
-    private static String taskFailureSummary(TaskFailedException exception) {
-        var details = exception.getErrorDetails();
-        if (details == null) {
-            return orchestrationFailureMessage(exception);
-        }
-        var errorType = details.getErrorType() == null ? "unknown" : details.getErrorType();
-        var errorMessage = details.getErrorMessage() == null ? "(no message)" : details.getErrorMessage();
-        return errorType + ": " + errorMessage;
     }
 
     private void signalCollectFailed(
