@@ -366,13 +366,21 @@ public class SejmCollectFunctionSupport {
 
     private CollectActivityResult awaitActivityWithFailureContext(Task<CollectActivityResult> task, String activityName) {
         try {
-            return this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_RESULT, task.await());
+            var activityResult = task.await();
+            if (activityResult == null) {
+                throw new IllegalStateException("Collect orchestrator received null result from activity " + activityName);
+            }
+            return this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_RESULT, activityResult);
         } catch (TaskFailedException e) {
             var details = e.getErrorDetails();
             var errorType = details == null ? "unknown" : details.getErrorType();
             var errorMessage = details == null ? e.getMessage() : details.getErrorMessage();
             throw new IllegalStateException(
                     "Collect orchestrator failed in activity " + activityName + " (" + errorType + "): " + errorMessage,
+                    e);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException(
+                    "Collect orchestrator received invalid payload from activity " + activityName + ": " + e.getMessage(),
                     e);
         }
     }

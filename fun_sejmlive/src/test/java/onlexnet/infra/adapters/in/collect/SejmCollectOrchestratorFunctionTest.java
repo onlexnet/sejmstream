@@ -221,6 +221,46 @@ class SejmCollectOrchestratorFunctionTest {
                 any());
     }
 
+    @Test
+    void givenActivityReturnsNullPayload_whenOrchestratorRuns_thenSignalsFailureAndThrowsIllegalState() {
+        var collectService = mock(SejmCollectOperations.class);
+        var sejmApiClient = mock(SejmApiClient.class);
+        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+
+        @SuppressWarnings("unchecked")
+        Task<CollectActivityResult> nullResultTask = mock(Task.class);
+        when(nullResultTask.await()).thenReturn(null);
+
+        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-null-result");
+        when(orchestrationContext.callActivity(
+                any(String.class),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(nullResultTask);
+
+        Task<List<CollectActivityResult>> allOfTask = new com.microsoft.durabletask.CompletedTask<>(List.of());
+        when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
+                .thenReturn(allOfTask);
+        var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
+        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class))
+                .thenReturn(cancelEventTask);
+        @SuppressWarnings("unchecked")
+        Task<Task<?>> winnerAllOfTask = mock(Task.class);
+        doReturn(allOfTask).when(winnerAllOfTask).await();
+        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any()))
+                .thenReturn(winnerAllOfTask);
+
+        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("received null result from activity");
+
+        verify(orchestrationContext).signalEntity(
+                any(),
+                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
+                any());
+    }
+
         @Test
         void givenSnapshotSignalFails_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
         var collectService = mock(SejmCollectOperations.class);
