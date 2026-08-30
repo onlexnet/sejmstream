@@ -57,13 +57,6 @@ class SejmCollectOrchestratorFunctionTest {
                         collectionDate,
                         List.of(),
                         java.util.Map.of()));
-        var printsTask = SejmCollectFunctionTestSupport.completedTask(
-                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
-                        3,
-                        10,
-                        collectionDate,
-                        java.util.List.of("401"),
-                        java.util.Map.of()));
         var interpellationsTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(
                         4,
@@ -98,11 +91,6 @@ class SejmCollectOrchestratorFunctionTest {
                 any(TaskOptions.class),
                 eq(CollectActivityResult.class))).thenReturn(committeesTask);
         when(orchestrationContext.callActivity(
-                eq(SejmCollectFunctions.ACTIVITY_PRINTS),
-                any(CollectActivityRequest.class),
-                any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(printsTask);
-        when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
@@ -120,7 +108,6 @@ class SejmCollectOrchestratorFunctionTest {
         Task<List<CollectActivityResult>> allOfTask = new com.microsoft.durabletask.CompletedTask<>(List.of(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of(), java.util.Map.of()),
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(2, 10, collectionDate, List.of(), java.util.Map.of()),
-                SejmCollectFunctionTestSupport.activityResultWithSnapshot(3, 10, collectionDate, java.util.List.of("401"), java.util.Map.of()),
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(4, 10, collectionDate, java.util.List.of("77"), java.util.Map.of("77", "abc")),
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(5, 10, collectionDate, java.util.List.of("301"), java.util.Map.of()),
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(6, 10, collectionDate, java.util.List.of("501"), java.util.Map.of())));
@@ -139,12 +126,12 @@ class SejmCollectOrchestratorFunctionTest {
 
         assertThat(result.getCountsByType()).containsEntry("VOTING", 1);
         assertThat(result.getCountsByType()).containsEntry("COMMITTEE_SITTING", 2);
-        assertThat(result.getCountsByType()).containsEntry("PRINT", 3);
+        assertThat(result.getCountsByType()).containsEntry("PRINT", 0);
         assertThat(result.getCountsByType()).containsEntry("INTERPELLATION", 4);
         assertThat(result.getCountsByType()).containsEntry("WRITTEN_QUESTION", 5);
         assertThat(result.getCountsByType()).containsEntry("BILL", 6);
 
-        verify(orchestrationContext, times(6)).callActivity(
+        verify(orchestrationContext, times(5)).callActivity(
                 any(String.class),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
@@ -194,8 +181,8 @@ class SejmCollectOrchestratorFunctionTest {
                 any(), eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()), any());
     }
 
-    @Test
-        void givenAllOfAwaitTaskFailure_whenOrchestratorRuns_thenPropagatesTaskFailureWithoutFailureSignal() {
+        @Test
+        void givenAllOfAwaitTaskFailure_whenOrchestratorRuns_thenSignalsFailureAndThrowsIllegalState() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
@@ -225,16 +212,17 @@ class SejmCollectOrchestratorFunctionTest {
                 .thenReturn(winnerAllOfFailureTask);
 
         assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
-                .isSameAs(allOfFailure);
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Collect orchestrator failed while waiting for activity completion");
 
-        verify(orchestrationContext, never()).signalEntity(
+        verify(orchestrationContext).signalEntity(
                 any(),
                 eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
                 any());
     }
 
-    @Test
-        void givenSnapshotSignalFails_whenOrchestratorRuns_thenThrowsWithoutFailureSignal() {
+        @Test
+        void givenSnapshotSignalFails_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);
         var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
@@ -278,7 +266,7 @@ class SejmCollectOrchestratorFunctionTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("snapshot signal failed");
 
-        verify(orchestrationContext, never()).signalEntity(
+        verify(orchestrationContext).signalEntity(
                 any(),
                 eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
                 any());
