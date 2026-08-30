@@ -390,7 +390,15 @@ public class SejmCollectFunctionSupport {
             throw cancellationFailure;
         }
 
+        if (firstCompletedTask != activityTask) {
+            var failure = new IllegalStateException(
+                    "Collect orchestrator received unexpected completed task before activity " + activityName);
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, failure);
+            throw failure;
+        }
+
         try {
+            // Consume the winning activity task exactly once to avoid replay-side await issues.
             return awaitActivityWithFailureContext(activityTask, activityName);
         } catch (IllegalStateException e) {
             signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
