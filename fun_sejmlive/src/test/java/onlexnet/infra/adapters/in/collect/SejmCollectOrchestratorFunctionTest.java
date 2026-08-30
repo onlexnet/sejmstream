@@ -372,8 +372,6 @@ class SejmCollectOrchestratorFunctionTest {
         var activityTasks = List.of(votingTask, committeesTask, printsTask, interpellationsTask, questionsTask, billsTask);
         var nextTask = new AtomicInteger(0);
         when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenAnswer(invocation -> {
-            @SuppressWarnings("unchecked")
-            var ignoredTasks = (List<Task<?>>) invocation.getArgument(0);
             var wrappedWinner = activityTasks.get(nextTask.getAndIncrement());
             return SejmCollectFunctionTestSupport.completedTask((Task<?>) wrappedWinner);
         });
