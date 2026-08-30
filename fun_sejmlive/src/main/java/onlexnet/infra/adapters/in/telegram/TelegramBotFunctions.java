@@ -41,12 +41,13 @@ public final class TelegramBotFunctions {
 
     static final String HTTP_FUNCTION_NAME = "Fun_TelegramWebhook";
     static final String HTTP_FUNCTION_ROUTE = "telegram/webhook";
-        private static final String COLLECT_RECOVER_COMMAND = "/collect_recover";
-        private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID =
+    private static final String COLLECT_RECOVER_COMMAND = "/collect_recover";
+    private static final String COLLECT_RECOVER_SOURCE = "telegram-recovery";
+    private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID =
             new EntityInstanceId(SejmCollectFunctions.COORDINATOR_ENTITY_NAME, SejmCollectFunctions.COORDINATOR_ENTITY_KEY);
 
     private final AdminUseCase adminUseCase;
-        private final AdminAccessPolicy adminAccessPolicy;
+    private final AdminAccessPolicy adminAccessPolicy;
     private final TelegramAdminActionParser adminActionParser;
     private final TelegramAdminOutcomePresenter outcomePresenter;
     private final TelegramNotifier telegramNotifier;
@@ -119,13 +120,25 @@ public final class TelegramBotFunctions {
         }
 
         try {
-            durableClientContext.getClient().getEntities().signalEntity(
-                    COLLECT_COORDINATOR_ENTITY_ID,
-                    CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName(),
-                    "telegram-recovery");
+            var entityClient = durableClientContext.getClient().getEntities();
+            try {
+            entityClient.signalEntity(
+                COLLECT_COORDINATOR_ENTITY_ID,
+                CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName(),
+                COLLECT_RECOVER_SOURCE);
             this.telegramNotifier.sendMessage(
-                    chatId,
-                    "Wysłano recovery collecta (forceStartNext). Koordynator powinien uruchomić kolejny przebieg.");
+                chatId,
+                "Wysłano recovery collecta (forceStartNext). Koordynator powinien uruchomić kolejny przebieg.");
+            } catch (RuntimeException forceStartException) {
+            entityClient.signalEntity(
+                COLLECT_COORDINATOR_ENTITY_ID,
+                CollectCoordinatorContractOperations.REQUEST_COLLECT.methodName(),
+                COLLECT_RECOVER_SOURCE);
+            this.telegramNotifier.sendMessage(
+                chatId,
+                "forceStartNext nie powiódł się, wysłano fallback requestCollect: "
+                    + forceStartException.getMessage());
+            }
         } catch (RuntimeException exception) {
             this.telegramNotifier.sendMessage(
                     chatId,

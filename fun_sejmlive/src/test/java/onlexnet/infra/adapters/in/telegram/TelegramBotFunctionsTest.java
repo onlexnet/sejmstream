@@ -8,6 +8,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 
 import java.net.URI;
 import java.util.Map;
@@ -270,6 +271,61 @@ class TelegramBotFunctionsTest {
         verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
         verify(telegramNotifier).sendMessage(eq(1001L), contains("forceStartNext"));
         }
+
+                @Test
+                void givenCollectRecoverCommand_whenForceStartFails_thenFallsBackToRequestCollect() {
+                var adminUseCase = mock(AdminUseCase.class);
+                var actionParser = new TelegramAdminActionParser();
+                var outcomePresenter = new TelegramAdminOutcomePresenter();
+                var telegramNotifier = mock(TelegramNotifier.class);
+                var accessPolicy = allowAll();
+                var durableClientContext = mock(DurableClientContext.class);
+                var durableTaskClient = mock(DurableTaskClient.class);
+                var entityClient = mock(DurableEntityClient.class);
+                when(durableClientContext.getClient()).thenReturn(durableTaskClient);
+                when(durableTaskClient.getEntities()).thenReturn(entityClient);
+                doThrow(new RuntimeException("force operation unavailable"))
+                        .when(entityClient)
+                        .signalEntity(
+                                eq(new EntityInstanceId("CollectCoordinator", "singleton")),
+                                eq(CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName()),
+                                eq("telegram-recovery"));
+
+                var functions = new TelegramBotFunctions(
+                        adminUseCase,
+                        accessPolicy,
+                        actionParser,
+                        outcomePresenter,
+                        telegramNotifier,
+                        new ObjectMapper());
+
+                var payload = """
+                        {
+                            "update_id": 21,
+                            "message": {
+                                "message_id": 55,
+                                "chat": {
+                                    "id": 1001,
+                                    "type": "private"
+                                },
+                                "text": "/collect_recover"
+                            }
+                        }
+                        """;
+
+                var response = functions.telegramWebhook(
+                        new FakeHttpRequestMessage<>(Optional.of(payload)),
+                        durableClientContext,
+                        new FakeExecutionContext());
+
+                assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
+                verify(entityClient).signalEntity(
+                        eq(new EntityInstanceId("CollectCoordinator", "singleton")),
+                        eq(CollectCoordinatorContractOperations.REQUEST_COLLECT.methodName()),
+                        eq("telegram-recovery"));
+                verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
+                verify(telegramNotifier).sendMessage(eq(1001L), contains("fallback requestCollect"));
+                }
 
         @Test
         void givenCollectRecoverCommand_whenUnauthorized_thenDoesNotSignalCoordinator() {
