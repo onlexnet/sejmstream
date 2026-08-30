@@ -1,7 +1,6 @@
 package onlexnet.infra.adapters.in.azurefunc;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Resolves incoming durable entity operation names to typed contract bindings.
@@ -15,9 +14,6 @@ public final class DurableEntityOperationRouter {
             Class<?> targetType,
             String requestedMethod,
             List<DurableEntityOperationBinding<T, ?>> bindings) {
-        Objects.requireNonNull(targetType, "targetType must not be null");
-        Objects.requireNonNull(bindings, "bindings must not be null");
-
         return bindings.stream()
                 .filter(binding -> binding.matches(requestedMethod))
                 .findFirst()

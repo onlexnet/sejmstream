@@ -1,7 +1,6 @@
 package onlexnet.infra.adapters.out.telegram;
 
 import java.util.Map;
-import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,10 +57,9 @@ public final class DefaultTelegramNotifier implements TelegramNotifier {
     }
 
     private String trimToTelegramLimit(String text) {
-        var normalized = Objects.requireNonNull(text, "text must not be null");
-        if (normalized.length() <= TELEGRAM_MAX_TEXT_LENGTH) {
-            return normalized;
+        if (text.length() <= TELEGRAM_MAX_TEXT_LENGTH) {
+            return text;
         }
-        return normalized.substring(0, TELEGRAM_MAX_TEXT_LENGTH - 1) + "…";
+        return text.substring(0, TELEGRAM_MAX_TEXT_LENGTH - 1) + "…";
     }
 }

@@ -30,9 +30,8 @@ class GuardsTest {
     }
 
     @Test
-    void orDefaultIfNullOrEmpty_collection_givenNullDefault_throws() {
-        assertThatThrownBy(() -> Guards.orDefaultIfNullOrEmpty(List.of(), null))
-                .isInstanceOf(NullPointerException.class);
+    void orDefaultIfNullOrEmpty_collection_givenNullDefault_returnsNull() {
+        assertThat(Guards.orDefaultIfNullOrEmpty(List.of(), null)).isNull();
     }
 
     @Test
@@ -51,9 +50,8 @@ class GuardsTest {
     }
 
     @Test
-    void orDefaultIfNullOrEmpty_string_givenNullDefault_throws() {
-        assertThatThrownBy(() -> Guards.orDefaultIfNullOrEmpty("", null))
-                .isInstanceOf(NullPointerException.class);
+    void orDefaultIfNullOrEmpty_string_givenNullDefault_returnsNull() {
+        assertThat(Guards.orDefaultIfNullOrEmpty("", null)).isNull();
     }
 
     @Test
@@ -103,8 +101,7 @@ class GuardsTest {
     }
 
     @Test
-    void requireNonEmpty_string_givenNullSupplier_throws() {
-        assertThatThrownBy(() -> Guards.requireNonEmpty("x", (java.util.function.Supplier<RuntimeException>) null))
-                .isInstanceOf(NullPointerException.class);
+    void requireNonEmpty_string_givenNullSupplierAndNonEmptyValue_returnsValue() {
+        assertThat(Guards.requireNonEmpty("x", (java.util.function.Supplier<RuntimeException>) null)).isEqualTo("x");
     }
 }

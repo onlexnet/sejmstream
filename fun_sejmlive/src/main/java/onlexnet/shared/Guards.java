@@ -1,7 +1,6 @@
 package onlexnet.shared;
 
 import java.util.Collection;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 import org.jspecify.annotations.Nullable;
@@ -23,7 +22,6 @@ public final class Guards {
      * @return non-empty value or defaultValue when value is null/empty
      */
     public static <T extends Collection<?>> T orDefaultIfNullOrEmpty(@Nullable T value, T defaultValue) {
-        Objects.requireNonNull(defaultValue, "defaultValue must not be null");
         return value == null || value.isEmpty() ? defaultValue : value;
     }
 
@@ -35,7 +33,6 @@ public final class Guards {
      * @return non-empty input string or defaultValue
      */
     public static String orDefaultIfNullOrEmpty(@Nullable String value, String defaultValue) {
-        Objects.requireNonNull(defaultValue, "defaultValue must not be null");
         return value == null || value.isEmpty() ? defaultValue : value;
     }
 
@@ -52,7 +49,6 @@ public final class Guards {
     public static <T extends Collection<?>, X extends RuntimeException> T requireNonEmpty(
             @Nullable T value,
             Supplier<X> exceptionSupplier) throws X {
-        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier must not be null");
         if (value == null || value.isEmpty()) {
             throw exceptionSupplier.get();
         }
@@ -71,7 +67,6 @@ public final class Guards {
     public static <X extends RuntimeException> String requireNonEmpty(
             @Nullable String value,
             Supplier<X> exceptionSupplier) throws X {
-        Objects.requireNonNull(exceptionSupplier, "exceptionSupplier must not be null");
         if (value == null || value.isEmpty()) {
             throw exceptionSupplier.get();
         }

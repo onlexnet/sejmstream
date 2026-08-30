@@ -2,7 +2,6 @@ package onlexnet.app.ports.out;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 
 import org.jspecify.annotations.Nullable;
 
@@ -35,11 +34,10 @@ public record InterpellationPublishQueueMessage(
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("title must not be blank");
         }
-        recipients = List.copyOf(Objects.requireNonNull(recipients, "recipients must not be null"));
+        recipients = List.copyOf(recipients);
         if (attempt < 1) {
             throw new IllegalArgumentException("attempt must be >= 1");
         }
-        firstQueuedAt = Objects.requireNonNull(firstQueuedAt, "firstQueuedAt must not be null");
         attachments = attachments == null ? List.of() : List.copyOf(attachments);
     }
 

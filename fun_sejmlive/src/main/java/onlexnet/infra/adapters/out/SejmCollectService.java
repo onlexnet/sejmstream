@@ -6,7 +6,6 @@ import java.time.LocalTime;
 import java.time.Instant;
 import java.time.Duration;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -52,15 +51,11 @@ public class SejmCollectService implements SejmCollectOperations {
             InterpellationPublishQueuePort interpellationQueuePort,
             InterpellationPublishStatePort interpellationPublishStatePort,
             ObjectMapper objectMapper) {
-        this.sejmApiClient = Objects.requireNonNull(sejmApiClient, "sejmApiClient must not be null");
-        this.repository = Objects.requireNonNull(repository, "repository must not be null");
-        this.interpellationQueuePort = Objects.requireNonNull(
-            interpellationQueuePort,
-            "interpellationQueuePort must not be null");
-        this.interpellationPublishStatePort = Objects.requireNonNull(
-            interpellationPublishStatePort,
-            "interpellationPublishStatePort must not be null");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper must not be null");
+        this.sejmApiClient = sejmApiClient;
+        this.repository = repository;
+        this.interpellationQueuePort = interpellationQueuePort;
+        this.interpellationPublishStatePort = interpellationPublishStatePort;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -71,7 +66,6 @@ public class SejmCollectService implements SejmCollectOperations {
      * @return number of items upserted
      */
     public int collectVotings(int termNum, LocalDate date) {
-        Objects.requireNonNull(date, "date must not be null");
         try {
             return collectItems(termNum, date, null, "VOTING", "voting(s)", "votings",
                     () -> sejmApiClient.fetchVotingsForDate(termNum, date),
@@ -90,7 +84,6 @@ public class SejmCollectService implements SejmCollectOperations {
      * @return number of items upserted
      */
     public int collectCommitteeSittings(int termNum, LocalDate date) {
-        Objects.requireNonNull(date, "date must not be null");
         try {
             return collectItems(termNum, date, null, "COMMITTEE_SITTING",
                     "committee sitting(s)", "committee sittings",
@@ -110,7 +103,6 @@ public class SejmCollectService implements SejmCollectOperations {
      * @return number of items upserted
      */
     public int collectPrints(int termNum, LocalDate date) {
-        Objects.requireNonNull(date, "date must not be null");
         try {
             return collectItems(termNum, date, null, "PRINT", "print(s)", "prints",
                     () -> sejmApiClient.fetchPrintsModifiedSince(termNum, date), PrintItem::number,
@@ -129,7 +121,6 @@ public class SejmCollectService implements SejmCollectOperations {
      * @return number of items upserted
      */
     public int collectInterpellations(int termNum, LocalDate date) {
-        Objects.requireNonNull(date, "date must not be null");
         try {
             var since = startOfDay(date);
             var items = this.sejmApiClient.fetchInterpellationsModifiedSince(termNum, since);
@@ -169,7 +160,6 @@ public class SejmCollectService implements SejmCollectOperations {
      * @return number of items upserted
      */
     public int collectWrittenQuestions(int termNum, LocalDate date) {
-        Objects.requireNonNull(date, "date must not be null");
         try {
             var since = startOfDay(date);
             return collectItems(termNum, date, since, "WRITTEN_QUESTION", "written question(s)",
@@ -190,7 +180,6 @@ public class SejmCollectService implements SejmCollectOperations {
      * @return number of items upserted
      */
     public int collectBills(int termNum, LocalDate date) {
-        Objects.requireNonNull(date, "date must not be null");
         try {
             return collectItems(termNum, date, null, "BILL", "bill(s)", "bills",
                     () -> sejmApiClient.fetchBillsReceivedSince(termNum, date), BillItem::number,
@@ -273,7 +262,7 @@ public class SejmCollectService implements SejmCollectOperations {
         }
         return switch (links) {
             case SejmApiClient.InterpellationLinks.Complete complete -> complete.webDescription();
-            case SejmApiClient.InterpellationLinks.Missing ignored -> null;
+            case SejmApiClient.InterpellationLinks.Missing _ -> null;
         };
     }
 

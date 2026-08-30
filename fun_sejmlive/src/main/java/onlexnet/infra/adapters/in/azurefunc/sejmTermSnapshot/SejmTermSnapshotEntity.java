@@ -250,9 +250,6 @@ sealed interface SejmTermSnapshotEntityContext
 }
 
 record InitializedSejmTermSnapshotEntityContext(TaskEntityContext value) implements SejmTermSnapshotEntityContext {
-    InitializedSejmTermSnapshotEntityContext {
-        Objects.requireNonNull(value, "value");
-    }
 }
 
 enum UninitializedSejmTermSnapshotEntityContext implements SejmTermSnapshotEntityContext {

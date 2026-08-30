@@ -1,6 +1,5 @@
 package onlexnet.app.usecases;
 
-import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,8 +63,7 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
     }
 
     private InterpellationPublishQueueMessage messageFrom(ProcessInterpellationPublishCommand command) {
-        var nonNullCommand = Objects.requireNonNull(command, "command must not be null");
-        return Objects.requireNonNull(nonNullCommand.message(), "command.message must not be null");
+        return command.message();
     }
 
     private ProcessInterpellationPublishOutcome handlePostPublishPersistenceFailure(
@@ -112,10 +110,6 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
 
     private boolean hasReachedMaxAttempts(InterpellationPublishQueueMessage message) {
         return message.attempt() >= this.retryPolicy.maxAttempts();
-    }
-
-    private String formatFacebookPost(InterpellationPublishQueueMessage message) {
-        return this.formatFacebookPost(message, this.firstAttachmentSummary(message));
     }
 
     private String formatFacebookPost(InterpellationPublishQueueMessage message, @Nullable String attachmentSummary) {

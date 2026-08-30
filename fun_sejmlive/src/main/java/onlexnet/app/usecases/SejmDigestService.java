@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -54,8 +53,8 @@ public class SejmDigestService {
 
     public SejmDigestService(SejmDailyDigestPersistence repository,
             ObjectMapper objectMapper) {
-        this.repository = Objects.requireNonNull(repository, "repository cannot be null");
-        this.objectMapper = Objects.requireNonNull(objectMapper, "objectMapper cannot be null");
+        this.repository = repository;
+        this.objectMapper = objectMapper;
     }
 
     /**

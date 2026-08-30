@@ -1,7 +1,6 @@
 package onlexnet.infra.adapters.out;
 
 import java.time.Duration;
-import java.util.Objects;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -37,7 +36,7 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
             String deadLetterQueueName,
             ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
-        var normalizedConnectionString = Objects.requireNonNull(storageConnectionString, "Storage connection string must be configured").trim();
+        var normalizedConnectionString = storageConnectionString.trim();
         if (normalizedConnectionString.isEmpty()) {
             throw new IllegalStateException("Storage connection string must be configured");
         }

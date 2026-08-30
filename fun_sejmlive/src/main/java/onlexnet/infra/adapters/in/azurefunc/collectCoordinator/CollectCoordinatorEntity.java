@@ -1,7 +1,5 @@
 package onlexnet.infra.adapters.in.azurefunc.collectCoordinator;
 
-import java.util.Objects;
-
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
@@ -149,9 +147,6 @@ sealed interface CollectCoordinatorEntityContext permits InitializedCollectCoord
 }
 
 record InitializedCollectCoordinatorEntityContext(TaskEntityContext value) implements CollectCoordinatorEntityContext {
-    InitializedCollectCoordinatorEntityContext {
-        Objects.requireNonNull(value, "value");
-    }
 }
 
 enum UninitializedCollectCoordinatorEntityContext implements CollectCoordinatorEntityContext {
