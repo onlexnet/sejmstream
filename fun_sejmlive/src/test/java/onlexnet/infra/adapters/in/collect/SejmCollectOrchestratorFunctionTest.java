@@ -7,7 +7,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -124,16 +123,8 @@ class SejmCollectOrchestratorFunctionTest {
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(4, 10, collectionDate, java.util.List.of("77"), java.util.Map.of("77", "abc")),
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(5, 10, collectionDate, java.util.List.of("301"), java.util.Map.of()),
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(6, 10, collectionDate, java.util.List.of("501"), java.util.Map.of())));
-        var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
                 .thenReturn(allOfTask);
-        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class))
-                .thenReturn(cancelEventTask);
-        @SuppressWarnings("unchecked")
-        Task<Task<?>> winnerAllOfTask = mock(Task.class);
-        doReturn(allOfTask).when(winnerAllOfTask).await();
-        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any()))
-                .thenReturn(winnerAllOfTask);
 
         var result = support.runOrchestrator(orchestrationContext);
 
@@ -178,14 +169,6 @@ class SejmCollectOrchestratorFunctionTest {
         when(allOfBlockedTask.await()).thenThrow(blockedException);
         when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
                 .thenReturn(allOfBlockedTask);
-        var unusedCancelEventTask1 = SejmCollectFunctionTestSupport.completedTask("unused");
-        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class))
-                .thenReturn(unusedCancelEventTask1);
-        @SuppressWarnings("unchecked")
-        Task<Task<?>> winnerAllOfBlockedTask = mock(Task.class);
-        doReturn(allOfBlockedTask).when(winnerAllOfBlockedTask).await();
-        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any()))
-                .thenReturn(winnerAllOfBlockedTask);
 
         assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
                 .isSameAs(blockedException);
@@ -215,14 +198,6 @@ class SejmCollectOrchestratorFunctionTest {
         when(allOfFailureTask.await()).thenThrow(allOfFailure);
         when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
                 .thenReturn(allOfFailureTask);
-        var unusedCancelEventTask2 = SejmCollectFunctionTestSupport.completedTask("unused");
-        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class))
-                .thenReturn(unusedCancelEventTask2);
-        @SuppressWarnings("unchecked")
-        Task<Task<?>> winnerAllOfFailureTask = mock(Task.class);
-        doReturn(allOfFailureTask).when(winnerAllOfFailureTask).await();
-        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any()))
-                .thenReturn(winnerAllOfFailureTask);
 
         assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
                 .isInstanceOf(IllegalStateException.class)
@@ -259,14 +234,6 @@ class SejmCollectOrchestratorFunctionTest {
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp"))));
         when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
                 .thenReturn(allOfTask);
-        var unusedCancelEventTask3 = SejmCollectFunctionTestSupport.completedTask("unused");
-        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class))
-                .thenReturn(unusedCancelEventTask3);
-        @SuppressWarnings("unchecked")
-        Task<Task<?>> winnerSnapshotAllOfTask = mock(Task.class);
-        doReturn(allOfTask).when(winnerSnapshotAllOfTask).await();
-        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any()))
-                .thenReturn(winnerSnapshotAllOfTask);
 
         org.mockito.Mockito.doThrow(new IllegalStateException("snapshot signal failed"))
                 .when(orchestrationContext)
@@ -310,14 +277,6 @@ class SejmCollectOrchestratorFunctionTest {
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp"))));
         when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
                 .thenReturn(allOfTask);
-        var unusedCancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
-        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class))
-                .thenReturn(unusedCancelEventTask);
-        @SuppressWarnings("unchecked")
-        Task<Task<?>> winnerAllOfTask = mock(Task.class);
-        doReturn(allOfTask).when(winnerAllOfTask).await();
-        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any()))
-                .thenReturn(winnerAllOfTask);
 
         var blocked = new OrchestratorBlockedException("yield after fan-in finalization");
         org.mockito.Mockito.doThrow(blocked)
@@ -336,47 +295,4 @@ class SejmCollectOrchestratorFunctionTest {
                 any());
     }
 
-    @Test
-    void givenCancelEventWinsRace_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
-        var collectService = mock(SejmCollectOperations.class);
-        var sejmApiClient = mock(SejmApiClient.class);
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
-        var orchestrationContext = mock(TaskOrchestrationContext.class);
-        var activityTask = SejmCollectFunctionTestSupport.completedTask(
-                SejmCollectFunctionTestSupport.activityResult(0));
-
-        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-cancel");
-        when(orchestrationContext.callActivity(
-                any(String.class),
-                any(CollectActivityRequest.class),
-                any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(activityTask);
-
-        @SuppressWarnings("unchecked")
-        Task<List<CollectActivityResult>> allOfTask = mock(Task.class);
-        var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("manual-stop");
-        when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
-                .thenReturn(allOfTask);
-        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class))
-                .thenReturn(cancelEventTask);
-        @SuppressWarnings("unchecked")
-        Task<Task<?>> winnerCancelEventTask = mock(Task.class);
-        doReturn(cancelEventTask).when(winnerCancelEventTask).await();
-        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any()))
-                .thenReturn(winnerCancelEventTask);
-
-        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Collect orchestrator cancelled by external event 'collect-cancel'");
-
-        verify(orchestrationContext).signalEntity(
-                any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
-                any());
-        verify(orchestrationContext, never()).signalEntity(
-                any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()),
-                any());
-        verify(allOfTask, never()).await();
-    }
 }
