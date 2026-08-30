@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -201,7 +202,7 @@ public class SejmCollectService implements SejmCollectOperations {
     }
 
     private <T> int collectItems(int termNum, LocalDate date,
-            LocalDateTime since, String dataType, String collectedLabel,
+            @Nullable LocalDateTime since, String dataType, String collectedLabel,
             String noItemsLabel, Supplier<List<T>> fetcher,
             Function<T, String> itemKeyExtractor, Function<T, String> titleExtractor) {
         var items = fetcher.get();
@@ -223,7 +224,7 @@ public class SejmCollectService implements SejmCollectOperations {
     }
 
     private String buildNoItemsMessage(int termNum, String noItemsLabel,
-            LocalDateTime since, LocalDate date) {
+            @Nullable LocalDateTime since, LocalDate date) {
         if (since != null) {
             return "No " + noItemsLabel + " returned for term " + termNum + " since " + since;
         }

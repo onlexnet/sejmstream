@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.NullUnmarked;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +34,7 @@ import onlexnet.app.ports.out.SejmApiClient.PrintItem;
 import onlexnet.app.ports.out.SejmApiClient.VotingItem;
 import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
 
+@NullUnmarked
 class SejmCollectServiceTest {
 
     private static final LocalDate TEST_DATE = LocalDate.of(2026, 6, 13);

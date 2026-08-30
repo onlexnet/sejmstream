@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.NullUnmarked;
 import org.mockito.ArgumentCaptor;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,6 +35,7 @@ import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.in.admin.AdminUseCase;
 import onlexnet.app.ports.out.TelegramNotifier;
 
+@NullUnmarked
 class TelegramBotFunctionsTest {
 
     @Test

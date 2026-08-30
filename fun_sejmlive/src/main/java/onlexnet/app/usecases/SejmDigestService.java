@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -305,7 +306,7 @@ public class SejmDigestService {
         return normalized.substring(0, AGENDA_EXCERPT_MAX_LENGTH - 1) + "…";
     }
 
-    private String safeText(String value) {
+    private String safeText(@Nullable String value) {
         if (value == null || value.isBlank()) {
             return "brak danych";
         }

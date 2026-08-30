@@ -6,7 +6,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.NullUnmarked;
 
+@NullUnmarked
 class GuardsTest {
 
     @Test

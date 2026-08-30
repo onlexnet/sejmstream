@@ -8,7 +8,7 @@ This application follows Hexagonal Architecture (Ports and Adapters).
 - Keep transport and framework concerns in input adapters.
 - Keep external integrations behind output ports and output adapters.
 - Keep runtime assembly and framework wiring in a composition package.
-- Enforce null-safety defaults in the app layer via package-level JSpecify annotations.
+- Enforce null-safety defaults across all production packages under `onlexnet` via package-level JSpecify annotations.
 
 ## Building Blocks and Locations
 
@@ -22,7 +22,7 @@ This application follows Hexagonal Architecture (Ports and Adapters).
 	- Use case implementations orchestrating business behavior.
 - `src/main/java/onlexnet/app/ports/out`
 	- Output port contracts required by use cases.
-- `src/main/java/onlexnet/app/**/package-info.java`
+- `src/main/java/onlexnet/**/package-info.java`
 	- Nullness defaults (`@NullMarked`) and package-level constraints.
 
 ### Infrastructure Adapters

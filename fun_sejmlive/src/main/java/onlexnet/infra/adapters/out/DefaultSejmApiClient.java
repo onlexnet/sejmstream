@@ -21,6 +21,7 @@ import java.util.Objects;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.text.PDFTextStripper;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.stereotype.Component;
@@ -299,7 +300,7 @@ class DefaultSejmApiClient implements SejmApiClient {
         return new BinaryAttachmentContent(mimeType, body);
     }
 
-    private static String extractPdfText(byte[] pdfBytes) {
+    private static @Nullable String extractPdfText(byte[] pdfBytes) {
         try (var document = Loader.loadPDF(pdfBytes)) {
             var text = new PDFTextStripper().getText(document);
             if (text == null || text.isBlank()) {
@@ -321,7 +322,7 @@ class DefaultSejmApiClient implements SejmApiClient {
                 term.getTo());
     }
 
-    private SejmPrints mapPrints(PrintInfo prints) {
+    private @Nullable SejmPrints mapPrints(PrintInfo prints) {
         if (prints == null) {
             return null;
         }
@@ -390,7 +391,7 @@ class DefaultSejmApiClient implements SejmApiClient {
         return new SejmApiClient.InterpellationLinks.Missing();
     }
 
-    private static String findLinkHref(Interpellation interpellation, String rel) {
+    private static @Nullable String findLinkHref(Interpellation interpellation, String rel) {
         var links = interpellation.getLinks();
         if (links == null || links.isEmpty()) {
             return null;
@@ -450,7 +451,7 @@ class DefaultSejmApiClient implements SejmApiClient {
         return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 
-    private static LocalDateTime toLocalDateTime(OffsetDateTime value) {
+    private static @Nullable LocalDateTime toLocalDateTime(OffsetDateTime value) {
         return value == null ? null : value.toLocalDateTime();
     }
 
@@ -458,11 +459,11 @@ class DefaultSejmApiClient implements SejmApiClient {
         return value == null ? 0 : value;
     }
 
-    private static <T> List<T> nullSafe(List<T> value) {
+    private static <T> List<T> nullSafe(@Nullable List<T> value) {
         return value == null ? List.of() : value;
     }
 
-    private static String firstPresent(String... candidates) {
+    private static @Nullable String firstPresent(String... candidates) {
         for (var candidate : candidates) {
             if (candidate != null && !candidate.isBlank()) {
                 return candidate;
@@ -471,7 +472,7 @@ class DefaultSejmApiClient implements SejmApiClient {
         return null;
     }
 
-    private <T> T callSejmApi(String operationName, ApiCall<T> call) {
+    private <T> @Nullable T callSejmApi(String operationName, ApiCall<T> call) {
         try {
             return call.execute();
         } catch (RestClientException exception) {
@@ -481,7 +482,7 @@ class DefaultSejmApiClient implements SejmApiClient {
 
     @FunctionalInterface
     private interface ApiCall<T> {
-        T execute();
+        @Nullable T execute();
     }
 
     private sealed interface AttachmentContent permits PdfTextContent, BinaryAttachmentContent {
@@ -496,7 +497,7 @@ class DefaultSejmApiClient implements SejmApiClient {
     private static final class LenientOffsetDateTimeDeserializer extends ValueDeserializer<OffsetDateTime> {
 
         @Override
-        public OffsetDateTime deserialize(JsonParser parser, DeserializationContext context)
+        public @Nullable OffsetDateTime deserialize(JsonParser parser, DeserializationContext context)
                 throws JacksonException {
             var textValue = parser.getValueAsString();
             if (textValue == null || textValue.isBlank()) {

@@ -6,7 +6,7 @@ import org.jspecify.annotations.Nullable;
  * Minimal attachment metadata carried through the interpellation publishing pipeline.
  */
 public record AttachmentMetadata(
-        String replyKey,
+        @Nullable String replyKey,
         String name,
         String url,
         @Nullable String lastModified,

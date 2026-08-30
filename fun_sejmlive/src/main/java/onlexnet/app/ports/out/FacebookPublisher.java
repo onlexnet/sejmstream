@@ -1,11 +1,13 @@
 package onlexnet.app.ports.out;
 
+import org.jspecify.annotations.Nullable;
+
 /**
  * Publishes a Facebook post and optional comments under it.
  */
 public interface FacebookPublisher {
 
-    String publish(String message);
+    @Nullable String publish(String message);
 
     void publishComment(String postId, String comment);
 }

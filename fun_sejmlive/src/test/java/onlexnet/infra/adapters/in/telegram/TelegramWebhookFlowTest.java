@@ -12,6 +12,7 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.NullUnmarked;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
@@ -28,6 +29,7 @@ import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.app.usecases.DefaultAdminUseCase;
 
+@NullUnmarked
 class TelegramWebhookFlowTest {
 
     @Test

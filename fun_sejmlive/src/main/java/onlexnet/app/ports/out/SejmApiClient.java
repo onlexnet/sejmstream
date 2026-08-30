@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Minimal Sejm API client used by the anonymous HTTP function.
@@ -17,19 +18,19 @@ public interface SejmApiClient {
         boolean current,
         LocalDate from,
         int num,
-        SejmPrints prints,
+        @Nullable SejmPrints prints,
         LocalDate to) {
     }
 
     /** Represents the nested prints summary for a Sejm term entry. */
-    record SejmPrints(int count, LocalDateTime lastChanged, String link) {
+    record SejmPrints(int count, @Nullable LocalDateTime lastChanged, @Nullable String link) {
     }
 
     record VotingItem(
-        LocalDateTime date,
+        @Nullable LocalDateTime date,
         int sitting,
         int votingNumber,
-        String topic,
+        @Nullable String topic,
         int yes,
         int no,
         int abstain,
@@ -42,15 +43,15 @@ public interface SejmApiClient {
         LocalDate date,
         int num,
         String agenda,
-        String status,
+        @Nullable String status,
         String room) {
     }
 
     record PrintItem(
         String number,
         String title,
-        LocalDateTime changeDate,
-        String deliveryDate) {
+        @Nullable LocalDateTime changeDate,
+        @Nullable String deliveryDate) {
     }
 
     /**
@@ -89,8 +90,8 @@ public interface SejmApiClient {
         int num,
         String title,
         List<String> to,
-        String sentDate,
-        String lastModified,
+        @Nullable String sentDate,
+        @Nullable String lastModified,
         List<ReplyItem> replies,
         List<AttachmentMetadata> attachments,
         InterpellationLinks links) {
@@ -165,16 +166,16 @@ public interface SejmApiClient {
         int num,
         String title,
         List<String> to,
-        String sentDate,
-        String lastModified) {
+        @Nullable String sentDate,
+        @Nullable String lastModified) {
     }
 
     record BillItem(
         String number,
         String title,
-        String dateOfReceipt,
-        String submissionType,
-        String status) {
+        @Nullable String dateOfReceipt,
+        @Nullable String submissionType,
+        @Nullable String status) {
     }
 
     /**

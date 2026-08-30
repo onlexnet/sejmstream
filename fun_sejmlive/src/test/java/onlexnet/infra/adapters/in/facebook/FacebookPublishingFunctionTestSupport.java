@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import org.jspecify.annotations.NullUnmarked;
+
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
@@ -16,6 +18,7 @@ import com.microsoft.azure.functions.HttpStatusType;
 /**
  * Shared test fakes for Facebook publishing function tests.
  */
+@NullUnmarked
 final class FacebookPublishingFunctionTestSupport {
 
     private FacebookPublishingFunctionTestSupport() {

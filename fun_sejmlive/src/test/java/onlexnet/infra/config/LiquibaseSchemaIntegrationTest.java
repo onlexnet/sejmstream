@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.jspecify.annotations.NullUnmarked;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -22,6 +23,7 @@ import onlexnet.testsupport.AppTest;
 import onlexnet.testsupport.PostgresIntegrationTestSupport;
 
 @AppTest(classes = DatabaseConfiguration.class)
+@NullUnmarked
 class LiquibaseSchemaIntegrationTest extends PostgresIntegrationTestSupport {
 
     @Autowired

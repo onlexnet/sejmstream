@@ -1,6 +1,7 @@
 package onlexnet.infra.adapters.out.facebook;
 
 import org.springframework.stereotype.Component;
+import org.jspecify.annotations.Nullable;
 
 import com.restfb.FacebookClient;
 import com.restfb.Parameter;
@@ -17,7 +18,7 @@ class DefaultFacebookPublisher implements FacebookPublisher {
     private final FacebookClient client;
 
     @Override
-    public String publish(String message) {
+    public @Nullable String publish(String message) {
         if (message == null || message.isBlank()) {
             return null;
         }
