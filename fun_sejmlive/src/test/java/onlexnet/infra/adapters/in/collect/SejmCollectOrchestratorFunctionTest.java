@@ -23,8 +23,7 @@ import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
 import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 
-import onlexnet.app.ports.out.SejmApiClient;
-import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectOrchestratorFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
@@ -40,9 +39,7 @@ class SejmCollectOrchestratorFunctionTest {
 
     @Test
     void givenOrchestrator_whenInvoked_thenCallsActivitiesSequentiallyAndAggregatesCounts() {
-        var collectService = mock(SejmCollectOperations.class);
-        var sejmApiClient = mock(SejmApiClient.class);
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+                var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
 
@@ -100,7 +97,7 @@ class SejmCollectOrchestratorFunctionTest {
                     return SejmCollectFunctionTestSupport.completedTask(tasks.get(0));
                 });
 
-        var result = support.runOrchestrator(orchestrationContext);
+        var result = orchestratorFunction.runOrchestrator(orchestrationContext);
 
         assertThat(result.getCountsByType()).containsEntry("VOTING", 1);
         assertThat(result.getCountsByType()).containsEntry("COMMITTEE_SITTING", 2);
@@ -126,9 +123,7 @@ class SejmCollectOrchestratorFunctionTest {
 
     @Test
     void givenUncompletedActivity_whenOrchestratorAwaits_thenPropagatesBlockedExceptionWithoutFailureSignal() {
-        var collectService = mock(SejmCollectOperations.class);
-        var sejmApiClient = mock(SejmApiClient.class);
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+                var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var blockedException = new OrchestratorBlockedException("activity is not completed");
 
@@ -148,7 +143,7 @@ class SejmCollectOrchestratorFunctionTest {
         doReturn(activityTask).when(winnerTask).await();
         when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenReturn(winnerTask);
 
-        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext)).isSameAs(blockedException);
+        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext)).isSameAs(blockedException);
 
         verify(orchestrationContext, never()).signalEntity(
                 any(),
@@ -158,9 +153,7 @@ class SejmCollectOrchestratorFunctionTest {
 
     @Test
     void givenActivityFailure_whenOrchestratorRuns_thenSignalsFailureAndThrowsIllegalState() {
-        var collectService = mock(SejmCollectOperations.class);
-        var sejmApiClient = mock(SejmApiClient.class);
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+                var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var activityFailure = mock(TaskFailedException.class);
 
@@ -185,7 +178,7 @@ class SejmCollectOrchestratorFunctionTest {
         doReturn(activityTask).when(winnerTask).await();
         when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenReturn(winnerTask);
 
-        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
+        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Collect orchestrator failed in activity " + SejmCollectFunctions.ACTIVITY_VOTINGS);
 
@@ -197,9 +190,7 @@ class SejmCollectOrchestratorFunctionTest {
 
     @Test
     void givenSnapshotSignalFails_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
-        var collectService = mock(SejmCollectOperations.class);
-        var sejmApiClient = mock(SejmApiClient.class);
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+                var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
@@ -226,7 +217,7 @@ class SejmCollectOrchestratorFunctionTest {
                         eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
                         any());
 
-        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
+        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("snapshot signal failed");
 
@@ -238,9 +229,7 @@ class SejmCollectOrchestratorFunctionTest {
 
     @Test
     void givenFinalizationBlocked_whenOrchestratorRuns_thenPropagatesBlockedWithoutFailureSignal() {
-        var collectService = mock(SejmCollectOperations.class);
-        var sejmApiClient = mock(SejmApiClient.class);
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+                var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
@@ -268,7 +257,7 @@ class SejmCollectOrchestratorFunctionTest {
                         eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
                         any());
 
-        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext)).isSameAs(blocked);
+        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext)).isSameAs(blocked);
 
         verify(orchestrationContext, never()).signalEntity(
                 any(),
@@ -278,9 +267,7 @@ class SejmCollectOrchestratorFunctionTest {
 
     @Test
     void givenCancelEventWinsRace_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
-        var collectService = mock(SejmCollectOperations.class);
-        var sejmApiClient = mock(SejmApiClient.class);
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+                var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResult(0));
@@ -299,7 +286,7 @@ class SejmCollectOrchestratorFunctionTest {
         doReturn(cancelEventTask).when(winnerCancelTask).await();
         when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenReturn(winnerCancelTask);
 
-        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
+        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Collect orchestrator cancelled by external event 'collect-cancel'");
 
@@ -315,9 +302,8 @@ class SejmCollectOrchestratorFunctionTest {
 
         @Test
         void givenInvalidOrchestratorInput_whenOrchestratorRuns_thenSignalsFailureToDefaultCoordinator() {
-                var collectService = mock(SejmCollectOperations.class);
-                var sejmApiClient = mock(SejmApiClient.class);
-                var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+                var orchestratorFunction = new SejmCollectOrchestratorFunction(
+                                SejmCollectFunctionTestSupport.newJsonValidator());
                 var orchestrationContext = mock(TaskOrchestrationContext.class);
 
                 var invalidInput = new CollectOrchestrationInput();
@@ -327,7 +313,7 @@ class SejmCollectOrchestratorFunctionTest {
                 when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-invalid-input");
                 when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(invalidInput);
 
-                assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
+                assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
                                 .isInstanceOf(IllegalArgumentException.class)
                                 .hasMessageContaining("collect-orchestration-input.schema.json");
 
