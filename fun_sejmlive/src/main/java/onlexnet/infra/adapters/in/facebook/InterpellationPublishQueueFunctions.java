@@ -13,6 +13,7 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.QueueTrigger;
 
+import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.in.interpellation.ProcessInterpellationPublishCommand;
 import onlexnet.app.ports.in.interpellation.ProcessInterpellationPublishOutcome;
 import onlexnet.app.ports.in.interpellation.ProcessInterpellationPublishUseCase;
@@ -25,6 +26,7 @@ import onlexnet.infra.adapters.in.azurefunc.Log;
  * Queue-triggered adapter that processes one INTERPELLATION publish message at a time.
  */
 @Component
+@RequiredArgsConstructor
 public class InterpellationPublishQueueFunctions {
 
     static final String QUEUE_TRIGGER_FUNCTION_NAME = "Fun_InterpellationPublishFromQueue";
@@ -33,17 +35,6 @@ public class InterpellationPublishQueueFunctions {
     private final ObjectMapper objectMapper;
     private final InterpellationPublishQueuePort queuePort;
     private final InterpellationPublishStatePort publishStatePort;
-
-    public InterpellationPublishQueueFunctions(
-            ProcessInterpellationPublishUseCase useCase,
-            ObjectMapper objectMapper,
-            InterpellationPublishQueuePort queuePort,
-            InterpellationPublishStatePort publishStatePort) {
-        this.useCase = useCase;
-        this.objectMapper = objectMapper;
-        this.queuePort = queuePort;
-        this.publishStatePort = publishStatePort;
-    }
 
     @FunctionName(QUEUE_TRIGGER_FUNCTION_NAME)
     public void process(

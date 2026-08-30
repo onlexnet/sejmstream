@@ -2,6 +2,7 @@ package onlexnet.app.usecases;
 
 import org.springframework.stereotype.Component;
 
+import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
 import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
@@ -12,20 +13,12 @@ import onlexnet.app.ports.out.SejmDailyDigestPersistence;
  * Default app-layer orchestration for one daily Facebook digest publish attempt.
  */
 @Component
+@RequiredArgsConstructor
 public class DefaultPublishDailyDigestUseCase implements PublishDailyDigestUseCase {
 
     private final FacebookPublisher facebookPublisher;
     private final SejmDigestService digestService;
     private final SejmDailyDigestPersistence repository;
-
-    public DefaultPublishDailyDigestUseCase(
-            FacebookPublisher facebookPublisher,
-            SejmDigestService digestService,
-            SejmDailyDigestPersistence repository) {
-        this.facebookPublisher = facebookPublisher;
-        this.digestService = digestService;
-        this.repository = repository;
-    }
 
     @Override
     public PublishDailyDigestOutcome publish(PublishDailyDigestCommand command) {

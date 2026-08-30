@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.BillItem;
 import onlexnet.app.ports.out.SejmApiClient.CommitteeSittingItem;
@@ -36,27 +37,16 @@ import onlexnet.app.ports.out.SejmDailyDigestPersistence;
  * as JSON in the database. Each collect method is idempotent due to database upsert semantics.
  */
 @Component
+@RequiredArgsConstructor
 public class SejmCollectService implements SejmCollectOperations {
 
     private static final Logger LOGGER = Logger.getLogger(SejmCollectService.class.getName());
 
     private final SejmApiClient sejmApiClient;
     private final SejmDailyDigestPersistence repository;
-        private final InterpellationPublishQueuePort interpellationQueuePort;
-        private final InterpellationPublishStatePort interpellationPublishStatePort;
+    private final InterpellationPublishQueuePort interpellationQueuePort;
+    private final InterpellationPublishStatePort interpellationPublishStatePort;
     private final ObjectMapper objectMapper;
-
-    public SejmCollectService(SejmApiClient sejmApiClient,
-            SejmDailyDigestPersistence repository,
-            InterpellationPublishQueuePort interpellationQueuePort,
-            InterpellationPublishStatePort interpellationPublishStatePort,
-            ObjectMapper objectMapper) {
-        this.sejmApiClient = sejmApiClient;
-        this.repository = repository;
-        this.interpellationQueuePort = interpellationQueuePort;
-        this.interpellationPublishStatePort = interpellationPublishStatePort;
-        this.objectMapper = objectMapper;
-    }
 
     /**
      * Collects voting items for the given term and date.

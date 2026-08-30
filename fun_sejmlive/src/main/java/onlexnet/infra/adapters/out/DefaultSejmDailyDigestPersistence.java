@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.out.InterpellationPublishQueueMessage;
 import onlexnet.app.ports.out.InterpellationPublishStatePort;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
@@ -19,14 +20,11 @@ import onlexnet.app.ports.out.SejmDailyDigestPersistence;
  * JDBC adapter for daily digest collection and publish log persistence.
  */
 @Component
+@RequiredArgsConstructor
 public class DefaultSejmDailyDigestPersistence
     implements SejmDailyDigestPersistence, InterpellationPublishStatePort {
 
     private final JdbcTemplate jdbcTemplate;
-
-    public DefaultSejmDailyDigestPersistence(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
 
     @Override
     public int upsertItem(LocalDate date, String dataType,

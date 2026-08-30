@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.app.ports.out.SejmApiClient.BillItem;
 import onlexnet.app.ports.out.SejmApiClient.CommitteeSittingItem;
@@ -30,6 +31,7 @@ import onlexnet.shared.Guards;
  * Builds a social-media digest from collected Sejm daily data.
  */
 @Component
+@RequiredArgsConstructor
 public class SejmDigestService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SejmDigestService.class);
@@ -50,12 +52,6 @@ public class SejmDigestService {
 
     private final SejmDailyDigestPersistence repository;
     private final ObjectMapper objectMapper;
-
-    public SejmDigestService(SejmDailyDigestPersistence repository,
-            ObjectMapper objectMapper) {
-        this.repository = repository;
-        this.objectMapper = objectMapper;
-    }
 
     /**
      * Builds a Polish digest post for the given date.

@@ -31,6 +31,7 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 
 ### Spring Boot Patterns
 - Use constructor-based dependency injection (avoid `@Autowired` on fields)
+- When a constructor only assigns injected dependencies to `final` fields, prefer Lombok `@RequiredArgsConstructor` and remove manual constructor boilerplate.
 - Keep controllers thin - business logic belongs in service classes
 - Use `@Transactional` for database operations that modify data
 - Leverage Spring's `RestTemplate` or `WebClient` for HTTP calls

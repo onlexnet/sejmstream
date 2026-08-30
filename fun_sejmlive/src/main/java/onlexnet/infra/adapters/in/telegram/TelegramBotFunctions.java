@@ -17,6 +17,7 @@ import com.microsoft.azure.functions.annotation.AuthorizationLevel;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 
+import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminActor;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
@@ -28,6 +29,7 @@ import onlexnet.infra.adapters.in.telegram.model.TelegramUpdate;
  * Azure Function webhook entrypoint for Telegram updates.
  */
 @Component
+@RequiredArgsConstructor
 public final class TelegramBotFunctions {
 
     static final String HTTP_FUNCTION_NAME = "Fun_TelegramWebhook";
@@ -38,19 +40,6 @@ public final class TelegramBotFunctions {
     private final TelegramAdminOutcomePresenter outcomePresenter;
     private final TelegramNotifier telegramNotifier;
     private final ObjectMapper objectMapper;
-
-    public TelegramBotFunctions(
-            AdminUseCase adminUseCase,
-            TelegramAdminActionParser adminActionParser,
-            TelegramAdminOutcomePresenter outcomePresenter,
-            TelegramNotifier telegramNotifier,
-            ObjectMapper objectMapper) {
-        this.adminUseCase = adminUseCase;
-        this.adminActionParser = adminActionParser;
-        this.outcomePresenter = outcomePresenter;
-        this.telegramNotifier = telegramNotifier;
-        this.objectMapper = objectMapper;
-    }
 
     /**
      * Receives Telegram updates and delegates command handling.
