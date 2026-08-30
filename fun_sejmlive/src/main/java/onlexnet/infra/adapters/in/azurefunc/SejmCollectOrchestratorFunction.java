@@ -48,6 +48,10 @@ public final class SejmCollectOrchestratorFunction {
     @FunctionName(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME)
     public CollectResult runOrchestrator(
             @DurableOrchestrationTrigger(name = "orchestrationContext") TaskOrchestrationContext orchestrationContext) {
+        return runOrchestratorInter(new OrchestrationContext(orchestrationContext));
+    }
+
+    CollectResult runOrchestratorInter(OrchestrationContext orchestrationContext) {
         EntityInstanceId coordinatorEntityId = COLLECT_COORDINATOR_ENTITY_ID;
         String activitySource;
 
@@ -144,7 +148,7 @@ public final class SejmCollectOrchestratorFunction {
     }
 
     private Task<CollectActivityResult> startActivityWithRetry(
-            TaskOrchestrationContext orchestrationContext,
+            OrchestrationContext orchestrationContext,
             String activityName,
             String source) {
         var request = new CollectActivityRequest();
@@ -187,7 +191,7 @@ public final class SejmCollectOrchestratorFunction {
     }
 
     private CollectActivityResult awaitActivityOrCancel(
-            TaskOrchestrationContext orchestrationContext,
+            OrchestrationContext orchestrationContext,
             EntityInstanceId coordinatorEntityId,
             Task<String> cancelRequestedTask,
             Task<CollectActivityResult> activityTask,
@@ -230,7 +234,7 @@ public final class SejmCollectOrchestratorFunction {
     }
 
     private void reconcileTermSnapshot(
-            TaskOrchestrationContext orchestrationContext,
+            OrchestrationContext orchestrationContext,
             String activitySource,
             CollectActivityResult interpellationsResult,
             CollectActivityResult questionsResult,
@@ -285,7 +289,7 @@ public final class SejmCollectOrchestratorFunction {
     }
 
     private void signalCollectFailed(
-            TaskOrchestrationContext orchestrationContext,
+            OrchestrationContext orchestrationContext,
             EntityInstanceId coordinatorEntityId,
             RuntimeException exception) {
         var failure = new CollectFailure();
