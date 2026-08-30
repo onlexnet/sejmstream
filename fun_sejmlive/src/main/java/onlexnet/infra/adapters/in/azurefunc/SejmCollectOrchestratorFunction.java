@@ -194,6 +194,13 @@ public final class SejmCollectOrchestratorFunction {
             String activityName) {
         var firstCompletedTask = orchestrationContext.anyOf(List.of(activityTask, cancelRequestedTask)).await();
 
+        if (firstCompletedTask != cancelRequestedTask && firstCompletedTask != activityTask) {
+            var failure = new IllegalStateException(
+                    "Collect orchestrator received unexpected winner task from anyOf for activity " + activityName);
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, failure);
+            throw failure;
+        }
+
         if (firstCompletedTask == cancelRequestedTask) {
             var cancelReason = cancelRequestedTask.await();
             var normalizedCancelReason =

@@ -392,6 +392,40 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(CollectActivityResult.class));
     }
 
+    @Test
+    void givenAnyOfReturnsUnexpectedWinner_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
+        var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+        when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-unexpected-winner");
+
+        var votingTask = SejmCollectFunctionTestSupport.completedTask(SejmCollectFunctionTestSupport.activityResult(1));
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(votingTask);
+
+        var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
+        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
+
+        @SuppressWarnings("unchecked")
+        Task<?> unknownWinnerTask = mock(Task.class);
+        @SuppressWarnings("unchecked")
+        Task<Task<?>> winnerTask = mock(Task.class);
+        doReturn(unknownWinnerTask).when(winnerTask).await();
+        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenReturn(winnerTask);
+
+        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("unexpected winner task from anyOf");
+
+        verify(orchestrationContext).signalEntity(
+                any(),
+                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
+                any());
+    }
+
         @Test
         void givenInvalidOrchestratorInput_whenOrchestratorRuns_thenSignalsFailureToDefaultCoordinator() {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(
