@@ -33,19 +33,12 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
 import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.TermSnapshotCollectedEvent;
-import onlexnet.shared.Guards;
 
 @Component
 @RequiredArgsConstructor
 public final class SejmCollectOrchestratorFunction {
 
     private static final String COLLECT_CANCEL_EVENT_NAME = "collect-cancel";
-
-    private static final TaskOptions ACTIVITY_RETRY_OPTIONS = new TaskOptions(
-            new RetryPolicy(3, Duration.ofSeconds(10))
-                    .setBackoffCoefficient(2.0)
-                    .setMaxRetryInterval(Duration.ofMinutes(2))
-                    .setRetryTimeout(Duration.ofMinutes(10)));
 
     private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID =
             new EntityInstanceId(SejmCollectFunctions.COORDINATOR_ENTITY_NAME, SejmCollectFunctions.COORDINATOR_ENTITY_KEY);
@@ -56,16 +49,14 @@ public final class SejmCollectOrchestratorFunction {
     public CollectResult runOrchestrator(
             @DurableOrchestrationTrigger(name = "orchestrationContext") TaskOrchestrationContext orchestrationContext) {
         EntityInstanceId coordinatorEntityId = COLLECT_COORDINATOR_ENTITY_ID;
-        String activitySource = "orchestrator";
+        String activitySource;
 
         try {
-            var input = this.jsonValidator.validateReceivedIfPresent(
+            var input = this.jsonValidator.validateReceived(
                     JsonValidator.COLLECT_ORCHESTRATION_INPUT,
                     orchestrationContext.getInput(CollectOrchestrationInput.class));
-            if (input != null) {
-                coordinatorEntityId = EntityInstanceId.fromString(input.getCoordinatorEntityId());
-                activitySource = Guards.orDefaultIfNullOrEmpty(input.getSource(), "orchestrator");
-            }
+            coordinatorEntityId = EntityInstanceId.fromString(input.getCoordinatorEntityId());
+            activitySource = input.getSource();
         } catch (RuntimeException e) {
             signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
             throw e;
@@ -162,9 +153,17 @@ public final class SejmCollectOrchestratorFunction {
         return orchestrationContext.callActivity(
                 activityName,
                 request,
-                ACTIVITY_RETRY_OPTIONS,
+            activityRetryOptions(),
                 CollectActivityResult.class);
     }
+
+        private static TaskOptions activityRetryOptions() {
+        return new TaskOptions(
+            new RetryPolicy(3, Duration.ofSeconds(10))
+                .setBackoffCoefficient(2.0)
+                .setMaxRetryInterval(Duration.ofMinutes(2))
+                .setRetryTimeout(Duration.ofMinutes(10)));
+        }
 
     private CollectActivityResult awaitActivityWithFailureContext(Task<CollectActivityResult> task, String activityName) {
         try {

@@ -37,11 +37,19 @@ class SejmCollectOrchestratorFunctionTest {
     private static final String COORDINATOR_ENTITY_KEY = "singleton";
     private static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
 
+        private static CollectOrchestrationInput validInput() {
+                var input = new CollectOrchestrationInput();
+                input.setCoordinatorEntityId(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY).toString());
+                input.setSource("orchestrator");
+                return input;
+        }
+
     @Test
     void givenOrchestrator_whenInvoked_thenCallsActivitiesSequentiallyAndAggregatesCounts() {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
+                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
 
         var votingTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of(), java.util.Map.of()));
@@ -126,6 +134,7 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var blockedException = new OrchestratorBlockedException("activity is not completed");
+                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
 
         @SuppressWarnings("unchecked")
         Task<CollectActivityResult> activityTask = mock(Task.class);
@@ -156,6 +165,7 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var activityFailure = mock(TaskFailedException.class);
+                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
 
         when(activityFailure.getMessage()).thenReturn("activity failed");
         when(activityFailure.getErrorDetails()).thenReturn(null);
@@ -193,6 +203,7 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
+                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")));
 
@@ -232,6 +243,7 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
+                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")));
 
@@ -271,6 +283,7 @@ class SejmCollectOrchestratorFunctionTest {
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResult(0));
+                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
 
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-cancel");
         when(orchestrationContext.callActivity(
