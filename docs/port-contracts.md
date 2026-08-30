@@ -111,6 +111,21 @@ public interface SejmCollectOperations {
     the activity logs the error and returns `0`, allowing orchestration to complete with
     partial counts for other data types.
 
+### Durable Activity Wire Contract
+
+Azure Functions Java serializes activity return values with Gson, while the Durable Task Java SDK
+deserializes activity results with Jackson. Values crossing an activity-to-orchestrator boundary must
+therefore use a serializer-neutral JSON wire contract.
+
+- Durable activity return types use explicit `...Wire` records rather than generated DTOs containing
+    `java.time` values.
+- Temporal values are represented as ISO-8601 strings, for example `"2026-08-30"`, at the Durable boundary.
+- The orchestrator maps a wire record back to the generated schema DTO and validates it before business use.
+- Each wire contract requires a `Gson -> JacksonDataConverter` round-trip test to prevent serializer drift.
+
+`CollectActivityResultWire` is the collect-flow implementation of this rule. Its `collectionDate` field is a
+string on the wire and becomes `LocalDate` only after the orchestrator receives it.
+
 ---
 
 ### FacebookPublisher

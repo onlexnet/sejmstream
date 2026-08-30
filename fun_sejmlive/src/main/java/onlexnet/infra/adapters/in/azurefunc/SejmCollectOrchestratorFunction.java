@@ -147,7 +147,7 @@ public final class SejmCollectOrchestratorFunction {
         }
     }
 
-    private Task<CollectActivityResult> startActivityWithRetry(
+    private Task<CollectActivityResultWire> startActivityWithRetry(
             OrchestrationContext orchestrationContext,
             String activityName,
             String source) {
@@ -158,7 +158,7 @@ public final class SejmCollectOrchestratorFunction {
                 activityName,
                 request,
             activityRetryOptions(),
-                CollectActivityResult.class);
+                CollectActivityResultWire.class);
     }
 
         private static TaskOptions activityRetryOptions() {
@@ -169,13 +169,15 @@ public final class SejmCollectOrchestratorFunction {
                 .setRetryTimeout(Duration.ofMinutes(10)));
         }
 
-    private CollectActivityResult awaitActivityWithFailureContext(Task<CollectActivityResult> task, String activityName) {
+    private CollectActivityResult awaitActivityWithFailureContext(Task<CollectActivityResultWire> task, String activityName) {
         try {
-            var activityResult = task.await();
-            if (activityResult == null) {
+            var activityResultWire = task.await();
+            if (activityResultWire == null) {
                 throw new IllegalStateException("Collect orchestrator received null result from activity " + activityName);
             }
-            return this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_RESULT, activityResult);
+            return this.jsonValidator.validateReceived(
+                    JsonValidator.COLLECT_ACTIVITY_RESULT,
+                    activityResultWire.toSchemaModel());
         } catch (TaskFailedException e) {
             var details = e.getErrorDetails();
             var errorType = details == null ? "unknown" : details.getErrorType();
@@ -194,7 +196,7 @@ public final class SejmCollectOrchestratorFunction {
             OrchestrationContext orchestrationContext,
             EntityInstanceId coordinatorEntityId,
             Task<String> cancelRequestedTask,
-            Task<CollectActivityResult> activityTask,
+            Task<CollectActivityResultWire> activityTask,
             String activityName) {
         var firstCompletedTask = orchestrationContext.anyOf(List.of(activityTask, cancelRequestedTask)).await();
 
@@ -219,7 +221,7 @@ public final class SejmCollectOrchestratorFunction {
 
         try {
             @SuppressWarnings("unchecked")
-            var completedActivityTask = (Task<CollectActivityResult>) firstCompletedTask;
+            var completedActivityTask = (Task<CollectActivityResultWire>) firstCompletedTask;
             return awaitActivityWithFailureContext(completedActivityTask, activityName);
         } catch (ClassCastException e) {
             var failure = new IllegalStateException(

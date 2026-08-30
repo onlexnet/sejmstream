@@ -8,7 +8,6 @@ import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 
 import lombok.RequiredArgsConstructor;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 
 @Component
 @RequiredArgsConstructor
@@ -17,7 +16,7 @@ public final class SejmCollectBillsActivityFunction {
     private final SejmCollectFunctionSupport support;
 
     @FunctionName(SejmCollectFunctions.ACTIVITY_BILLS)
-    public CollectActivityResult collectBills(
+    public CollectActivityResultWire collectBills(
             @DurableActivityTrigger(name = "request") CollectActivityRequest request,
             ExecutionContext execCtx) {
         return this.support.collectBills(request, execCtx);

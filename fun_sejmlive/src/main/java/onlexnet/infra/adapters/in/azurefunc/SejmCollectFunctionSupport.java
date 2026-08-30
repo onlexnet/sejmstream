@@ -98,7 +98,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectVotings(CollectActivityRequest request, ExecutionContext execCtx) {
+    public CollectActivityResultWire collectVotings(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -116,7 +116,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectCommittees(CollectActivityRequest request, ExecutionContext execCtx) {
+    public CollectActivityResultWire collectCommittees(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -134,7 +134,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectPrints(CollectActivityRequest request, ExecutionContext execCtx) {
+    public CollectActivityResultWire collectPrints(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -152,7 +152,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectInterpellations(CollectActivityRequest request, ExecutionContext execCtx) {
+    public CollectActivityResultWire collectInterpellations(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -176,7 +176,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectQuestions(CollectActivityRequest request, ExecutionContext execCtx) {
+    public CollectActivityResultWire collectQuestions(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -194,7 +194,7 @@ public class SejmCollectFunctionSupport {
         }
     }
 
-    public CollectActivityResult collectBills(CollectActivityRequest request, ExecutionContext execCtx) {
+    public CollectActivityResultWire collectBills(CollectActivityRequest request, ExecutionContext execCtx) {
         validateActivityRequest(request);
 
         try {
@@ -293,7 +293,7 @@ public class SejmCollectFunctionSupport {
         this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, normalizedRequest);
     }
 
-    private CollectActivityResult buildActivityResult(
+    private CollectActivityResultWire buildActivityResult(
             int count,
             int termNum,
             LocalDate date,
@@ -305,7 +305,8 @@ public class SejmCollectFunctionSupport {
         result.setCollectionDate(date);
         result.setItemKeys(List.copyOf(itemKeys));
         result.setInterpellationFingerprints(Map.copyOf(interpellationFingerprints));
-        return this.jsonValidator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, result);
+        return CollectActivityResultWire.from(
+            this.jsonValidator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, result));
     }
 
     private static String buildFailureMessage(Exception exception) {

@@ -40,10 +40,10 @@ import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
+import onlexnet.infra.adapters.in.azurefunc.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctionSupport;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 
 final class SejmCollectFunctionTestSupport {
 
@@ -73,25 +73,22 @@ final class SejmCollectFunctionTestSupport {
         return validator;
     }
 
-    static CollectActivityResult activityResult(int value) {
-        var result = new CollectActivityResult();
-        result.setCount(value);
-        return result;
+    static CollectActivityResultWire activityResult(int value) {
+        return new CollectActivityResultWire(value, null, null, List.of(), Map.of());
     }
 
-    static CollectActivityResult activityResultWithSnapshot(
+    static CollectActivityResultWire activityResultWithSnapshot(
             int count,
             int termNum,
             LocalDate collectionDate,
             List<String> itemKeys,
             Map<String, String> interpellationFingerprints) {
-        var result = new CollectActivityResult();
-        result.setCount(count);
-        result.setTermNum(termNum);
-        result.setCollectionDate(collectionDate);
-        result.setItemKeys(itemKeys);
-        result.setInterpellationFingerprints(interpellationFingerprints);
-        return result;
+        return new CollectActivityResultWire(
+                count,
+                termNum,
+                collectionDate.toString(),
+                itemKeys,
+                interpellationFingerprints);
     }
 
     @SuppressWarnings("unchecked")
@@ -101,7 +98,7 @@ final class SejmCollectFunctionTestSupport {
         return task;
     }
 
-    static List<Task<CollectActivityResult>> anyCollectActivityTasks() {
+    static List<Task<CollectActivityResultWire>> anyCollectActivityTasks() {
         return anyList();
     }
 

@@ -24,11 +24,11 @@ import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
 import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 
+import onlexnet.infra.adapters.in.azurefunc.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectOrchestratorFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations;
 
@@ -70,32 +70,32 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(votingTask);
+                eq(CollectActivityResultWire.class))).thenReturn(votingTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_COMMITTEES),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(committeesTask);
+                eq(CollectActivityResultWire.class))).thenReturn(committeesTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PRINTS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(printsTask);
+                eq(CollectActivityResultWire.class))).thenReturn(printsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(interpellationsTask);
+                eq(CollectActivityResultWire.class))).thenReturn(interpellationsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_QUESTIONS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(questionsTask);
+                eq(CollectActivityResultWire.class))).thenReturn(questionsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_BILLS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(billsTask);
+                eq(CollectActivityResultWire.class))).thenReturn(billsTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -119,7 +119,7 @@ class SejmCollectOrchestratorFunctionTest {
                 any(String.class),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class));
+                eq(CollectActivityResultWire.class));
         verify(orchestrationContext).signalEntity(
                 eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
                 eq(CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()),
@@ -138,13 +138,13 @@ class SejmCollectOrchestratorFunctionTest {
                 when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
 
         @SuppressWarnings("unchecked")
-        Task<CollectActivityResult> activityTask = mock(Task.class);
+        Task<CollectActivityResultWire> activityTask = mock(Task.class);
         when(activityTask.await()).thenThrow(blockedException);
         when(orchestrationContext.callActivity(
                 any(String.class),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(activityTask);
+                eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -172,7 +172,7 @@ class SejmCollectOrchestratorFunctionTest {
         when(activityFailure.getErrorDetails()).thenReturn(null);
 
         @SuppressWarnings("unchecked")
-        Task<CollectActivityResult> activityTask = mock(Task.class);
+        Task<CollectActivityResultWire> activityTask = mock(Task.class);
         when(activityTask.await()).thenThrow(activityFailure);
 
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-2");
@@ -180,7 +180,7 @@ class SejmCollectOrchestratorFunctionTest {
                 any(String.class),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(activityTask);
+                eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -213,7 +213,7 @@ class SejmCollectOrchestratorFunctionTest {
                 any(String.class),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(activityTask);
+                eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -253,7 +253,7 @@ class SejmCollectOrchestratorFunctionTest {
                 any(String.class),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(activityTask);
+                eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -291,7 +291,7 @@ class SejmCollectOrchestratorFunctionTest {
                 any(String.class),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(activityTask);
+                eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("manual-stop");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -339,32 +339,32 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(votingTask);
+                eq(CollectActivityResultWire.class))).thenReturn(votingTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_COMMITTEES),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(committeesTask);
+                eq(CollectActivityResultWire.class))).thenReturn(committeesTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PRINTS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(printsTask);
+                eq(CollectActivityResultWire.class))).thenReturn(printsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(interpellationsTask);
+                eq(CollectActivityResultWire.class))).thenReturn(interpellationsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_QUESTIONS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(questionsTask);
+                eq(CollectActivityResultWire.class))).thenReturn(questionsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_BILLS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(billsTask);
+                eq(CollectActivityResultWire.class))).thenReturn(billsTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -389,7 +389,7 @@ class SejmCollectOrchestratorFunctionTest {
                 any(String.class),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class));
+                eq(CollectActivityResultWire.class));
     }
 
     @Test
@@ -404,14 +404,13 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
-                eq(CollectActivityResult.class))).thenReturn(votingTask);
+                eq(CollectActivityResultWire.class))).thenReturn(votingTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
 
-        @SuppressWarnings("unchecked")
         Task<?> unknownWinnerTask = mock(Task.class);
-        when(unknownWinnerTask.await()).thenReturn("not-a-CollectActivityResult");
+        doReturn("not-a-CollectActivityResult").when(unknownWinnerTask).await();
         @SuppressWarnings("unchecked")
         Task<Task<?>> winnerTask = mock(Task.class);
         doReturn(unknownWinnerTask).when(winnerTask).await();

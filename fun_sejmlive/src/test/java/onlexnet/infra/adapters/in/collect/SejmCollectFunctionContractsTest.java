@@ -27,6 +27,7 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 import com.restfb.FacebookClient;
 
 import onlexnet.app.ports.out.SejmApiClient;
+import onlexnet.infra.adapters.in.azurefunc.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectBillsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectCommitteesActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
@@ -241,5 +242,6 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
         assertThat(functionName.value()).isEqualTo(expectedFunctionName);
         assertThat(trigger).isNotNull();
         assertThat(trigger.name()).isEqualTo("request");
+                assertThat(method.getReturnType()).isEqualTo(CollectActivityResultWire.class);
     }
 }

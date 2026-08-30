@@ -60,13 +60,13 @@ class SejmCollectActivitiesFunctionTest {
 
         var result = support.collectInterpellations(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
 
-        assertThat(result.getCount()).isEqualTo(2);
-        assertThat(result.getTermNum()).isEqualTo(10);
-        assertThat(result.getCollectionDate()).isNotNull();
-        assertThat(result.getInterpellationFingerprints())
+        assertThat(result.count()).isEqualTo(2);
+        assertThat(result.termNum()).isEqualTo(10);
+        assertThat(result.collectionDate()).isNotNull();
+        assertThat(result.interpellationFingerprints())
                 .containsEntry("77", sha256Hex("{\"num\":77,\"title\":\"A\"}"))
                 .containsEntry("78", sha256Hex("{\"num\":78,\"title\":\"B\"}"));
-        assertThat(result.getItemKeys()).containsExactly("77", "78");
+        assertThat(result.itemKeys()).containsExactly("77", "78");
 
         verify(digestPersistence, times(1)).findByDateAndType(any(LocalDate.class), eq("INTERPELLATION"));
         verify(collectService, times(1)).collectInterpellations(eq(10), any(LocalDate.class));
@@ -95,8 +95,8 @@ class SejmCollectActivitiesFunctionTest {
         var billsResult = support.collectBills(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
         var afterBills = LocalDate.now();
 
-        assertThat(votingResult.getCount()).isEqualTo(11);
-        assertThat(billsResult.getCount()).isEqualTo(22);
+        assertThat(votingResult.count()).isEqualTo(11);
+        assertThat(billsResult.count()).isEqualTo(22);
         var votingsDateCaptor = org.mockito.ArgumentCaptor.forClass(LocalDate.class);
         var billsDateCaptor = org.mockito.ArgumentCaptor.forClass(LocalDate.class);
         verify(collectService, times(1)).collectVotings(eq(10), votingsDateCaptor.capture());
@@ -158,7 +158,7 @@ class SejmCollectActivitiesFunctionTest {
 
         var result = support.collectBills(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
 
-        assertThat(result.getCount()).isEqualTo(0);
+        assertThat(result.count()).isEqualTo(0);
         verify(collectService, times(1)).collectBills(eq(10), any(LocalDate.class));
     }
 
