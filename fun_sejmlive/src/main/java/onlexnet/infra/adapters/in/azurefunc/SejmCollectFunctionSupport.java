@@ -57,6 +57,8 @@ import onlexnet.shared.Guards;
 @RequiredArgsConstructor
 public class SejmCollectFunctionSupport {
 
+    private static final String COLLECT_CANCEL_EVENT_NAME = "collect-cancel";
+
     private static final TaskOptions ACTIVITY_RETRY_OPTIONS = new TaskOptions(
             new RetryPolicy(3, Duration.ofSeconds(10))
                     .setBackoffCoefficient(2.0)
@@ -151,6 +153,19 @@ public class SejmCollectFunctionSupport {
             interpellationsTask,
             questionsTask,
             billsTask));
+        var cancelRequestedTask = orchestrationContext.waitForExternalEvent(COLLECT_CANCEL_EVENT_NAME, String.class);
+        var firstCompletedTask = orchestrationContext.anyOf(List.of(allActivitiesTask, cancelRequestedTask)).await();
+
+        if (firstCompletedTask == cancelRequestedTask) {
+            var cancelReason = cancelRequestedTask.await();
+            var normalizedCancelReason =
+                cancelReason == null || cancelReason.isBlank() ? "no-reason-provided" : cancelReason;
+            var cancellationFailure = new IllegalStateException(
+                "Collect orchestrator cancelled by external event '" + COLLECT_CANCEL_EVENT_NAME + "': "
+                    + normalizedCancelReason);
+            signalCollectFailed(orchestrationContext, coordinatorEntityId, cancellationFailure);
+            throw cancellationFailure;
+        }
 
         try {
             allActivitiesTask.await();
