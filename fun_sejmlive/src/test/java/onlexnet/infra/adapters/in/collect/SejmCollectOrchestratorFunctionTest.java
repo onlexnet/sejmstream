@@ -286,6 +286,57 @@ class SejmCollectOrchestratorFunctionTest {
     }
 
     @Test
+    void givenFinalizationBlocked_whenOrchestratorRuns_thenPropagatesBlockedWithoutFailureSignal() {
+        var collectService = mock(SejmCollectOperations.class);
+        var sejmApiClient = mock(SejmApiClient.class);
+        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+        var collectionDate = java.time.LocalDate.of(2026, 8, 27);
+        var activityTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(
+                        1,
+                        10,
+                        collectionDate,
+                        List.of("k"),
+                        java.util.Map.of("k", "fp")));
+
+        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-blocked-finalization");
+        when(orchestrationContext.callActivity(
+                any(String.class),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResult.class))).thenReturn(activityTask);
+        Task<List<CollectActivityResult>> allOfTask = new com.microsoft.durabletask.CompletedTask<>(List.of(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp"))));
+        when(orchestrationContext.allOf(SejmCollectFunctionTestSupport.anyCollectActivityTasks()))
+                .thenReturn(allOfTask);
+        var unusedCancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
+        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class))
+                .thenReturn(unusedCancelEventTask);
+        @SuppressWarnings("unchecked")
+        Task<Task<?>> winnerAllOfTask = mock(Task.class);
+        doReturn(allOfTask).when(winnerAllOfTask).await();
+        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any()))
+                .thenReturn(winnerAllOfTask);
+
+        var blocked = new OrchestratorBlockedException("yield after fan-in finalization");
+        org.mockito.Mockito.doThrow(blocked)
+                .when(orchestrationContext)
+                .signalEntity(
+                        eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
+                        eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
+                        any());
+
+        assertThatThrownBy(() -> support.runOrchestrator(orchestrationContext))
+                .isSameAs(blocked);
+
+        verify(orchestrationContext, never()).signalEntity(
+                any(),
+                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
+                any());
+    }
+
+    @Test
     void givenCancelEventWinsRace_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
         var collectService = mock(SejmCollectOperations.class);
         var sejmApiClient = mock(SejmApiClient.class);

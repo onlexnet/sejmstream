@@ -39,6 +39,11 @@
       "version": "1.4.4",
       "resolved": "ghcr.io/devcontainers/features/terraform@sha256:c6a4ed166fb749670db856c549f8858037c0af9ab3aacaf85fcb8634fadf6b05",
       "integrity": "sha256:c6a4ed166fb749670db856c549f8858037c0af9ab3aacaf85fcb8634fadf6b05"
+    },
+    "ghcr.io/jlaundry/devcontainer-features/azure-functions-core-tools:1": {
+      "version": "1.0.1",
+      "resolved": "ghcr.io/jlaundry/devcontainer-features/azure-functions-core-tools@sha256:a8b16ec41e15f0b28e49b831b02361b2519aa000d048e7d4d21e6a3b6486356c",
+      "integrity": "sha256:a8b16ec41e15f0b28e49b831b02361b2519aa000d048e7d4d21e6a3b6486356c"
     }
   }
 }

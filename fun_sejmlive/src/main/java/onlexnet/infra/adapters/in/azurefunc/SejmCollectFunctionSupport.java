@@ -32,6 +32,7 @@ import com.microsoft.durabletask.Task;
 import com.microsoft.durabletask.TaskFailedException;
 import com.microsoft.durabletask.TaskOptions;
 import com.microsoft.durabletask.TaskOrchestrationContext;
+import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 
 import lombok.RequiredArgsConstructor;
@@ -214,6 +215,8 @@ public class SejmCollectFunctionSupport {
             this.jsonValidator.validateToSend(JsonValidator.COLLECT_COMPLETION, completion);
             orchestrationContext.signalEntity(coordinatorEntityId, COLLECT_COMPLETED.methodName(), completion);
             return result;
+        } catch (OrchestratorBlockedException e) {
+            throw e;
         } catch (RuntimeException e) {
             signalCollectFailed(orchestrationContext, coordinatorEntityId, e);
             throw e;
