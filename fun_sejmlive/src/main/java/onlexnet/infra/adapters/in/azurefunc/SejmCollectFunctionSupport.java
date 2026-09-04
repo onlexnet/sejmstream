@@ -1,6 +1,6 @@
 package onlexnet.infra.adapters.in.azurefunc;
 
-import static onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations.REQUEST_COLLECT;
+import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.REQUEST_COLLECT;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -26,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
+import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.shared.Guards;
@@ -327,7 +328,7 @@ public class SejmCollectFunctionSupport {
                 () -> new IllegalStateException("No Sejm terms found"));
         var termNum = terms.stream()
                 .filter(t -> t != null && t.current())
-                .mapToInt(onlexnet.app.ports.out.SejmApiClient.SejmTerm::num)
+                .mapToInt(SejmApiClient.SejmTerm::num)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No current Sejm term found among " + terms.size() + " terms"));
         cachedTermNum = new CachedTerm.Resolved(termNum);

@@ -26,8 +26,6 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
 
     private static final int MAX_ATTEMPTS = 3;
     private static final int TERM_9 = 9;
-    private static final String INTERPELLATION_NUM = "32472";
-    private static final String REPLY_KEY = "CDUH9D";
     private static final String ATTACHMENT_REPLY_KEY = "ATTCDUH9D";
     private static final String ATTACHMENT_FILE_NAME = "i32472-o1.pdf";
 
@@ -63,14 +61,30 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
     }
 
     @Test
-    void givenKnownInterpellationReplyBodyEndpoint_whenFetching_thenDownloadAndDeserializeHtmlBody() {
+    void givenCurrentInterpellationReplyBodyEndpoint_whenFetching_thenDownloadAndDeserializeHtmlBody() {
+        var activeTerm = this.sejmApiClient.fetchTerms().stream()
+            .filter(SejmApiClient.SejmTerm::current)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Sejm API did not return an active term"));
+        var interpellation = this.sejmApiClient
+            .fetchInterpellationsModifiedSince(activeTerm.num(), activeTerm.from().atStartOfDay())
+            .stream()
+            .filter(candidate -> candidate.replies().stream()
+                .anyMatch(SejmApiClient.ReplyItem.ActualReply.class::isInstance))
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Sejm API did not return an interpellation with a reply"));
+        var reply = interpellation.replies().stream()
+            .filter(SejmApiClient.ReplyItem.ActualReply.class::isInstance)
+            .map(SejmApiClient.ReplyItem.ActualReply.class::cast)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Interpellation does not contain an actual reply"));
         var interpellationsApi = new InterpellationsApi(createApiClientForHtmlStringResponses());
 
         var htmlBody = assertCallReachable(
                 () -> interpellationsApi.sejmTermtermInterpellationsNumReplyKeyBodyGet(
-                        REPLY_KEY,
-                        INTERPELLATION_NUM,
-                        TERM_9));
+                reply.key(),
+                String.valueOf(interpellation.num()),
+                activeTerm.num()));
 
         assertThat(htmlBody).isNotBlank();
         assertThat(htmlBody).contains("<");

@@ -1,7 +1,7 @@
-package onlexnet.infra.adapters.in.azurefunc;
+package onlexnet.infra.adapters.in.azurefunc.collectorchestrator;
 
-import static onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations.COLLECT_COMPLETED;
-import static onlexnet.infra.adapters.in.azurefunc.collectCoordinator.CollectCoordinatorContractOperations.COLLECT_FAILED;
+import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.COLLECT_COMPLETED;
+import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.COLLECT_FAILED;
 import static onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED;
 
 import java.time.Duration;
@@ -26,6 +26,8 @@ import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 
 import lombok.RequiredArgsConstructor;
+import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
@@ -157,17 +159,17 @@ public final class SejmCollectOrchestratorFunction {
         return orchestrationContext.callActivity(
                 activityName,
                 request,
-            activityRetryOptions(),
+                activityRetryOptions(),
                 CollectActivityResultWire.class);
     }
 
-        private static TaskOptions activityRetryOptions() {
+    private static TaskOptions activityRetryOptions() {
         return new TaskOptions(
-            new RetryPolicy(3, Duration.ofSeconds(10))
-                .setBackoffCoefficient(2.0)
-                .setMaxRetryInterval(Duration.ofMinutes(2))
-                .setRetryTimeout(Duration.ofMinutes(10)));
-        }
+                new RetryPolicy(3, Duration.ofSeconds(10))
+                        .setBackoffCoefficient(2.0)
+                        .setMaxRetryInterval(Duration.ofMinutes(2))
+                        .setRetryTimeout(Duration.ofMinutes(10)));
+    }
 
     private CollectActivityResult awaitActivityWithFailureContext(Task<CollectActivityResultWire> task, String activityName) {
         try {

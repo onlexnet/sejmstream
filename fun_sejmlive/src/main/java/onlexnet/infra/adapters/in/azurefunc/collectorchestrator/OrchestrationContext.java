@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc;
+package onlexnet.infra.adapters.in.azurefunc.collectorchestrator;
 
 import java.util.List;
 

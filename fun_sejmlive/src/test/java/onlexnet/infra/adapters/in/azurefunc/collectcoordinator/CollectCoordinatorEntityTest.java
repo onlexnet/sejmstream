@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc.collectCoordinator;
+package onlexnet.infra.adapters.in.azurefunc.collectcoordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

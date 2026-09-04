@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc;
+package onlexnet.infra.adapters.in.azurefunc.collectorchestrator;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -22,7 +22,7 @@ public record CollectActivityResultWire(
         @Nullable List<String> itemKeys,
         @Nullable Map<String, String> interpellationFingerprints) {
 
-    static CollectActivityResultWire from(CollectActivityResult result) {
+    public static CollectActivityResultWire from(CollectActivityResult result) {
         var date = result.getCollectionDate();
         return new CollectActivityResultWire(
                 result.getCount(),
@@ -32,7 +32,7 @@ public record CollectActivityResultWire(
                 result.getInterpellationFingerprints());
     }
 
-    CollectActivityResult toSchemaModel() {
+    public CollectActivityResult toSchemaModel() {
         var result = new CollectActivityResult();
         result.setCount(this.count);
         result.setTermNum(this.termNum);

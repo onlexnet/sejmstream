@@ -40,7 +40,7 @@ import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
-import onlexnet.infra.adapters.in.azurefunc.CollectActivityResultWire;
+import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctionSupport;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;

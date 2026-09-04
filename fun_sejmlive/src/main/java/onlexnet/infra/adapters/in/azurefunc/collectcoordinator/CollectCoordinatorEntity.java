@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc.collectCoordinator;
+package onlexnet.infra.adapters.in.azurefunc.collectcoordinator;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
