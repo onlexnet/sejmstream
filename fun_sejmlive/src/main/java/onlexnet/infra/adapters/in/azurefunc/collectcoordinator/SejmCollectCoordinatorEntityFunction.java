@@ -3,6 +3,7 @@ package onlexnet.infra.adapters.in.azurefunc.collectcoordinator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.durabletask.EntityRunner;
@@ -30,11 +31,11 @@ public final class SejmCollectCoordinatorEntityFunction {
 
 }
 
-final class CollectCoordinatorState implements CollectCoordinatorEntityState {
+@JsonIgnoreProperties(ignoreUnknown = true)
+final class Some implements EntityState {
     private boolean running;
-    private int pendingRequests;
 
-    public CollectCoordinatorState() {
+    public Some() {
     }
 
     public boolean isRunning() {
@@ -45,20 +46,11 @@ final class CollectCoordinatorState implements CollectCoordinatorEntityState {
         this.running = running;
     }
 
-    public int getPendingRequests() {
-        return this.pendingRequests;
-    }
-
-    public void setPendingRequests(int pendingRequests) {
-        this.pendingRequests = pendingRequests;
-    }
-
     public CollectCoordinatorDecider.State toDeciderState() {
-        return new CollectCoordinatorDecider.State(this.running, this.pendingRequests);
+        return new CollectCoordinatorDecider.State(this.running);
     }
 
     public void apply(CollectCoordinatorDecider.State state) {
         this.running = state.running();
-        this.pendingRequests = state.pendingRequests();
     }
 }

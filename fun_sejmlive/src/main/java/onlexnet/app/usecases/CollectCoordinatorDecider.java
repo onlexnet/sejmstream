@@ -1,8 +1,8 @@
 package onlexnet.app.usecases;
 
 /**
- * Ensures at most one collect orchestration runs at a time and queues additional requests
- * so none are lost while a run is in progress.
+ * Ensures at most one collect orchestration runs at a time.
+ * Additional requests received while a run is in progress are coalesced.
  */
 public final class CollectCoordinatorDecider {
 
@@ -17,35 +17,23 @@ public final class CollectCoordinatorDecider {
 
     private Decision onRequestCollect(State state, RequestCollect requestCollect) {
         if (state.running()) {
-            return new Decision(new State(true, state.pendingRequests() + 1), Effect.none());
+            return new Decision(state, Effect.none());
         }
 
-        return new Decision(new State(true, state.pendingRequests()), new Effect.StartCollectRun(requestCollect.source()));
+        return new Decision(new State(true), new Effect.StartCollectRun(requestCollect.source()));
     }
 
     private Decision onCollectFinished(State state) {
-        if (state.pendingRequests() > 0) {
-            return new Decision(
-                    new State(true, state.pendingRequests() - 1),
-                    new Effect.StartCollectRun("queued"));
-        }
-
-        return new Decision(new State(false, state.pendingRequests()), Effect.none());
+        return new Decision(State.idle(), Effect.none());
     }
 
     private Decision onForceStartNext(State state, ForceStartNext forceStartNext) {
-        if (state.pendingRequests() > 0) {
-            return new Decision(
-                    new State(true, state.pendingRequests() - 1),
-                    new Effect.StartCollectRun(forceStartNext.source()));
-        }
-
-        return new Decision(new State(true, 0), new Effect.StartCollectRun(forceStartNext.source()));
+        return new Decision(new State(true), new Effect.StartCollectRun(forceStartNext.source()));
     }
 
-    public record State(boolean running, int pendingRequests) {
+    public record State(boolean running) {
         public static State idle() {
-            return new State(false, 0);
+            return new State(false);
         }
     }
 

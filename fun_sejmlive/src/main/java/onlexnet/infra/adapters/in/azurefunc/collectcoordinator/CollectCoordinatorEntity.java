@@ -24,15 +24,15 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
     // private static final String DELETE_OPERATION_NAME = "delete";
     private final JsonValidator jsonValidator;
-    private CollectCoordinatorEntityState state = UninitializedCollectCoordinatorState.INSTANCE;
+    private EntityState state = None.INSTANCE;
     private CollectCoordinatorEntityContext context = UninitializedCollectCoordinatorEntityContext.INSTANCE;
 
-    protected Class<CollectCoordinatorState> getStateType() {
-        return CollectCoordinatorState.class;
+    protected Class<Some> getStateType() {
+        return Some.class;
     }
 
-    protected CollectCoordinatorState initializeState(TaskEntityOperation operation) {
-        return new CollectCoordinatorState();
+    protected Some initializeState(TaskEntityOperation operation) {
+        return new Some();
     }
 
     @Override
@@ -121,8 +121,8 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
                 options);
     }
 
-    private CollectCoordinatorState requireState() {
-        if (this.state instanceof CollectCoordinatorState initializedState) {
+    private Some requireState() {
+        if (this.state instanceof Some initializedState) {
             return initializedState;
         }
         throw new IllegalStateException("state must be initialized in run() before contract dispatch");
@@ -136,12 +136,11 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 }
 
-sealed interface CollectCoordinatorEntityState permits CollectCoordinatorState, UninitializedCollectCoordinatorState {
+sealed interface EntityState permits Some, None {
 }
 
-enum UninitializedCollectCoordinatorState implements CollectCoordinatorEntityState {
-    INSTANCE
-}
+enum None implements EntityState { INSTANCE }
+
 
 sealed interface CollectCoordinatorEntityContext permits InitializedCollectCoordinatorEntityContext, UninitializedCollectCoordinatorEntityContext {
 }

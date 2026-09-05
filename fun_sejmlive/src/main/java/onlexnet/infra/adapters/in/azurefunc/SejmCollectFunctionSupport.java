@@ -26,10 +26,7 @@ public class SejmCollectFunctionSupport {
     private static final EntityInstanceId COLLECT_COORDINATOR_ENTITY_ID =
             new EntityInstanceId(SejmCollectFunctions.COORDINATOR_ENTITY_NAME, SejmCollectFunctions.COORDINATOR_ENTITY_KEY);
 
-    public void runTimer(
-            String timerInfo,
-            DurableClientContext clientCtx,
-            ExecutionContext execCtx) {
+    public void runTimer(String timerInfo, DurableClientContext clientCtx, ExecutionContext execCtx) {
 
         try {
             var instanceId = enqueueCollectRequest(clientCtx, "timer");

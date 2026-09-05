@@ -204,27 +204,26 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     @Test
     void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
         var objectMapper = new ObjectMapper();
-                var stateClassName = SejmCollectCoordinatorEntityFunction.class.getPackageName() + ".CollectCoordinatorState";
-                var stateClass = Class.forName(stateClassName);
+        var stateClassName = SejmCollectCoordinatorEntityFunction.class.getPackageName() + ".CollectCoordinatorState";
+        var stateClass = Class.forName(stateClassName);
         var constructor = stateClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         var state = constructor.newInstance();
         var setRunning = stateClass.getDeclaredMethod("setRunning", boolean.class);
         setRunning.setAccessible(true);
         setRunning.invoke(state, true);
-        var setPendingRequests = stateClass.getDeclaredMethod("setPendingRequests", int.class);
-        setPendingRequests.setAccessible(true);
-        setPendingRequests.invoke(state, 2);
 
         var json = objectMapper.writeValueAsString(state);
         var restored = objectMapper.readValue(json, stateClass);
         var isRunning = stateClass.getDeclaredMethod("isRunning");
         isRunning.setAccessible(true);
-        var getPendingRequests = stateClass.getDeclaredMethod("getPendingRequests");
-        getPendingRequests.setAccessible(true);
 
         assertThat(isRunning.invoke(restored)).isEqualTo(true);
-        assertThat(getPendingRequests.invoke(restored)).isEqualTo(2);
+
+        var restoredFromLegacyPayload = objectMapper.readValue(
+                "{\"running\":true,\"pendingRequests\":2}",
+                stateClass);
+        assertThat(isRunning.invoke(restoredFromLegacyPayload)).isEqualTo(true);
     }
 
     private static void assertActivityContract(
