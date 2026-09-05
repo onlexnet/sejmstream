@@ -44,6 +44,13 @@ import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityR
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctionSupport;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectActivitySupport;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectBillsActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectCommitteesActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectInterpellationsActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectPrintsActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectQuestionsActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectVotingsActivityFunction;
 
 final class SejmCollectFunctionTestSupport {
 
@@ -53,15 +60,52 @@ final class SejmCollectFunctionTestSupport {
     static SejmCollectFunctionSupport newSupport(
             SejmCollectOperations collectService,
             SejmApiClient sejmApiClient) {
-        var digestPersistence = mock(SejmDailyDigestPersistence.class);
-        return new SejmCollectFunctionSupport(collectService, sejmApiClient, digestPersistence, newJsonValidator());
+        return new SejmCollectFunctionSupport();
     }
 
     static SejmCollectFunctionSupport newSupport(
             SejmCollectOperations collectService,
             SejmApiClient sejmApiClient,
             SejmDailyDigestPersistence digestPersistence) {
-        return new SejmCollectFunctionSupport(collectService, sejmApiClient, digestPersistence, newJsonValidator());
+        return new SejmCollectFunctionSupport();
+    }
+
+    static SejmCollectActivitySupport newActivitySupport(
+            SejmCollectOperations collectService,
+            SejmApiClient sejmApiClient) {
+        var digestPersistence = mock(SejmDailyDigestPersistence.class);
+        return new SejmCollectActivitySupport(collectService, sejmApiClient, digestPersistence, newJsonValidator());
+    }
+
+    static SejmCollectActivitySupport newActivitySupport(
+            SejmCollectOperations collectService,
+            SejmApiClient sejmApiClient,
+            SejmDailyDigestPersistence digestPersistence) {
+        return new SejmCollectActivitySupport(collectService, sejmApiClient, digestPersistence, newJsonValidator());
+    }
+
+    static SejmCollectVotingsActivityFunction newVotingsActivityFunction(SejmCollectActivitySupport activitySupport) {
+        return new SejmCollectVotingsActivityFunction(activitySupport);
+    }
+
+    static SejmCollectCommitteesActivityFunction newCommitteesActivityFunction(SejmCollectActivitySupport activitySupport) {
+        return new SejmCollectCommitteesActivityFunction(activitySupport);
+    }
+
+    static SejmCollectPrintsActivityFunction newPrintsActivityFunction(SejmCollectActivitySupport activitySupport) {
+        return new SejmCollectPrintsActivityFunction(activitySupport);
+    }
+
+    static SejmCollectInterpellationsActivityFunction newInterpellationsActivityFunction(SejmCollectActivitySupport activitySupport) {
+        return new SejmCollectInterpellationsActivityFunction(activitySupport);
+    }
+
+    static SejmCollectQuestionsActivityFunction newQuestionsActivityFunction(SejmCollectActivitySupport activitySupport) {
+        return new SejmCollectQuestionsActivityFunction(activitySupport);
+    }
+
+    static SejmCollectBillsActivityFunction newBillsActivityFunction(SejmCollectActivitySupport activitySupport) {
+        return new SejmCollectBillsActivityFunction(activitySupport);
     }
 
     static JsonValidator newJsonValidator() {

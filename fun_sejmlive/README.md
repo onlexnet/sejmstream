@@ -114,6 +114,11 @@ azurite --silent --location /tmp/azurite
 
 ### 3) Build and test
 
+Maven JVM defaults for this repository:
+
+- `.mvn/jvm.config` includes `-XX:-UseContainerSupport` to avoid noisy cgroup-detection warnings in some dev-container/WSL environments.
+- If you need container-aware JVM sizing, remove this flag locally and set explicit JVM limits via `MAVEN_OPTS`.
+
 ```bash
 mvn test
 mvn -DskipTests package

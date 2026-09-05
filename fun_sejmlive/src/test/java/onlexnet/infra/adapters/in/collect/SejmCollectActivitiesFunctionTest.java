@@ -56,9 +56,16 @@ class SejmCollectActivitiesFunctionTest {
         when(digestPersistence.findByDateAndType(any(LocalDate.class), eq("PRINT"))).thenReturn(printRows);
         when(digestPersistence.findByDateAndType(any(LocalDate.class), eq("BILL"))).thenReturn(billRows);
 
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient, digestPersistence);
+        var activitySupport = SejmCollectFunctionTestSupport.newActivitySupport(
+                collectService,
+                sejmApiClient,
+                digestPersistence);
+        var interpellationsActivity = SejmCollectFunctionTestSupport
+                .newInterpellationsActivityFunction(activitySupport);
 
-        var result = support.collectInterpellations(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
+        var result = interpellationsActivity.collectInterpellations(
+                null,
+                new SejmCollectFunctionTestSupport.FakeExecutionContext());
 
         assertThat(result.count()).isEqualTo(2);
         assertThat(result.termNum()).isEqualTo(10);
@@ -85,14 +92,16 @@ class SejmCollectActivitiesFunctionTest {
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
                         new SejmPrints(10, null, "/term10/prints"),
                         null)));
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+        var activitySupport = SejmCollectFunctionTestSupport.newActivitySupport(collectService, sejmApiClient);
+        var votingsActivity = SejmCollectFunctionTestSupport.newVotingsActivityFunction(activitySupport);
+        var billsActivity = SejmCollectFunctionTestSupport.newBillsActivityFunction(activitySupport);
 
         var beforeVotings = LocalDate.now();
-        var votingResult = support.collectVotings(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
+        var votingResult = votingsActivity.collectVotings(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
         var afterVotings = LocalDate.now();
 
         var beforeBills = LocalDate.now();
-        var billsResult = support.collectBills(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
+        var billsResult = billsActivity.collectBills(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
         var afterBills = LocalDate.now();
 
         assertThat(votingResult.count()).isEqualTo(11);
@@ -114,9 +123,12 @@ class SejmCollectActivitiesFunctionTest {
                 new SejmTerm(false, LocalDate.of(2023, 1, 1), 9,
                         new SejmPrints(0, null, "/term9/prints"),
                         LocalDate.of(2023, 10, 10))));
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+        var activitySupport = SejmCollectFunctionTestSupport.newActivitySupport(collectService, sejmApiClient);
+        var committeesActivity = SejmCollectFunctionTestSupport.newCommitteesActivityFunction(activitySupport);
 
-        assertThatThrownBy(() -> support.collectCommittees(null, new SejmCollectFunctionTestSupport.FakeExecutionContext()))
+        assertThatThrownBy(() -> committeesActivity.collectCommittees(
+                null,
+                new SejmCollectFunctionTestSupport.FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageStartingWith("Failed to collect committee sittings")
                 .hasCauseInstanceOf(IllegalStateException.class)
@@ -134,9 +146,12 @@ class SejmCollectActivitiesFunctionTest {
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
                         new SejmPrints(10, null, "/term10/prints"),
                         null)));
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+        var activitySupport = SejmCollectFunctionTestSupport.newActivitySupport(collectService, sejmApiClient);
+        var questionsActivity = SejmCollectFunctionTestSupport.newQuestionsActivityFunction(activitySupport);
 
-        assertThatThrownBy(() -> support.collectQuestions(null, new SejmCollectFunctionTestSupport.FakeExecutionContext()))
+        assertThatThrownBy(() -> questionsActivity.collectQuestions(
+                null,
+                new SejmCollectFunctionTestSupport.FakeExecutionContext()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageStartingWith("Failed to collect written questions")
                 .hasCauseInstanceOf(RuntimeException.class)
@@ -154,9 +169,10 @@ class SejmCollectActivitiesFunctionTest {
                 new SejmTerm(true, LocalDate.of(2023, 10, 11), 10,
                         new SejmPrints(10, null, "/term10/prints"),
                         null)));
-        var support = SejmCollectFunctionTestSupport.newSupport(collectService, sejmApiClient);
+        var activitySupport = SejmCollectFunctionTestSupport.newActivitySupport(collectService, sejmApiClient);
+        var billsActivity = SejmCollectFunctionTestSupport.newBillsActivityFunction(activitySupport);
 
-        var result = support.collectBills(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
+        var result = billsActivity.collectBills(null, new SejmCollectFunctionTestSupport.FakeExecutionContext());
 
         assertThat(result.count()).isEqualTo(0);
         verify(collectService, times(1)).collectBills(eq(10), any(LocalDate.class));
