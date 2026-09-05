@@ -30,7 +30,7 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
-import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations;
 
 class SejmCollectOrchestratorFunctionTest {
 
@@ -126,7 +126,7 @@ class SejmCollectOrchestratorFunctionTest {
                 any());
         verify(orchestrationContext).signalEntity(
                 eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
-                eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
+                eq(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
                 any());
     }
 
@@ -226,7 +226,7 @@ class SejmCollectOrchestratorFunctionTest {
                 .when(orchestrationContext)
                 .signalEntity(
                         eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
-                        eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
+                        eq(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
                         any());
 
         assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
@@ -267,7 +267,7 @@ class SejmCollectOrchestratorFunctionTest {
                 .when(orchestrationContext)
                 .signalEntity(
                         eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
-                        eq(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
+                        eq(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
                         any());
 
         assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext)).isSameAs(blocked);

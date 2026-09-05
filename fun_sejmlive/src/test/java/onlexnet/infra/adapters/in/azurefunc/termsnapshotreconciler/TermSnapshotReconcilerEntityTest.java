@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot;
+package onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -16,26 +16,26 @@ import com.microsoft.durabletask.EntityInstanceId;
 import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
 
-class SejmTermSnapshotEntityTest {
+class TermSnapshotReconcilerEntityTest {
 
     @Test
     void givenKnownOperationName_whenResolving_thenReturnsExpectedBinding() {
-        assertThat(SejmTermSnapshotEntity.resolveContractOperation(
-                SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()))
-                .isEqualTo(SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED);
+        assertThat(TermSnapshotReconcilerEntity.resolveContractOperation(
+                TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()))
+                .isEqualTo(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED);
     }
 
     @Test
     void givenUnknownOperationName_whenResolving_thenThrowsWithEntityNameAndOperation() {
-        assertThatThrownBy(() -> SejmTermSnapshotEntity.resolveContractOperation("unknownMethod"))
+        assertThatThrownBy(() -> TermSnapshotReconcilerEntity.resolveContractOperation("unknownMethod"))
                 .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("SejmTermSnapshotEntity")
+                .hasMessageContaining("TermSnapshotReconcilerEntity")
                 .hasMessageContaining("unknownMethod");
     }
 
     @Test
     void givenIncomingTermSnapshotCollectedEvent_whenInvoked_thenCallsContractMethod() {
-        var target = mock(SejmTermSnapshotContractV1.class);
+        var target = mock(TermSnapshotReconcilerContractV1.class);
         var operation = mock(TaskEntityOperation.class);
         var context = mock(TaskEntityContext.class);
         when(operation.getContext()).thenReturn(context);
@@ -50,14 +50,14 @@ class SejmTermSnapshotEntityTest {
                 List.of("501"));
         when(operation.getInput(TermSnapshotCollectedEvent.class)).thenReturn(event);
 
-        SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED.invoke(target, operation);
+        TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.invoke(target, operation);
 
         verify(target).termSnapshotCollected(event);
     }
 
     @Test
     void givenPreviousSnapshotForSameTerm_whenReconciling_thenDetectsNewAndUpdatedItems() {
-        var state = new SejmTermSnapshotState();
+        var state = new TermSnapshotReconcilerState();
         state.setLatestSnapshot(
                 new TermSnapshotPayload(
                         10,
@@ -76,7 +76,7 @@ class SejmTermSnapshotEntityTest {
                 List.of("401", "402"),
                 List.of("501", "502"));
 
-        var outcome = SejmTermSnapshotEntity.reconcile(state, 10, event);
+        var outcome = TermSnapshotReconcilerEntity.reconcile(state, 10, event);
 
         assertThat(outcome.diff().newInterpellations()).containsExactly("79");
         assertThat(outcome.diff().updatedInterpellations()).containsExactly("77");
@@ -88,7 +88,7 @@ class SejmTermSnapshotEntityTest {
     @Test
     void givenDiffWithAllEvents_whenDispatching_thenInvokesSeparatedHandlers() {
         var probe = new DispatchProbeEntity();
-        var diff = new SejmTermSnapshotEntity.TermSnapshotDiff(
+        var diff = new TermSnapshotReconcilerEntity.TermSnapshotDiff(
                 10,
                 List.of("79"),
                 List.of("77"),
@@ -105,7 +105,7 @@ class SejmTermSnapshotEntityTest {
         assertThat(probe.newBillsEvents).isEqualTo(1);
     }
 
-    private static final class DispatchProbeEntity extends SejmTermSnapshotEntity {
+    private static final class DispatchProbeEntity extends TermSnapshotReconcilerEntity {
         private int newInterpellationsEvents;
         private int updatedInterpellationsEvents;
         private int newWrittenQuestionsEvents;

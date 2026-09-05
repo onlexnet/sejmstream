@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot;
+package onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,22 +21,22 @@ import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class SejmTermSnapshotEntity implements TaskEntity, SejmTermSnapshotContractV1 {
+public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotReconcilerContractV1 {
 
-    private SejmTermSnapshotEntityState state = UninitializedSejmTermSnapshotState.INSTANCE;
-    private SejmTermSnapshotEntityContext context = UninitializedSejmTermSnapshotEntityContext.INSTANCE;
+    private TermSnapshotReconcilerEntityState state = UninitializedTermSnapshotReconcilerState.INSTANCE;
+    private TermSnapshotReconcilerEntityContext context = UninitializedTermSnapshotReconcilerEntityContext.INSTANCE;
 
-    protected Class<SejmTermSnapshotState> getStateType() {
-        return SejmTermSnapshotState.class;
+    protected Class<TermSnapshotReconcilerState> getStateType() {
+        return TermSnapshotReconcilerState.class;
     }
 
-    protected SejmTermSnapshotState initializeState(TaskEntityOperation operation) {
-        return new SejmTermSnapshotState();
+    protected TermSnapshotReconcilerState initializeState(TaskEntityOperation operation) {
+        return new TermSnapshotReconcilerState();
     }
 
     @Override
     public @Nullable Object run(TaskEntityOperation operation) {
-        this.context = new InitializedSejmTermSnapshotEntityContext(operation.getContext());
+        this.context = new InitializedTermSnapshotReconcilerEntityContext(operation.getContext());
 
         var stateType = getStateType();
         var persistedState = operation.getState().getState(stateType);
@@ -48,8 +48,8 @@ public class SejmTermSnapshotEntity implements TaskEntity, SejmTermSnapshotContr
         return null;
     }
 
-    public static DurableEntityOperationBinding<SejmTermSnapshotContractV1, ?> resolveContractOperation(String requestedMethod) {
-        return SejmTermSnapshotContractOperations.resolveOperation(SejmTermSnapshotEntity.class, requestedMethod);
+    public static DurableEntityOperationBinding<TermSnapshotReconcilerContractV1, ?> resolveContractOperation(String requestedMethod) {
+        return TermSnapshotReconcilerContractOperations.resolveOperation(TermSnapshotReconcilerEntity.class, requestedMethod);
     }
 
     @Override
@@ -121,15 +121,15 @@ public class SejmTermSnapshotEntity implements TaskEntity, SejmTermSnapshotContr
         return new NewBillsDetectedEvent(diff.termNum(), diff.newBills());
     }
 
-    private SejmTermSnapshotState requireState() {
-        if (this.state instanceof SejmTermSnapshotState initializedState) {
+    private TermSnapshotReconcilerState requireState() {
+        if (this.state instanceof TermSnapshotReconcilerState initializedState) {
             return initializedState;
         }
         throw new IllegalStateException("state must be initialized in run() before contract dispatch");
     }
 
     private TaskEntityContext requireContext() {
-        if (this.context instanceof InitializedSejmTermSnapshotEntityContext initializedContext) {
+        if (this.context instanceof InitializedTermSnapshotReconcilerEntityContext initializedContext) {
             return initializedContext.value();
         }
         throw new IllegalStateException("context must be initialized in run() before contract dispatch");
@@ -195,7 +195,7 @@ public class SejmTermSnapshotEntity implements TaskEntity, SejmTermSnapshotContr
     }
 
     static ReconciliationOutcome reconcile(
-            SejmTermSnapshotState state,
+            TermSnapshotReconcilerState state,
             int termNum,
             TermSnapshotCollectedEvent event) {
         var previousSnapshot = state.getLatestSnapshot();
@@ -238,20 +238,20 @@ public class SejmTermSnapshotEntity implements TaskEntity, SejmTermSnapshotContr
     }
 }
 
-sealed interface SejmTermSnapshotEntityState permits SejmTermSnapshotState, UninitializedSejmTermSnapshotState {
+sealed interface TermSnapshotReconcilerEntityState permits TermSnapshotReconcilerState, UninitializedTermSnapshotReconcilerState {
 }
 
-enum UninitializedSejmTermSnapshotState implements SejmTermSnapshotEntityState {
+enum UninitializedTermSnapshotReconcilerState implements TermSnapshotReconcilerEntityState {
     INSTANCE
 }
 
-sealed interface SejmTermSnapshotEntityContext
-        permits InitializedSejmTermSnapshotEntityContext, UninitializedSejmTermSnapshotEntityContext {
+sealed interface TermSnapshotReconcilerEntityContext
+        permits InitializedTermSnapshotReconcilerEntityContext, UninitializedTermSnapshotReconcilerEntityContext {
 }
 
-record InitializedSejmTermSnapshotEntityContext(TaskEntityContext value) implements SejmTermSnapshotEntityContext {
+record InitializedTermSnapshotReconcilerEntityContext(TaskEntityContext value) implements TermSnapshotReconcilerEntityContext {
 }
 
-enum UninitializedSejmTermSnapshotEntityContext implements SejmTermSnapshotEntityContext {
+enum UninitializedTermSnapshotReconcilerEntityContext implements TermSnapshotReconcilerEntityContext {
     INSTANCE
 }

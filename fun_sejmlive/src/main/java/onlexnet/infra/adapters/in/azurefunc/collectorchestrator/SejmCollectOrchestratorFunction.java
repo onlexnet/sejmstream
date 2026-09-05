@@ -2,7 +2,7 @@ package onlexnet.infra.adapters.in.azurefunc.collectorchestrator;
 
 import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.COLLECT_COMPLETED;
 import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.COLLECT_FAILED;
-import static onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotContractOperations.TERM_SNAPSHOT_COLLECTED;
+import static onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -34,7 +34,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
-import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.TermSnapshotCollectedEvent;
+import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotCollectedEvent;
 
 @Component
 @RequiredArgsConstructor

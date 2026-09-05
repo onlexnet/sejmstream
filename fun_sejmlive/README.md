@@ -30,7 +30,7 @@ Main boundaries:
 - `Fun_CollectStart` - `HttpTrigger` `POST`, auth level `FUNCTION`.
 - `Fun_CollectOrchestrator` - durable orchestrator.
 - `Fun_CollectCoordinatorEntity` - durable entity to serialize collect requests.
-- `Fun_SejmTermSnapshotEntity` - durable entity to keep latest term snapshot and dispatch per-event handlers after diffing.
+- `Fun_TermSnapshotReconcilerEntity` - durable entity to keep latest term snapshot and dispatch per-event handlers after diffing.
 - Orchestrator sends currently collected snapshot state (from activity outputs) directly to the term snapshot entity for diffing.
 - Coordinator entity exposes admin recovery operation `forceStartNext` (durable entity op) to resume queue processing when state is stuck and no orchestrator is running.
 - Activities:

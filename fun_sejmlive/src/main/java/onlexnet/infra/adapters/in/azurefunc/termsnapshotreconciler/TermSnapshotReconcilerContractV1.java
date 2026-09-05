@@ -1,11 +1,11 @@
-package onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot;
+package onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler;
 
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityContract;
 
 /**
  * Business contract accepted by the term snapshot durable entity.
  */
-public interface SejmTermSnapshotContractV1 extends DurableEntityContract {
+public interface TermSnapshotReconcilerContractV1 extends DurableEntityContract {
 
     /**
      * Handles a newly collected term snapshot.

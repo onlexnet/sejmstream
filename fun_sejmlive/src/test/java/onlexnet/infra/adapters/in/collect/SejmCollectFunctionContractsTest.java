@@ -41,7 +41,7 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectTimerFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractV1;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.SejmCollectCoordinatorEntityFunction;
-import onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot.SejmTermSnapshotEntityFunction;
+import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
@@ -152,8 +152,8 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
         @Test
         void givenTermSnapshotEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
                         throws NoSuchMethodException {
-                var method = SejmTermSnapshotEntityFunction.class.getDeclaredMethod(
-                                "runSejmTermSnapshotEntity",
+                var method = TermSnapshotReconcilerEntityFunction.class.getDeclaredMethod(
+                                "runTermSnapshotReconcilerEntity",
                                 String.class,
                                 ExecutionContext.class);
 

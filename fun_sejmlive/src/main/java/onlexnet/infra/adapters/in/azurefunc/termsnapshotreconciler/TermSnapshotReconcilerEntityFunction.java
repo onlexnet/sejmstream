@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot;
+package onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.ObjectProvider;
@@ -22,25 +22,25 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
  */
 @Component
 @RequiredArgsConstructor
-public final class SejmTermSnapshotEntityFunction {
+public final class TermSnapshotReconcilerEntityFunction {
 
-    private final ObjectProvider<SejmTermSnapshotEntity> providerOfSejmTermSnapshotEntity;
+    private final ObjectProvider<TermSnapshotReconcilerEntity> providerOfTermSnapshotReconcilerEntity;
 
     @FunctionName(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_FUNCTION_NAME)
-    public String runSejmTermSnapshotEntity(
+    public String runTermSnapshotReconcilerEntity(
             @DurableEntityTrigger(name = "entityRequest", entityName = SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME)
             String entityBatchRequest,
             ExecutionContext execCtx) {
 
         Log.info(execCtx, "Processing term snapshot entity batch");
-        return EntityRunner.loadAndRun(entityBatchRequest, () -> providerOfSejmTermSnapshotEntity.getObject());
+        return EntityRunner.loadAndRun(entityBatchRequest, () -> providerOfTermSnapshotReconcilerEntity.getObject());
     }
 }
 
-final class SejmTermSnapshotState implements SejmTermSnapshotEntityState {
+final class TermSnapshotReconcilerState implements TermSnapshotReconcilerEntityState {
     private @Nullable TermSnapshotPayload latestSnapshot;
 
-    public SejmTermSnapshotState() {
+    public TermSnapshotReconcilerState() {
     }
 
     /**
@@ -54,7 +54,7 @@ final class SejmTermSnapshotState implements SejmTermSnapshotEntityState {
         this.latestSnapshot = latestSnapshot;
     }
 
-    public SejmTermSnapshotEntity.ReconciliationOutcome handleTermSnapshotCollected(int termNum, TermSnapshotCollectedEvent event) {
-        return SejmTermSnapshotEntity.reconcile(this, termNum, event);
+    public TermSnapshotReconcilerEntity.ReconciliationOutcome handleTermSnapshotCollected(int termNum, TermSnapshotCollectedEvent event) {
+        return TermSnapshotReconcilerEntity.reconcile(this, termNum, event);
     }
 }

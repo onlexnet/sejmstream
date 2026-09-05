@@ -1,16 +1,15 @@
-package onlexnet.infra.adapters.in.azurefunc.sejmTermSnapshot;
+package onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Event payload emitted when a new term snapshot was collected.
+ * Activity payload describing current collected state for one Sejm term and collection date.
  */
-public record TermSnapshotCollectedEvent(
+public record TermSnapshotPayload(
+        int termNum,
         LocalDate collectionDate,
-        String source,
-        String orchestrationInstanceId,
         Map<String, String> interpellationFingerprints,
         List<String> writtenQuestionKeys,
         List<String> printKeys,
