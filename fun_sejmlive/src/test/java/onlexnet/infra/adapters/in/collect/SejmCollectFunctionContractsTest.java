@@ -192,11 +192,14 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     }
 
     @Test
-    void givenAllCollectCoordinatorOperations_whenChecked_thenEachMapsToCoordinatorContractMethod() {
+        void shouldExposeOnlyDispatchAsCollectCoordinatorBusinessOperation() {
         var publicMethods = Arrays.stream(CollectCoordinatorContractV1.class.getMethods())
                 .map(Method::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
+
+                assertThat(COLLECT_COORDINATOR_OPERATIONS)
+                                .containsExactly(CollectCoordinatorContractOperations.DISPATCH.methodName());
 
         for (var op : COLLECT_COORDINATOR_OPERATIONS) {
             assertThat(publicMethods)

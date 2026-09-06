@@ -27,36 +27,32 @@ import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 
 class CollectCoordinatorEntityTest {
 
     @Test
-        void givenKnownOperationNames_whenResolving_thenReturnsExpectedContractBinding() {
+        void shouldResolveDispatchOperationName() {
                 assertThat(CollectCoordinatorEntity.resolveContractOperation(
-                                CollectCoordinatorContractOperations.REQUEST_COLLECT.methodName()))
-                                .isEqualTo(CollectCoordinatorContractOperations.REQUEST_COLLECT);
-                assertThat(CollectCoordinatorEntity.resolveContractOperation(
-                                CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()))
-                                .isEqualTo(CollectCoordinatorContractOperations.COLLECT_COMPLETED);
-                assertThat(CollectCoordinatorEntity.resolveContractOperation(
-                                CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()))
-                                .isEqualTo(CollectCoordinatorContractOperations.COLLECT_FAILED);
-                assertThat(CollectCoordinatorEntity.resolveContractOperation(
-                                CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName()))
-                                .isEqualTo(CollectCoordinatorContractOperations.FORCE_START_NEXT);
+                                CollectCoordinatorContractOperations.DISPATCH.methodName()))
+                                .isEqualTo(CollectCoordinatorContractOperations.DISPATCH);
     }
 
     @Test
-    void givenMixedCaseOperationName_whenResolving_thenMatchesCaseInsensitively() {
-                var operation = CollectCoordinatorEntity.resolveContractOperation("CoLlEcTcOmPlEtEd");
+        void shouldResolveDispatchOperationNameCaseInsensitively() {
+                var operation = CollectCoordinatorEntity.resolveContractOperation("DiSpAtCh");
 
-                assertThat(operation).isEqualTo(CollectCoordinatorContractOperations.COLLECT_COMPLETED);
+                assertThat(operation).isEqualTo(CollectCoordinatorContractOperations.DISPATCH);
     }
 
     @Test
-    void givenUnknownOperationName_whenResolving_thenThrowsWithEntityNameAndOperation() {
+        void shouldThrowForUnknownOperationName() {
                 assertThatThrownBy(() -> CollectCoordinatorEntity.resolveContractOperation("unknownMethod"))
                 .isInstanceOf(UnsupportedOperationException.class)
                 .hasMessageContaining("CollectCoordinatorEntity")
@@ -64,7 +60,7 @@ class CollectCoordinatorEntityTest {
     }
 
         @Test
-        void givenCoordinatorContractMethods_whenChecked_thenAllAreInvokableByOperationBindings() {
+        void shouldExposeOnlyDispatchAsBusinessOperationBinding() {
                 var contractMethods = Set.of(CollectCoordinatorContractV1.class.getMethods()).stream()
                                 .map(Method::getName)
                                 .collect(Collectors.toSet());
@@ -73,56 +69,66 @@ class CollectCoordinatorEntityTest {
                                 .map(DurableEntityOperationBinding::methodName)
                                 .collect(Collectors.toSet());
 
+                assertThat(boundOperationMethods)
+                                .containsExactly(CollectCoordinatorContractOperations.DISPATCH.methodName());
                 assertThat(boundOperationMethods).containsExactlyInAnyOrderElementsOf(contractMethods);
         }
 
         @Test
-        void givenIncomingDurableRequestForRequestCollect_whenInvoked_thenCallsContractMethod() {
+        void shouldInvokeDispatchWithRequestCollectCommandPayload() {
                 var target = mock(CollectCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
-                when(operation.getInput(String.class)).thenReturn("timer");
+                var command = new CollectCoordinatorRequestCollectCommand();
+                command.setSource("timer");
+                when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
 
-                CollectCoordinatorContractOperations.REQUEST_COLLECT.invoke(target, operation);
+                CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
-                verify(target).requestCollect("timer");
+                verify(target).dispatch(command);
         }
 
         @Test
-        void givenIncomingDurableRequestForCollectCompleted_whenInvoked_thenCallsContractMethod() {
+        void shouldInvokeDispatchWithCollectCompletedCommandPayload() {
                 var target = mock(CollectCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
                 var completion = new CollectCompletion();
                 completion.setOrchestrationInstanceId("instance-1");
-                when(operation.getInput(CollectCompletion.class)).thenReturn(completion);
+                var command = new CollectCoordinatorCollectCompletedCommand();
+                command.setCompletion(completion);
+                when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
 
-                CollectCoordinatorContractOperations.COLLECT_COMPLETED.invoke(target, operation);
+                CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
-                verify(target).collectCompleted(completion);
+                verify(target).dispatch(command);
         }
 
         @Test
-        void givenIncomingDurableRequestForCollectFailed_whenInvoked_thenCallsContractMethod() {
+        void shouldInvokeDispatchWithCollectFailedCommandPayload() {
                 var target = mock(CollectCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
                 var failure = new CollectFailure();
                 failure.setOrchestrationInstanceId("instance-1");
                 failure.setMessage("boom");
-                when(operation.getInput(CollectFailure.class)).thenReturn(failure);
+                var command = new CollectCoordinatorCollectFailedCommand();
+                command.setFailure(failure);
+                when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
 
-                CollectCoordinatorContractOperations.COLLECT_FAILED.invoke(target, operation);
+                CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
-                verify(target).collectFailed(failure);
+                verify(target).dispatch(command);
         }
 
         @Test
-        void givenIncomingDurableRequestForForceStartNext_whenInvoked_thenCallsContractMethod() {
+        void shouldInvokeDispatchWithForceStartNextCommandPayload() {
                 var target = mock(CollectCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
-                when(operation.getInput(String.class)).thenReturn("manual-recovery");
+                var command = new CollectCoordinatorForceStartNextCommand();
+                command.setSource("manual-recovery");
+                when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
 
-                CollectCoordinatorContractOperations.FORCE_START_NEXT.invoke(target, operation);
+                CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
-                verify(target).forceStartNext("manual-recovery");
+                verify(target).dispatch(command);
         }
 
     @Test
@@ -143,12 +149,14 @@ class CollectCoordinatorEntityTest {
         var failure = new CollectFailure();
         failure.setOrchestrationInstanceId("collect-instance-1");
         failure.setMessage("io.netty.handler.timeout.ReadTimeoutException");
+        var command = new CollectCoordinatorCollectFailedCommand();
+        command.setFailure(failure);
 
-        when(operation.getName()).thenReturn(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName());
+        when(operation.getName()).thenReturn(CollectCoordinatorContractOperations.DISPATCH.methodName());
         when(operation.getContext()).thenReturn(context);
         when(operation.getState()).thenReturn(state);
         when(state.getState(Some.class)).thenReturn(persistedState);
-        when(operation.getInput(CollectFailure.class)).thenReturn(failure);
+        when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
         when(context.getId()).thenReturn(new EntityInstanceId(
                 SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
                 SejmCollectFunctions.COORDINATOR_ENTITY_KEY));

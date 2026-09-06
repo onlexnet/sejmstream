@@ -78,6 +78,10 @@ This application follows Hexagonal Architecture (Ports and Adapters).
 
 For the collect pipeline, runtime coordination now uses two separate durable entities:
 - `CollectCoordinator` serializes collect-run requests.
+	- Business signaling contract is a single operation: `dispatch`.
+	- `dispatch` payload is `CollectCoordinatorDispatchCommand` (`oneOf` with discriminator `type`):
+		`requestCollect`, `collectCompleted`, `collectFailed`, `forceStartNext`.
+	- This contract is runtime-breaking for older senders that still use legacy operation names.
 - `SejmTermSnapshot` stores latest per-term snapshot state and dispatches recognized
 	events (new/updated interpellations, new questions/prints/bills, term switch)
 	after comparing current snapshot with previous state.

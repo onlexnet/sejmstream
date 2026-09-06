@@ -3,7 +3,9 @@ package onlexnet.infra.adapters.in.collect;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -29,6 +31,8 @@ import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.SejmCollectOrche
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations;
 
@@ -122,8 +126,8 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(CollectActivityResultWire.class));
         verify(orchestrationContext).signalEntity(
                 eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
-                eq(CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()),
-                any());
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                argThat(command -> isCompletedDispatchCommand(command, "collect-instance-1")));
         verify(orchestrationContext).signalEntity(
                 eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
                 eq(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
@@ -157,8 +161,8 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext, never()).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
-                any());
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                isA(CollectCoordinatorCollectFailedCommand.class));
     }
 
     @Test
@@ -195,8 +199,11 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
-                any());
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                argThat(command -> isFailedDispatchCommand(
+                        command,
+                        "collect-instance-2",
+                        "Collect orchestrator failed in activity " + SejmCollectFunctions.ACTIVITY_VOTINGS)));
     }
 
     @Test
@@ -235,8 +242,8 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
-                any());
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                argThat(command -> isFailedDispatchCommand(command, "collect-instance-3", "snapshot signal failed")));
     }
 
     @Test
@@ -274,8 +281,8 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext, never()).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
-                any());
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                isA(CollectCoordinatorCollectFailedCommand.class));
     }
 
     @Test
@@ -306,12 +313,12 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
-                any());
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                argThat(command -> isFailedDispatchCommand(command, "collect-instance-cancel", "collect-cancel")));
         verify(orchestrationContext, never()).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_COMPLETED.methodName()),
-                any());
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                isA(CollectCoordinatorCollectCompletedCommand.class));
     }
 
     @Test
@@ -422,8 +429,11 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
-                any());
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                argThat(command -> isFailedDispatchCommand(
+                        command,
+                        "collect-instance-unexpected-winner",
+                        "winner task that was not an anyOf candidate")));
     }
 
         @Test
@@ -445,7 +455,32 @@ class SejmCollectOrchestratorFunctionTest {
 
                 verify(orchestrationContext).signalEntity(
                                 eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
-                                eq(CollectCoordinatorContractOperations.COLLECT_FAILED.methodName()),
-                                any());
+                                                                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                                                                argThat(command -> isFailedDispatchCommand(
+                                                                                command,
+                                                                                "collect-instance-invalid-input",
+                                                                                "collect-orchestration-input.schema.json")));
+        }
+
+        private static boolean isCompletedDispatchCommand(Object command, String expectedInstanceId) {
+                if (!(command instanceof CollectCoordinatorCollectCompletedCommand completedCommand)) {
+                        return false;
+                }
+                var completion = completedCommand.getCompletion();
+                return completion != null && expectedInstanceId.equals(completion.getOrchestrationInstanceId());
+        }
+
+        private static boolean isFailedDispatchCommand(Object command, String expectedInstanceId, String expectedMessageFragment) {
+                if (!(command instanceof CollectCoordinatorCollectFailedCommand failedCommand)) {
+                        return false;
+                }
+                var failure = failedCommand.getFailure();
+                if (failure == null) {
+                        return false;
+                }
+                var message = failure.getMessage();
+                return expectedInstanceId.equals(failure.getOrchestrationInstanceId())
+                                && message != null
+                                && message.contains(expectedMessageFragment);
         }
 }

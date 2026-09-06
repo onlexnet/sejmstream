@@ -1,7 +1,6 @@
 package onlexnet.infra.adapters.in.azurefunc.collectorchestrator;
 
-import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.COLLECT_COMPLETED;
-import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.COLLECT_FAILED;
+import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.DISPATCH;
 import static onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED;
 
 import java.time.Duration;
@@ -31,6 +30,8 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
@@ -139,7 +140,9 @@ public final class SejmCollectOrchestratorFunction {
             var completion = new CollectCompletion();
             completion.setOrchestrationInstanceId(ctx.getInstanceId());
             this.jsonValidator.validateToSend(JsonValidator.COLLECT_COMPLETION, completion);
-            ctx.signalEntity(coordinatorEntityId, COLLECT_COMPLETED.methodName(), completion);
+            var completionCommand = new CollectCoordinatorCollectCompletedCommand();
+            completionCommand.setCompletion(completion);
+            ctx.signalEntity(coordinatorEntityId, DISPATCH.methodName(), completionCommand);
             return result;
         } catch (OrchestratorBlockedException e) {
             throw e;
@@ -300,6 +303,8 @@ public final class SejmCollectOrchestratorFunction {
         failure.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
         failure.setMessage(orchestrationFailureMessage(exception));
         this.jsonValidator.validateToSend(JsonValidator.COLLECT_FAILURE, failure);
-        orchestrationContext.signalEntity(coordinatorEntityId, COLLECT_FAILED.methodName(), failure);
+        var failureCommand = new CollectCoordinatorCollectFailedCommand();
+        failureCommand.setFailure(failure);
+        orchestrationContext.signalEntity(coordinatorEntityId, DISPATCH.methodName(), failureCommand);
     }
 }

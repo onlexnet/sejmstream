@@ -61,3 +61,58 @@ components:
       $ref: '../schemajson/collect-flow/collect-completion.schema.json'
     CollectFailure:
       $ref: '../schemajson/collect-flow/collect-failure.schema.json'
+    CollectCoordinatorDispatchCommand:
+      type: object
+      required:
+        - type
+      properties:
+        type:
+          type: string
+      discriminator:
+        propertyName: type
+        mapping:
+          requestCollect: '#/components/schemas/CollectCoordinatorRequestCollectCommand'
+          collectCompleted: '#/components/schemas/CollectCoordinatorCollectCompletedCommand'
+          collectFailed: '#/components/schemas/CollectCoordinatorCollectFailedCommand'
+          forceStartNext: '#/components/schemas/CollectCoordinatorForceStartNextCommand'
+      oneOf:
+        - $ref: '#/components/schemas/CollectCoordinatorRequestCollectCommand'
+        - $ref: '#/components/schemas/CollectCoordinatorCollectCompletedCommand'
+        - $ref: '#/components/schemas/CollectCoordinatorCollectFailedCommand'
+        - $ref: '#/components/schemas/CollectCoordinatorForceStartNextCommand'
+    CollectCoordinatorRequestCollectCommand:
+      allOf:
+        - $ref: '#/components/schemas/CollectCoordinatorDispatchCommand'
+        - type: object
+          required:
+            - source
+          properties:
+            source:
+              type: string
+    CollectCoordinatorCollectCompletedCommand:
+      allOf:
+        - $ref: '#/components/schemas/CollectCoordinatorDispatchCommand'
+        - type: object
+          required:
+            - completion
+          properties:
+            completion:
+              $ref: '#/components/schemas/CollectCompletion'
+    CollectCoordinatorCollectFailedCommand:
+      allOf:
+        - $ref: '#/components/schemas/CollectCoordinatorDispatchCommand'
+        - type: object
+          required:
+            - failure
+          properties:
+            failure:
+              $ref: '#/components/schemas/CollectFailure'
+    CollectCoordinatorForceStartNextCommand:
+      allOf:
+        - $ref: '#/components/schemas/CollectCoordinatorDispatchCommand'
+        - type: object
+          required:
+            - source
+          properties:
+            source:
+              type: string

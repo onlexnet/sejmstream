@@ -1,8 +1,7 @@
 package onlexnet.infra.adapters.in.azurefunc.collectcoordinator;
 
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityContract;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommand;
 
 /**
  * Business operation contract accepted by the collect coordinator durable entity.
@@ -10,23 +9,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 public interface CollectCoordinatorContractV1 extends DurableEntityContract {
 
     /**
-     * Requests a collect run for the specified source.
+     * Dispatches a collect coordinator business command.
      */
-    void requestCollect(String source);
-
-    /**
-     * Reports successful orchestration completion.
-     */
-    void collectCompleted(CollectCompletion completion);
-
-    /**
-     * Reports orchestration failure details.
-     */
-    void collectFailed(CollectFailure failure);
-
-    /**
-     * Administrative recovery operation that forces starting the next collect run.
-     * Use only when runtime diagnostics confirm there is no active collect orchestrator.
-     */
-    void forceStartNext(String source);
+    void dispatch(CollectCoordinatorDispatchCommand command);
 }

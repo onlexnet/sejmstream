@@ -15,8 +15,11 @@ import onlexnet.app.usecases.CollectCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 
 @Component
@@ -62,29 +65,46 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 
     @Override
-    public void requestCollect(String source) {
+    public void dispatch(CollectCoordinatorDispatchCommand command) {
+        if (command == null) {
+            throw new IllegalArgumentException("Collect coordinator command payload is required");
+        }
+
+        switch (command) {
+            case CollectCoordinatorRequestCollectCommand requestCollectCommand ->
+                    handleRequestCollect(requestCollectCommand.getSource());
+            case CollectCoordinatorCollectCompletedCommand collectCompletedCommand ->
+                    handleCollectCompleted(collectCompletedCommand);
+            case CollectCoordinatorCollectFailedCommand collectFailedCommand ->
+                    handleCollectFailed(collectFailedCommand);
+            case CollectCoordinatorForceStartNextCommand forceStartNextCommand ->
+                    handleForceStartNext(forceStartNextCommand.getSource());
+            default -> throw new UnsupportedOperationException(
+                    "Unsupported collect coordinator dispatch command type: " + command.getClass().getName());
+        }
+    }
+
+    private void handleRequestCollect(String source) {
         var decision = DECIDER.decide(
                 requireState().toDeciderState(),
                 new CollectCoordinatorDecider.RequestCollect(source));
         applyDecision(decision);
     }
 
-    @Override
-    public void collectCompleted(CollectCompletion completion) {
+    private void handleCollectCompleted(CollectCoordinatorCollectCompletedCommand command) {
         var validatedCompletion = this.jsonValidator.validateReceived(
                 JsonValidator.COLLECT_COMPLETION,
-                completion);
+                command.getCompletion());
         var decision = DECIDER.decide(
-            requireState().toDeciderState(),
+                requireState().toDeciderState(),
                 new CollectCoordinatorDecider.CollectCompleted(validatedCompletion.getOrchestrationInstanceId()));
         applyDecision(decision);
     }
 
-    @Override
-    public void collectFailed(CollectFailure failure) {
+    private void handleCollectFailed(CollectCoordinatorCollectFailedCommand command) {
         var validatedFailure = this.jsonValidator.validateReceived(
                 JsonValidator.COLLECT_FAILURE,
-                failure);
+                command.getFailure());
         var decision = DECIDER.decide(
                 requireState().toDeciderState(),
                 new CollectCoordinatorDecider.CollectFailed(
@@ -93,14 +113,13 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
         applyDecision(decision);
     }
 
-        @Override
-        public void forceStartNext(String source) {
+    private void handleForceStartNext(String source) {
         var normalizedSource = source == null || source.isBlank() ? "manual-recovery" : source;
         var decision = DECIDER.decide(
-            requireState().toDeciderState(),
-            new CollectCoordinatorDecider.ForceStartNext(normalizedSource));
+                requireState().toDeciderState(),
+                new CollectCoordinatorDecider.ForceStartNext(normalizedSource));
         applyDecision(decision);
-        }
+    }
 
     private void applyDecision(CollectCoordinatorDecider.Decision decision) {
         requireState().apply(decision.state());

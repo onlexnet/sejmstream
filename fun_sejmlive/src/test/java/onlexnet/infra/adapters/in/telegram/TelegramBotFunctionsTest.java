@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -41,6 +42,8 @@ import onlexnet.app.ports.in.admin.AdminUseCase;
 import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
 
 @NullUnmarked
 class TelegramBotFunctionsTest {
@@ -264,10 +267,14 @@ class TelegramBotFunctionsTest {
             new FakeExecutionContext());
 
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
+        var payloadCaptor = ArgumentCaptor.forClass(Object.class);
         verify(entityClient).signalEntity(
             eq(new EntityInstanceId("CollectCoordinator", "singleton")),
-            eq(CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName()),
-            eq("telegram-recovery"));
+            eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+            payloadCaptor.capture());
+        assertThat(payloadCaptor.getValue()).isInstanceOf(CollectCoordinatorForceStartNextCommand.class);
+        var command = (CollectCoordinatorForceStartNextCommand) payloadCaptor.getValue();
+        assertThat(command.getSource()).isEqualTo("telegram-recovery");
         verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
         verify(telegramNotifier).sendMessage(eq(1001L), contains("forceStartNext"));
         }
@@ -288,8 +295,8 @@ class TelegramBotFunctionsTest {
                         .when(entityClient)
                         .signalEntity(
                                 eq(new EntityInstanceId("CollectCoordinator", "singleton")),
-                                eq(CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName()),
-                                eq("telegram-recovery"));
+                        eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                        any(CollectCoordinatorForceStartNextCommand.class));
 
                 var functions = new TelegramBotFunctions(
                         adminUseCase,
@@ -319,10 +326,15 @@ class TelegramBotFunctionsTest {
                         new FakeExecutionContext());
 
                 assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
-                verify(entityClient).signalEntity(
-                        eq(new EntityInstanceId("CollectCoordinator", "singleton")),
-                        eq(CollectCoordinatorContractOperations.REQUEST_COLLECT.methodName()),
-                        eq("telegram-recovery"));
+                var payloadCaptor = ArgumentCaptor.forClass(Object.class);
+                verify(entityClient, times(2)).signalEntity(
+                    eq(new EntityInstanceId("CollectCoordinator", "singleton")),
+                    eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                    payloadCaptor.capture());
+                assertThat(payloadCaptor.getAllValues().get(0)).isInstanceOf(CollectCoordinatorForceStartNextCommand.class);
+                assertThat(payloadCaptor.getAllValues().get(1)).isInstanceOf(CollectCoordinatorRequestCollectCommand.class);
+                var fallbackCommand = (CollectCoordinatorRequestCollectCommand) payloadCaptor.getAllValues().get(1);
+                assertThat(fallbackCommand.getSource()).isEqualTo("telegram-recovery");
                 verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
                 verify(telegramNotifier).sendMessage(eq(1001L), contains("fallback requestCollect"));
                 }

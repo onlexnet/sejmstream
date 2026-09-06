@@ -30,6 +30,8 @@ import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
 import onlexnet.infra.adapters.in.telegram.model.TelegramUpdate;
 
 /**
@@ -122,22 +124,26 @@ public final class TelegramBotFunctions {
         try {
             var entityClient = durableClientContext.getClient().getEntities();
             try {
-            entityClient.signalEntity(
-                COLLECT_COORDINATOR_ENTITY_ID,
-                CollectCoordinatorContractOperations.FORCE_START_NEXT.methodName(),
-                COLLECT_RECOVER_SOURCE);
-            this.telegramNotifier.sendMessage(
-                chatId,
-                "Wysłano recovery collecta (forceStartNext). Koordynator powinien uruchomić kolejny przebieg.");
+                var forceStartNextCommand = new CollectCoordinatorForceStartNextCommand();
+                forceStartNextCommand.setSource(COLLECT_RECOVER_SOURCE);
+                entityClient.signalEntity(
+                        COLLECT_COORDINATOR_ENTITY_ID,
+                        CollectCoordinatorContractOperations.DISPATCH.methodName(),
+                        forceStartNextCommand);
+                this.telegramNotifier.sendMessage(
+                        chatId,
+                        "Wysłano recovery collecta (forceStartNext). Koordynator powinien uruchomić kolejny przebieg.");
             } catch (RuntimeException forceStartException) {
-            entityClient.signalEntity(
-                COLLECT_COORDINATOR_ENTITY_ID,
-                CollectCoordinatorContractOperations.REQUEST_COLLECT.methodName(),
-                COLLECT_RECOVER_SOURCE);
-            this.telegramNotifier.sendMessage(
-                chatId,
-                "forceStartNext nie powiódł się, wysłano fallback requestCollect: "
-                    + forceStartException.getMessage());
+                var requestCollectCommand = new CollectCoordinatorRequestCollectCommand();
+                requestCollectCommand.setSource(COLLECT_RECOVER_SOURCE);
+                entityClient.signalEntity(
+                        COLLECT_COORDINATOR_ENTITY_ID,
+                        CollectCoordinatorContractOperations.DISPATCH.methodName(),
+                        requestCollectCommand);
+                this.telegramNotifier.sendMessage(
+                        chatId,
+                        "forceStartNext nie powiódł się, wysłano fallback requestCollect: "
+                                + forceStartException.getMessage());
             }
         } catch (RuntimeException exception) {
             this.telegramNotifier.sendMessage(
