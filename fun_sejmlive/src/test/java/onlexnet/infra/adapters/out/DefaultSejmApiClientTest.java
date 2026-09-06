@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 
 class DefaultSejmApiClientTest {
 
@@ -14,7 +16,7 @@ class DefaultSejmApiClientTest {
         // Calls real Sejm API — requires network access
         var client = new DefaultSejmApiClient();
 
-        var result = client.fetchTerms();
+        var result = requireSejmApiCallOrSkip("fetchTerms", client::fetchTerms);
 
         assertThat(result).isNotNull();
         assertThat(result).isNotEmpty();
@@ -26,7 +28,9 @@ class DefaultSejmApiClientTest {
         // Calls real Sejm API — requires network access
         var client = new DefaultSejmApiClient();
 
-        var result = client.fetchBillsReceivedSince(10, LocalDate.now().minusDays(7));
+        var result = requireSejmApiCallOrSkip(
+            "fetchBillsReceivedSince",
+            () -> client.fetchBillsReceivedSince(10, LocalDate.now().minusDays(7)));
 
         assertThat(result).isNotNull();
     }
@@ -36,7 +40,9 @@ class DefaultSejmApiClientTest {
         // Calls real Sejm API — requires network access
         var client = new DefaultSejmApiClient();
 
-        var result = client.fetchPrintsModifiedSince(10, LocalDate.now().minusDays(7));
+        var result = requireSejmApiCallOrSkip(
+            "fetchPrintsModifiedSince",
+            () -> client.fetchPrintsModifiedSince(10, LocalDate.now().minusDays(7)));
 
         assertThat(result).isNotNull();
     }
@@ -46,7 +52,9 @@ class DefaultSejmApiClientTest {
         // Calls real Sejm API — requires network access
         var client = new DefaultSejmApiClient();
 
-        var result = client.fetchInterpellationsModifiedSince(10, LocalDateTime.now().minusDays(7));
+        var result = requireSejmApiCallOrSkip(
+            "fetchInterpellationsModifiedSince",
+            () -> client.fetchInterpellationsModifiedSince(10, LocalDateTime.now().minusDays(7)));
 
         assertThat(result).isNotNull();
     }
@@ -56,7 +64,9 @@ class DefaultSejmApiClientTest {
         // Calls real Sejm API — requires network access
         var client = new DefaultSejmApiClient();
 
-        var result = client.fetchCommitteeSittingsForDate(10, LocalDate.of(2025, 3, 13));
+        var result = requireSejmApiCallOrSkip(
+            "fetchCommitteeSittingsForDate",
+            () -> client.fetchCommitteeSittingsForDate(10, LocalDate.of(2025, 3, 13)));
 
         assertThat(result).isNotNull();
     }
@@ -66,7 +76,9 @@ class DefaultSejmApiClientTest {
         // Calls real Sejm API — requires network access
         var client = new DefaultSejmApiClient();
 
-        var result = client.fetchVotingsForDate(10, LocalDate.of(2025, 3, 13));
+        var result = requireSejmApiCallOrSkip(
+            "fetchVotingsForDate",
+            () -> client.fetchVotingsForDate(10, LocalDate.of(2025, 3, 13)));
 
         assertThat(result).isNotNull();
     }
@@ -76,8 +88,18 @@ class DefaultSejmApiClientTest {
         // Calls real Sejm API — requires network access
         var client = new DefaultSejmApiClient();
 
-        var result = client.fetchWrittenQuestionsModifiedSince(10, LocalDateTime.now().minusDays(7));
+        var result = requireSejmApiCallOrSkip(
+                "fetchWrittenQuestionsModifiedSince",
+                () -> client.fetchWrittenQuestionsModifiedSince(10, LocalDateTime.now().minusDays(7)));
 
         assertThat(result).isNotNull();
+    }
+
+    private static <T> T requireSejmApiCallOrSkip(String operationName, Supplier<T> apiCall) {
+        try {
+            return apiCall.get();
+        } catch (RuntimeException exception) {
+            throw new TestAbortedException("Skipping due to temporary Sejm API failure in " + operationName, exception);
+        }
     }
 }

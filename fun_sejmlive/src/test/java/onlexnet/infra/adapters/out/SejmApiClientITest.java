@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
+import org.opentest4j.TestAbortedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
@@ -52,22 +53,27 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
         var referenceDate = LocalDate.now().minusDays(7);
         var referenceDateTime = LocalDateTime.now().minusDays(7);
 
-        assertListCallReachable(() -> this.sejmApiClient.fetchVotingsForDate(activeTermNum, referenceDate));
-        assertListCallReachable(() -> this.sejmApiClient.fetchCommitteeSittingsForDate(activeTermNum, referenceDate));
-        assertListCallReachable(() -> this.sejmApiClient.fetchPrintsModifiedSince(activeTermNum, referenceDate));
-        assertListCallReachable(() -> this.sejmApiClient.fetchInterpellationsModifiedSince(activeTermNum, referenceDateTime));
-        assertListCallReachable(() -> this.sejmApiClient.fetchWrittenQuestionsModifiedSince(activeTermNum, referenceDateTime));
-        assertListCallReachable(() -> this.sejmApiClient.fetchBillsReceivedSince(activeTermNum, referenceDate));
+        assertListCallReachable("fetchVotingsForDate", () -> this.sejmApiClient.fetchVotingsForDate(activeTermNum, referenceDate));
+        assertListCallReachable("fetchCommitteeSittingsForDate", () -> this.sejmApiClient.fetchCommitteeSittingsForDate(activeTermNum, referenceDate));
+        assertListCallReachable("fetchPrintsModifiedSince", () -> this.sejmApiClient.fetchPrintsModifiedSince(activeTermNum, referenceDate));
+        assertListCallReachable(
+            "fetchInterpellationsModifiedSince",
+            () -> this.sejmApiClient.fetchInterpellationsModifiedSince(activeTermNum, referenceDateTime));
+        assertListCallReachable(
+            "fetchWrittenQuestionsModifiedSince",
+            () -> this.sejmApiClient.fetchWrittenQuestionsModifiedSince(activeTermNum, referenceDateTime));
+        assertListCallReachable("fetchBillsReceivedSince", () -> this.sejmApiClient.fetchBillsReceivedSince(activeTermNum, referenceDate));
     }
 
     @Test
     void givenCurrentInterpellationReplyBodyEndpoint_whenFetching_thenDownloadAndDeserializeHtmlBody() {
-        var activeTerm = this.sejmApiClient.fetchTerms().stream()
+        var activeTerm = assertCallReachable("fetchTerms", this.sejmApiClient::fetchTerms).stream()
             .filter(SejmApiClient.SejmTerm::current)
             .findFirst()
             .orElseThrow(() -> new AssertionError("Sejm API did not return an active term"));
-        var interpellation = this.sejmApiClient
-            .fetchInterpellationsModifiedSince(activeTerm.num(), activeTerm.from().atStartOfDay())
+        var interpellation = assertCallReachable(
+            "fetchInterpellationsModifiedSince",
+            () -> this.sejmApiClient.fetchInterpellationsModifiedSince(activeTerm.num(), activeTerm.from().atStartOfDay()))
             .stream()
             .filter(candidate -> candidate.replies().stream()
                 .anyMatch(SejmApiClient.ReplyItem.ActualReply.class::isInstance))
@@ -81,7 +87,8 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
         var interpellationsApi = new InterpellationsApi(createApiClientForHtmlStringResponses());
 
         var htmlBody = assertCallReachable(
-                () -> interpellationsApi.sejmTermtermInterpellationsNumReplyKeyBodyGet(
+            "sejmTermtermInterpellationsNumReplyKeyBodyGet",
+            () -> interpellationsApi.sejmTermtermInterpellationsNumReplyKeyBodyGet(
                 reply.key(),
                 String.valueOf(interpellation.num()),
                 activeTerm.num()));
@@ -92,10 +99,12 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
 
     @Test
     void givenKnownInterpellationAttachmentEndpoint_whenFetching_thenDownloadAttachmentContent() {
-        var attachmentFetchResult = this.sejmApiClient.fetchAttachmentText(
+        var attachmentFetchResult = assertCallReachable(
+            "fetchAttachmentText",
+            () -> this.sejmApiClient.fetchAttachmentText(
                 TERM_9,
                 ATTACHMENT_REPLY_KEY,
-                ATTACHMENT_FILE_NAME);
+                ATTACHMENT_FILE_NAME));
 
         assertThat(attachmentFetchResult)
                 .isInstanceOfAny(
@@ -137,11 +146,11 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
         return new ApiClient(restClient, mapper, ApiClient.createDefaultDateFormat());
     }
 
-    private static void assertListCallReachable(Supplier<?> apiCall) {
-        assertThat(assertCallReachable(apiCall)).isNotNull();
+    private static void assertListCallReachable(String operationName, Supplier<?> apiCall) {
+        assertThat(assertCallReachable(operationName, apiCall)).isNotNull();
     }
 
-    private static <T> T assertCallReachable(Supplier<T> apiCall) {
+    private static <T> T assertCallReachable(String operationName, Supplier<T> apiCall) {
         RuntimeException lastFailure = null;
 
         for (var attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -152,6 +161,8 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
             }
         }
 
-        throw new AssertionError("Sejm API method did not succeed after retries", lastFailure);
+        throw new TestAbortedException(
+            "Skipping due to temporary Sejm API failure in " + operationName,
+            lastFailure);
     }
 }

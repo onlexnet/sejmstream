@@ -40,6 +40,7 @@ import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.SejmCollectOrche
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectTimerFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractV1;
+import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorEntity;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.SejmCollectCoordinatorEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
@@ -69,6 +70,9 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
 
     @Autowired
     private SejmApiClient sejmApiClient;
+
+        @Autowired
+        private CollectCoordinatorEntity collectCoordinatorEntity;
 
     @Test
     void givenSpringBootContext_whenResolvingCollectFunctions_thenRequiredDependenciesAreInjected() {
@@ -204,8 +208,10 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     @Test
     void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
         var objectMapper = new ObjectMapper();
-        var stateClassName = SejmCollectCoordinatorEntityFunction.class.getPackageName() + ".CollectCoordinatorState";
-        var stateClass = Class.forName(stateClassName);
+                var getStateType = CollectCoordinatorEntity.class.getDeclaredMethod("getStateType");
+                getStateType.setAccessible(true);
+                @SuppressWarnings("unchecked")
+                var stateClass = (Class<Object>) getStateType.invoke(this.collectCoordinatorEntity);
         var constructor = stateClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         var state = constructor.newInstance();

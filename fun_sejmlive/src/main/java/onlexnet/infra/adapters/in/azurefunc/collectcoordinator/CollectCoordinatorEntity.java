@@ -3,6 +3,8 @@ package onlexnet.infra.adapters.in.azurefunc.collectcoordinator;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
 import com.microsoft.durabletask.TaskEntity;
 import com.microsoft.durabletask.TaskEntityContext;
@@ -104,11 +106,22 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
         requireState().apply(decision.state());
         if (decision.effect() instanceof CollectCoordinatorDecider.Effect.StartCollectRun startCollectRun) {
             startNextRun(startCollectRun.source());
+            return;
+        }
+        if (decision.effect() instanceof CollectCoordinatorDecider.Effect.StartCollectRunDelayed startCollectRunDelayed) {
+            startNextRun(startCollectRunDelayed.source(), Instant.now().plus(startCollectRunDelayed.delay()));
         }
     }
 
     private void startNextRun(String source) {
+        startNextRun(source, null);
+    }
+
+    private void startNextRun(String source, @Nullable Instant startTime) {
         var options = new NewOrchestrationInstanceOptions();
+        if (startTime != null) {
+            options.setStartTime(startTime);
+        }
         var orchestrationInput = new CollectOrchestrationInput();
         orchestrationInput.setCoordinatorEntityId(requireContext().getId().toString());
         orchestrationInput.setSource(source);
