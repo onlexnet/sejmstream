@@ -142,22 +142,6 @@ cd infra
 ./set-telegram-webhook.sh
 ```
 
-### Breaking Rollout Procedure (CollectCoordinator `dispatch`)
-Use this procedure when deploying a version that changes collect coordinator signaling.
-
-1. Stop creating new collect orchestration work (disable timer/manual triggers).
-2. Drain active orchestrations to terminal state (`Completed`/`Failed`).
-3. If any instance is stuck, terminate it before cutover:
-   `func durable terminate --id <instance-id> --reason "Cutover to dispatch contract"`
-4. Deploy the new version and restart the function app.
-5. Re-enable collect triggers and start new orchestrations only after all nodes run the new build.
-
-Rollback caveat:
-- rollback must be coordinated across both sides of the protocol:
-  sender code and `CollectCoordinator` contract.
-- rolling back only one side can break durable entity signaling
-  (`dispatch` payload sent to legacy operation names, or legacy operation names sent to `dispatch`-only receiver).
-
 ---
 
 ## 5. Monitoring
@@ -309,7 +293,7 @@ func durable terminate --id <instance-id> --reason "Manual termination"
 | `/help` | Show available commands |
 | `/data` | Show current Sejm term info |
 | `/collect` | Trigger immediate data collection |
-| `/collect_recover` | Force `CollectCoordinator` to start next collect run (sends `dispatch` with `type=forceStartNext`) |
+| `/collect_recover` | Force `CollectCoordinator` to start next collect run (`forceStartNext`) |
 | `/publish` | Trigger immediate digest publishing |
 
 ### Authorization
@@ -317,14 +301,6 @@ Only the chat ID configured in `TELEGRAM_ALLOWED_CHAT_ID` (Key Vault) can execut
 1. Get the chat ID (send a message to the bot and check webhook logs)
 2. Update Key Vault secret with new chat ID
 3. Restart function app
-
-### Breaking Contract Note (CollectCoordinator)
-The durable entity business contract for `CollectCoordinator` is now a single operation,
-`dispatch`, with a `oneOf` command payload discriminated by `type`
-(`requestCollect`, `collectCompleted`, `collectFailed`, `forceStartNext`).
-There is no legacy compatibility layer for previous operation names.
-
-Operational implication: rollout must avoid mixed sender/receiver versions.
 
 ---
 
