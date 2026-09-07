@@ -13,12 +13,17 @@ facebook_token             = null
 telegram_bot_token         = "<telegram-bot-token>"  # required, obtain from @BotFather
 telegram_allowed_chat_id   = "<telegram-chat-id>"  # required, numeric id of allowed chat
 
+# Optional Event Hub overrides used by collect-orchestrator outbound publishing.
+# When eventhub_namespace_name is null, Terraform generates a namespace name with a random suffix.
+eventhub_namespace_name = null
+eventhub_name           = "sejm-collect-events"
+
 # GitHub App authentication (recommended; no PAT required)
 github_owner              = "onlexnet"
 github_repo               = "sejmstream"
 github_app_id             = "<github-app-id>"
 github_app_installation_id = "<github-app-installation-id>"
-github_app_pem_file       = "<github-app-private-key-pem>"
+github_app_pem            = "<github-app-private-key-pem-content>"  # PEM file content, not a file path
 github_environments = {
   prod = {}
 }

@@ -44,7 +44,7 @@ Add these workspace environment variables:
 
 The deployment workflow now expects the Azure login secrets to be available as GitHub Environment secrets for the `prod` environment. The `infra/` Terraform configuration can create and keep those secrets aligned with the current Function App name and Azure tenant/subscription IDs by using GitHub App authentication.
 
-For GitHub environment and secret management, configure the GitHub provider with a GitHub App (`github_app_id`, `github_app_installation_id`, `github_app_pem_file`) instead of a personal access token.
+For GitHub environment and secret management, configure the GitHub provider with a GitHub App (`github_app_id`, `github_app_installation_id`, `github_app_pem`) instead of a personal access token.
 
 Use this flow instead of manually populating repo secrets in GitHub UI:
 
@@ -75,19 +75,24 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
 - Flex Consumption Function service plan (`azurerm_service_plan`, SKU `FC1`)
 - Dedicated storage account for Function host bookkeeping and deployment artifacts (`azurerm_storage_account`)
 - Durable Task Scheduler backend (`azapi_resource.durable_task_scheduler`) with task hub (`azapi_resource.durable_task_scheduler_task_hub`)
-- Linux Function App Flex Consumption on Java 21 (`azurerm_function_app_flex_consumption`)
+- Linux Function App Flex Consumption on Java 25 (`azurerm_function_app_flex_consumption`)
 - System-assigned managed identity on the Function App
 - Azure Storage Queue resources for interpellation publish flow:
    - main queue (`azurerm_storage_queue.interpellation_publish`)
    - dead-letter queue (`azurerm_storage_queue.interpellation_publish_dead_letter`)
+- Azure Event Hubs resources for collect-orchestrator outbound events:
+   - namespace (`azurerm_eventhub_namespace.collect`)
+   - hub (`azurerm_eventhub.collect`)
 - Storage data-plane role assignments for that identity:
    - `Storage Blob Data Contributor`
    - `Storage Queue Data Contributor`
    - `Storage Table Data Contributor`
 - Durable Task Scheduler RBAC assignment for Function App identity:
    - `Durable Task Data Contributor` (task hub scope)
+- Event Hub RBAC assignment for Function App identity:
+   - `Azure Event Hubs Data Sender` (event hub scope)
 - Storage blob data-plane role assignment for the deployment principal (`data.azurerm_client_config.current.object_id`) used by the GitHub OIDC deploy job
-- Key Vault secret read access for the Function App managed identity via `Key Vault Secrets User`
+- Key Vault secret read access for the Function App managed identity via `azurerm_key_vault_access_policy.function_app`
 - Application Insights telemetry enabled by default for the Function App runtime
 - Diagnostic settings routing Function logs and metrics to Log Analytics
 
@@ -106,6 +111,11 @@ For interpellation queue processing, the Function App app settings are also set 
 - `INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER`
 - `INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS`
 
+For collect-orchestrator Event Hub publishing, the Function App app settings include:
+
+- `COLLECT_ORCHESTRATOR_EVENT_HUB_NAME`
+- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__fullyQualifiedNamespace`
+
 ### Queue RBAC assessment
 
 No additional RBAC role assignments are required for runtime queue access. Existing role assignment `azurerm_role_assignment.function_storage_queue_data_contributor` grants the Function App managed identity `Storage Queue Data Contributor` on the storage account scope, which covers read/write/dequeue operations on both publish queues.
@@ -114,7 +124,7 @@ No additional RBAC role assignments are required for runtime queue access. Exist
 
 The current hosting baseline has been verified against the repo state and matches the existing `fun_sejmlive` runtime contract:
 
-- Flex Consumption plan (`sku_name = "FC1"`) with Java 21 runtime on `azurerm_function_app_flex_consumption`.
+- Flex Consumption plan (`sku_name = "FC1"`) with Java 25 runtime on `azurerm_function_app_flex_consumption`.
 - System-assigned managed identity plus storage RBAC for blobs, queues, and tables.
 - Durable host app settings in `infra/main.tf`:
   - `FUNCTIONS_WORKER_RUNTIME=java`
@@ -154,6 +164,9 @@ Use these outputs to discover the deployed Function infrastructure without expos
 - `interpellation_publish_queue_url`
 - `interpellation_publish_dead_letter_queue_name`
 - `interpellation_publish_dead_letter_queue_url`
+- `eventhub_namespace_name`
+- `eventhub_namespace_fully_qualified_name`
+- `eventhub_name`
 
 Example:
 
@@ -163,9 +176,11 @@ terraform output -raw function_app_default_hostname
 terraform output -raw function_storage_account_name
 terraform output -raw interpellation_publish_queue_name
 terraform output -raw interpellation_publish_dead_letter_queue_name
+terraform output -raw eventhub_namespace_fully_qualified_name
+terraform output -raw eventhub_name
 ```
 
-## Queue/retry Terraform variables
+## Queue/retry/Event Hub Terraform variables
 
 The interpellation publish queue resources and retry behavior can be customized with these variables (safe defaults included):
 
@@ -175,6 +190,8 @@ The interpellation publish queue resources and retry behavior can be customized 
 - `interpellation_publish_retry_delay_seconds` (default `60`)
 - `interpellation_publish_backoff_multiplier` (default `2.0`)
 - `interpellation_publish_max_retry_delay_seconds` (default `900`)
+- `eventhub_namespace_name` (default `null`, auto-generated when omitted)
+- `eventhub_name` (default `sejm-collect-events`)
 
 Do not print or share sensitive outputs in logs or documentation.
 

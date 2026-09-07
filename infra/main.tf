@@ -48,6 +48,7 @@ locals {
   function_service_plan_name    = "${local.resource_prefix}-func-plan-flex"
   function_storage_account_name = "${local.name_prefix}${local.environment}fn${local.global_suffix}"
   domain_storage_account_name   = "${local.name_prefix}${local.environment}dom${local.global_suffix}"
+  eventhub_namespace_name       = coalesce(var.eventhub_namespace_name, "${local.name_prefix}-${local.environment}-ehns-${local.global_suffix}")
   function_app_name             = "${local.resource_prefix}-func-flex-${local.global_suffix}"
   durable_task_scheduler_name   = "${local.resource_prefix}-dts-${local.global_suffix}"
 }
@@ -189,6 +190,24 @@ resource "azurerm_storage_queue" "interpellation_publish_dead_letter" {
   storage_account_id = azurerm_storage_account.domain_storage.id
 }
 
+resource "azurerm_eventhub_namespace" "collect" {
+  name                = local.eventhub_namespace_name
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+  sku                 = "Standard"
+  capacity            = 1
+  minimum_tls_version = "1.2"
+  tags                = local.common_tags
+}
+
+resource "azurerm_eventhub" "collect" {
+  name                = var.eventhub_name
+  namespace_name      = azurerm_eventhub_namespace.collect.name
+  resource_group_name = azurerm_resource_group.main.name
+  partition_count     = 1
+  message_retention   = 1
+}
+
 resource "azurerm_function_app_flex_consumption" "main" {
   name                = local.function_app_name
   location            = azurerm_resource_group.main.location
@@ -244,6 +263,8 @@ resource "azurerm_function_app_flex_consumption" "main" {
       INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS     = tostring(var.interpellation_publish_retry_delay_seconds)
       INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER      = tostring(var.interpellation_publish_backoff_multiplier)
       INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS = tostring(var.interpellation_publish_max_retry_delay_seconds)
+      COLLECT_ORCHESTRATOR_EVENT_HUB_NAME            = azurerm_eventhub.collect.name
+      COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__fullyQualifiedNamespace = "${azurerm_eventhub_namespace.collect.name}.servicebus.windows.net"
     }
   )
 
@@ -281,6 +302,12 @@ resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
 resource "azurerm_role_assignment" "function_durable_task_data_contributor" {
   scope                = azapi_resource.durable_task_scheduler_task_hub.id
   role_definition_name = "Durable Task Data Contributor"
+  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
+}
+
+resource "azurerm_role_assignment" "function_event_hubs_data_sender" {
+  scope                = azurerm_eventhub.collect.id
+  role_definition_name = "Azure Event Hubs Data Sender"
   principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 

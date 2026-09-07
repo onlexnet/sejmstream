@@ -70,6 +70,29 @@ variable "function_durable_scheduler_ip_allowlist" {
   }
 }
 
+variable "eventhub_namespace_name" {
+  description = "Optional Event Hubs namespace name for collect-orchestrator publishing; when null a name is generated from project prefix + random suffix."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition = var.eventhub_namespace_name == null ? true : can(regex("^[a-z][a-z0-9-]{4,48}[a-z0-9]$", var.eventhub_namespace_name))
+    error_message = "eventhub_namespace_name must be null or 6-50 chars, lowercase alphanumeric/hyphen, start with a letter, and end with alphanumeric."
+  }
+}
+
+variable "eventhub_name" {
+  description = "Event Hub name used by collect-orchestrator for outbound events."
+  type        = string
+  default     = "sejm-collect-events"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,48}[A-Za-z0-9])?$", var.eventhub_name))
+    error_message = "eventhub_name must be 1-50 chars and use alphanumeric, dot, underscore, or hyphen; if longer than 1 char it must start/end with alphanumeric."
+  }
+}
+
 variable "interpellation_publish_queue_name" {
   description = "Main Azure Storage Queue name for interpellation publish jobs."
   type        = string

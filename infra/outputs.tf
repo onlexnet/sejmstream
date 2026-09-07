@@ -83,6 +83,26 @@ output "interpellation_publish_dead_letter_queue_url" {
   value = "${azurerm_storage_account.domain_storage.primary_queue_endpoint}${azurerm_storage_queue.interpellation_publish_dead_letter.name}"
 }
 
+output "eventhub_namespace_id" {
+  value = azurerm_eventhub_namespace.collect.id
+}
+
+output "eventhub_namespace_name" {
+  value = azurerm_eventhub_namespace.collect.name
+}
+
+output "eventhub_namespace_fully_qualified_name" {
+  value = "${azurerm_eventhub_namespace.collect.name}.servicebus.windows.net"
+}
+
+output "eventhub_id" {
+  value = azurerm_eventhub.collect.id
+}
+
+output "eventhub_name" {
+  value = azurerm_eventhub.collect.name
+}
+
 output "function_storage_table_service_endpoint" {
   value = azurerm_storage_account.function_app.primary_table_endpoint
 }
