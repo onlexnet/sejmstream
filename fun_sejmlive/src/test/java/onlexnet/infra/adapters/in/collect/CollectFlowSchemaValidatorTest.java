@@ -14,9 +14,11 @@ import com.microsoft.durabletask.JacksonDataConverter;
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1;
 
-class JsonValidatorTest {
+class CollectFlowSchemaValidatorTest {
 
 	@Test
 	void givenValidActivityPayloads_whenValidated_thenPasses() {
@@ -30,6 +32,24 @@ class JsonValidatorTest {
 				.doesNotThrowAnyException();
 		assertThatCode(() -> validator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, result))
 				.doesNotThrowAnyException();
+
+		var publishRequest = new CollectEventPublishRequest();
+		publishRequest.setOrchestrationInstanceId("collect-instance-1");
+		publishRequest.setSource("timer");
+		publishRequest.setTermNum(10);
+		publishRequest.setCollectionDate(java.time.LocalDate.of(2026, 9, 7));
+		publishRequest.setCountsByType(java.util.Map.of("VOTING", 1));
+		assertThatCode(() -> validator.validateToSend(JsonValidator.COLLECT_EVENT_PUBLISH_REQUEST, publishRequest))
+				.doesNotThrowAnyException();
+
+		var outboundEvent = new CollectOrchestratorEventV1()
+				.orchestrationInstanceId("collect-instance-1")
+				.source("timer")
+				.termNum(10)
+				.collectionDate(java.time.LocalDate.of(2026, 9, 7))
+				.countsByType(java.util.Map.of("VOTING", 1));
+		assertThatCode(() -> validator.validateToSend(JsonValidator.COLLECT_ORCHESTRATOR_EVENT_V1, outboundEvent))
+				.doesNotThrowAnyException();
 	}
 
 	@Test
@@ -39,6 +59,33 @@ class JsonValidatorTest {
 		assertThatThrownBy(() -> validator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, new CollectActivityResult()))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("collect-activity-result.schema.json");
+
+		assertThatThrownBy(() -> validator.validateToSend(
+				JsonValidator.COLLECT_EVENT_PUBLISH_REQUEST,
+				new CollectEventPublishRequest()))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("collect-event-publish-request.schema.json");
+
+		assertThatThrownBy(() -> validator.validateToSend(
+				JsonValidator.COLLECT_ORCHESTRATOR_EVENT_V1,
+				new CollectOrchestratorEventV1()
+						.source("timer")
+						.termNum(10)
+						.collectionDate(java.time.LocalDate.of(2026, 9, 7))
+						.countsByType(java.util.Map.of("VOTING", 1))))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("collect-orchestrator-event-v1.schema.json");
+
+		assertThatThrownBy(() -> validator.validateToSend(
+				JsonValidator.COLLECT_ORCHESTRATOR_EVENT_V1,
+				new CollectOrchestratorEventV1()
+						.orchestrationInstanceId("collect-instance-1")
+						.source("timer")
+						.termNum(10)
+						.collectionDate(java.time.LocalDate.of(2026, 9, 7))
+						.countsByType(java.util.Map.of("VOTING", -1))))
+				.isInstanceOf(IllegalArgumentException.class)
+				.hasMessageContaining("collect-orchestrator-event-v1.schema.json");
 	}
 
 	@Test

@@ -33,6 +33,7 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectHttpStarterFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectBillsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectCommitteesActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectInterpellationsActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectPublishCollectEventActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectPrintsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectQuestionsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectVotingsActivityFunction;
@@ -44,6 +45,7 @@ import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinato
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.SejmCollectCoordinatorEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
 import onlexnet.testsupport.PostgresIntegrationTestSupport;
@@ -189,6 +191,12 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
                 "collectQuestions",
                 SejmCollectFunctions.ACTIVITY_QUESTIONS);
         assertActivityContract(SejmCollectBillsActivityFunction.class, "collectBills", SejmCollectFunctions.ACTIVITY_BILLS);
+        assertActivityContract(
+                SejmCollectPublishCollectEventActivityFunction.class,
+                "publishCollectEvent",
+                SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT,
+                CollectEventPublishRequest.class,
+                String.class);
     }
 
     @Test
@@ -239,9 +247,23 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
             Class<?> ownerType,
             String methodName,
             String expectedFunctionName) throws NoSuchMethodException {
+        assertActivityContract(
+                ownerType,
+                methodName,
+                expectedFunctionName,
+                CollectActivityRequest.class,
+                CollectActivityResultWire.class);
+    }
+
+    private static void assertActivityContract(
+            Class<?> ownerType,
+            String methodName,
+            String expectedFunctionName,
+            Class<?> requestType,
+            Class<?> responseType) throws NoSuchMethodException {
         var method = ownerType.getDeclaredMethod(
                 methodName,
-                CollectActivityRequest.class,
+                requestType,
                 ExecutionContext.class);
         var functionName = method.getAnnotation(FunctionName.class);
         var trigger = method.getParameters()[0].getAnnotation(DurableActivityTrigger.class);
@@ -250,6 +272,6 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
         assertThat(functionName.value()).isEqualTo(expectedFunctionName);
         assertThat(trigger).isNotNull();
         assertThat(trigger.name()).isEqualTo("request");
-                assertThat(method.getReturnType()).isEqualTo(CollectActivityResultWire.class);
+                assertThat(method.getReturnType()).isEqualTo(responseType);
     }
 }

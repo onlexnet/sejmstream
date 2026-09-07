@@ -33,6 +33,7 @@ import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinato
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations;
 
@@ -68,6 +69,7 @@ class SejmCollectOrchestratorFunctionTest {
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(5, 10, collectionDate, List.of("301"), java.util.Map.of()));
         var billsTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(6, 10, collectionDate, List.of("501"), java.util.Map.of()));
+        var publishEventTask = SejmCollectFunctionTestSupport.completedTask("published");
 
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-1");
         when(orchestrationContext.callActivity(
@@ -100,6 +102,11 @@ class SejmCollectOrchestratorFunctionTest {
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(billsTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
+                any(CollectEventPublishRequest.class),
+                any(TaskOptions.class),
+                eq(String.class))).thenReturn(publishEventTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -124,6 +131,15 @@ class SejmCollectOrchestratorFunctionTest {
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class));
+        verify(orchestrationContext).callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
+                argThat((CollectEventPublishRequest request) ->
+                        "collect-instance-1".equals(request.getOrchestrationInstanceId())
+                                && "orchestrator".equals(request.getSource())
+                                && Integer.valueOf(10).equals(request.getTermNum())
+                                && collectionDate.equals(request.getCollectionDate())),
+                any(TaskOptions.class),
+                eq(String.class));
         verify(orchestrationContext).signalEntity(
                 eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
                 eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
@@ -340,6 +356,7 @@ class SejmCollectOrchestratorFunctionTest {
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(5, 10, collectionDate, List.of("301"), java.util.Map.of()));
         var billsTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(6, 10, collectionDate, List.of("501"), java.util.Map.of()));
+        var publishEventTask = SejmCollectFunctionTestSupport.completedTask("published");
 
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-wrapper");
         when(orchestrationContext.callActivity(
@@ -372,6 +389,11 @@ class SejmCollectOrchestratorFunctionTest {
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(billsTask);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
+                any(CollectEventPublishRequest.class),
+                any(TaskOptions.class),
+                eq(String.class))).thenReturn(publishEventTask);
 
         var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
@@ -397,6 +419,60 @@ class SejmCollectOrchestratorFunctionTest {
                 any(CollectActivityRequest.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class));
+        verify(orchestrationContext).callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
+                any(CollectEventPublishRequest.class),
+                any(TaskOptions.class),
+                eq(String.class));
+    }
+
+    @Test
+    void givenPublishActivityFailure_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
+        var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
+        var orchestrationContext = mock(TaskOrchestrationContext.class);
+        var collectionDate = LocalDate.of(2026, 8, 27);
+        when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-publish-failure");
+
+        var collectActivityTask = SejmCollectFunctionTestSupport.completedTask(
+                SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")));
+        when(orchestrationContext.callActivity(
+                any(String.class),
+                any(CollectActivityRequest.class),
+                any(TaskOptions.class),
+                eq(CollectActivityResultWire.class))).thenReturn(collectActivityTask);
+
+        @SuppressWarnings("unchecked")
+        Task<String> publishTask = mock(Task.class);
+        var publishFailure = mock(TaskFailedException.class);
+        when(publishFailure.getMessage()).thenReturn("event publish failed");
+        when(publishFailure.getErrorDetails()).thenReturn(null);
+        when(publishTask.await()).thenThrow(publishFailure);
+        when(orchestrationContext.callActivity(
+                eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
+                any(CollectEventPublishRequest.class),
+                any(TaskOptions.class),
+                eq(String.class))).thenReturn(publishTask);
+
+        var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
+        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
+        @SuppressWarnings("unchecked")
+        Task<Task<?>> winnerTask = mock(Task.class);
+        doReturn(collectActivityTask).when(winnerTask).await();
+        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenReturn(winnerTask);
+
+        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Collect orchestrator failed in activity "
+                        + SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT);
+
+        verify(orchestrationContext).signalEntity(
+                any(),
+                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                argThat(command -> isFailedDispatchCommand(
+                        command,
+                        "collect-instance-publish-failure",
+                        SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT)));
     }
 
     @Test

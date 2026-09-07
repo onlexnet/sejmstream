@@ -4,6 +4,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -23,7 +25,10 @@ import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.app.ports.out.CollectOrchestratorEventPublisher;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
+import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectPublishCollectEventActivityFunction;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
 
 class SejmCollectActivitiesFunctionTest {
 
@@ -176,6 +181,52 @@ class SejmCollectActivitiesFunctionTest {
 
         assertThat(result.count()).isEqualTo(0);
         verify(collectService, times(1)).collectBills(eq(10), any(LocalDate.class));
+    }
+
+    @Test
+    void givenPublishRequest_whenPublishActivityRuns_thenDelegatesToEventHubPublisher() {
+        var eventPublisher = mock(CollectOrchestratorEventPublisher.class);
+        var activity = new SejmCollectPublishCollectEventActivityFunction(
+                eventPublisher,
+                SejmCollectFunctionTestSupport.newJsonValidator());
+        var request = new CollectEventPublishRequest();
+        request.setOrchestrationInstanceId("collect-instance-1");
+        request.setSource("timer");
+        request.setTermNum(10);
+        request.setCollectionDate(LocalDate.of(2026, 9, 7));
+        request.setCountsByType(Map.of("VOTING", 3, "INTERPELLATION", 4));
+
+        var result = activity.publishCollectEvent(request, new SejmCollectFunctionTestSupport.FakeExecutionContext());
+
+        assertThat(result).isEqualTo("published");
+        verify(eventPublisher).publish(argThat(event ->
+                event.orchestrationInstanceId().equals("collect-instance-1")
+                        && event.source().equals("timer")
+                        && event.termNum() == 10
+                        && event.collectionDate().equals(LocalDate.of(2026, 9, 7))
+                        && event.countsByType().equals(Map.of("VOTING", 3, "INTERPELLATION", 4))));
+    }
+
+    @Test
+    void givenPublisherFailure_whenPublishActivityRuns_thenThrowsIllegalStateException() {
+        var eventPublisher = mock(CollectOrchestratorEventPublisher.class);
+        doThrow(new RuntimeException("event hub down")).when(eventPublisher).publish(any());
+        var activity = new SejmCollectPublishCollectEventActivityFunction(
+                eventPublisher,
+                SejmCollectFunctionTestSupport.newJsonValidator());
+        var request = new CollectEventPublishRequest();
+        request.setOrchestrationInstanceId("collect-instance-2");
+        request.setSource("timer");
+        request.setTermNum(10);
+        request.setCollectionDate(LocalDate.of(2026, 9, 7));
+        request.setCountsByType(Map.of("VOTING", 3));
+
+        assertThatThrownBy(() -> activity.publishCollectEvent(request, new SejmCollectFunctionTestSupport.FakeExecutionContext()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Failed to publish collect orchestration event")
+                .hasCauseInstanceOf(RuntimeException.class)
+                .cause()
+                .hasMessageContaining("event hub down");
     }
 
         private static String sha256Hex(String value) {

@@ -32,6 +32,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResul
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
@@ -132,7 +133,11 @@ public final class SejmCollectOrchestratorFunction {
             counts.put("WRITTEN_QUESTION", requireCount(questionsResult));
             counts.put("BILL", requireCount(billsResult));
 
+            var snapshotTermNum = requireSnapshotTermNum(interpellationsResult);
+            var snapshotDate = requireSnapshotDate(interpellationsResult);
+
             reconcileTermSnapshot(ctx, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
+            publishCollectEvent(ctx, activitySource, snapshotTermNum, snapshotDate, counts);
 
             var result = new CollectResult();
             result.setCountsByType(Collections.unmodifiableMap(new HashMap<>(counts)));
@@ -172,6 +177,46 @@ public final class SejmCollectOrchestratorFunction {
                         .setBackoffCoefficient(2.0)
                         .setMaxRetryInterval(Duration.ofMinutes(2))
                         .setRetryTimeout(Duration.ofMinutes(10)));
+    }
+
+    private void publishCollectEvent(
+            OrchestrationContext orchestrationContext,
+            String source,
+            int termNum,
+            LocalDate collectionDate,
+            Map<String, Integer> countsByType) {
+        var request = new CollectEventPublishRequest();
+        request.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
+        request.setSource(source);
+        request.setTermNum(termNum);
+        request.setCollectionDate(collectionDate);
+        request.setCountsByType(Map.copyOf(countsByType));
+        this.jsonValidator.validateToSend(JsonValidator.COLLECT_EVENT_PUBLISH_REQUEST, request);
+
+        var publishTask = orchestrationContext.callActivity(
+                SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT,
+                request,
+                activityRetryOptions(),
+                String.class);
+        awaitPublishWithFailureContext(publishTask);
+    }
+
+    private static void awaitPublishWithFailureContext(Task<String> publishTask) {
+        try {
+            publishTask.await();
+        } catch (TaskFailedException e) {
+            var details = e.getErrorDetails();
+            var errorType = details == null ? "unknown" : details.getErrorType();
+            var errorMessage = details == null ? e.getMessage() : details.getErrorMessage();
+            throw new IllegalStateException(
+                    "Collect orchestrator failed in activity "
+                            + SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT
+                            + " ("
+                            + errorType
+                            + "): "
+                            + errorMessage,
+                    e);
+        }
     }
 
     private CollectActivityResult awaitActivityWithFailureContext(Task<CollectActivityResultWire> task, String activityName) {

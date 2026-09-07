@@ -20,6 +20,9 @@
     "INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS": "60",
     "INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER": "2.0",
     "INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS": "900",
+    "COLLECT_ORCHESTRATOR_EVENT_HUB_NAME": "sejm-collect-events",
+    "COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__fullyQualifiedNamespace": "<eventhub-namespace>.servicebus.windows.net",
+    "COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__clientId": "<optional-user-assigned-managed-identity-client-id>",
     "facebook_token": "<FACEBOOK_TOKEN_OR_KEYVAULT_REFERENCE>",
     "TZ": "Europe/Warsaw",
     "WEBSITE_TIME_ZONE": "Europe/Warsaw"

@@ -11,6 +11,7 @@ System_Ext(telegram_api, "Telegram Bot API", "Webhook + outbound messages")
 SystemDb_Ext(postgres, "PostgreSQL", "Digest items, publish state, audit")
 System_Ext(domain_storage, "Domain Storage Queue", "Interpellation publish queue + dead-letter")
 System_Ext(durable_scheduler, "Durable Task Scheduler", "Durable orchestration backend")
+System_Ext(collect_event_hub, "Azure Event Hub", "Collect orchestration outbound events")
 
 Container_Boundary(func_app, "Azure Function App (Java)") {
   Component(collect_in, "SejmCollectFunctions", "Timer/HTTP + Durable starter")
@@ -34,6 +35,7 @@ Rel(collect_uc, collect_ops, "A3 delegate collection")
 Rel(collect_ops, sejm_api, "A4 fetch terms + daily slices")
 Rel(collect_ops, postgres, "A5 upsert SejmDailyDigestItem")
 Rel(collect_ops, domain_storage, "A6 enqueue interpellation publish messages")
+Rel(collect_in, collect_event_hub, "A7 publish collect completion event")
 
 ' B) Daily publish flow
 Rel(publish_in, publish_uc, "B1 timer/manual publish command")

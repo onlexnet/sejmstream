@@ -8,6 +8,8 @@ participant "SejmCollectOperations" as ops
 participant "SejmApiClient" as api
 participant "SejmDailyDigestPersistence" as db
 participant "InterpellationPublishQueuePort" as queue
+participant "CollectEventPublishActivity" as publish_activity
+participant "Azure Event Hub" as event_hub
 
 trigger -> fn: Timer fires (0 0 * * * *)\nor HTTP POST
 activate fn
@@ -77,6 +79,12 @@ else Bills fetch fails (timeout/transient API error)
   ops --> orch: 0
 end
 deactivate ops
+
+orch -> publish_activity: callActivityWithRetry("Intern_PublishCollectEvent")
+activate publish_activity
+publish_activity -> event_hub: publish collect orchestration event
+publish_activity --> orch: "published"
+deactivate publish_activity
 
 orch --> fn: CollectResult(countsByType)
 deactivate orch

@@ -40,6 +40,7 @@ Main boundaries:
    - `Intern_CollectInterpellations`
    - `Intern_CollectQuestions`
    - `Intern_CollectBills`
+   - `Intern_PublishCollectEvent`
 
 ### Facebook digest publish
 
@@ -69,6 +70,8 @@ Required at runtime:
 - `FB_TOKEN`
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_ALLOWED_CHAT_ID`
+- `COLLECT_ORCHESTRATOR_EVENT_HUB_NAME`
+- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__fullyQualifiedNamespace`
 
 Common optional settings:
 
@@ -82,6 +85,7 @@ Common optional settings:
 - `INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS` (default `60`)
 - `INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER` (default `2.0`)
 - `INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS` (default `900`)
+- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__clientId` (optional, user-assigned managed identity client id)
 - `TZ=Europe/Warsaw`
 - `WEBSITE_TIME_ZONE=Europe/Warsaw`
 
@@ -90,6 +94,7 @@ Notes:
 - Queue payloads are sent as raw JSON; this requires `host.json` queue setting `messageEncoding: "none"`.
 - `DomainStorage` is intentionally separate from `AzureWebJobsStorage`.
 - Collect durable payloads are defined schema-first under `src/main/resources/schemajson/collect-flow/`, generated during `generate-sources`, and validated against their schemas after receive and before send.
+- Collect orchestrator outbound Event Hub payloads use versioned contract metadata (`collectEventContractVersion=v1` and `collectEventSchemaId`) on EventData properties.
 
 ## Local development
 

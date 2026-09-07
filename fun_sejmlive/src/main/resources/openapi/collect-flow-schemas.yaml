@@ -47,6 +47,38 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectCompletion'
+  /_internal/collect/activity/publish-event:
+    post:
+      operationId: collectPublishEventContract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectEventPublishRequest'
+      responses:
+        '200':
+          description: Event publish outcome
+          content:
+            application/json:
+              schema:
+                type: string
+  /_internal/collect/activity/publish-event/v1:
+    post:
+      operationId: collectPublishEventV1Contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectOrchestratorEventV1'
+      responses:
+        '200':
+          description: Event publish outcome
+          content:
+            application/json:
+              schema:
+                type: string
 components:
   schemas:
     CollectActivityRequest:
@@ -61,6 +93,10 @@ components:
       $ref: '../schemajson/collect-flow/collect-completion.schema.json'
     CollectFailure:
       $ref: '../schemajson/collect-flow/collect-failure.schema.json'
+    CollectEventPublishRequest:
+      $ref: '../schemajson/collect-flow/collect-event-publish-request.schema.json'
+    CollectOrchestratorEventV1:
+      $ref: '../schemajson/collect-flow/collect-orchestrator-event-v1.schema.json'
     CollectCoordinatorDispatchCommand:
       type: object
       required:

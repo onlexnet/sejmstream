@@ -37,5 +37,7 @@ public final class SejmCollectFunctions {
     public static final String ACTIVITY_QUESTIONS = "Intern_CollectQuestions";
     /** Activity function name for collecting bills. */
     public static final String ACTIVITY_BILLS = "Intern_CollectBills";
+    /** Activity function name for publishing collect completion events. */
+    public static final String ACTIVITY_PUBLISH_COLLECT_EVENT = "Intern_PublishCollectEvent";
 
 }

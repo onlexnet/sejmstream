@@ -21,7 +21,9 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityReque
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
 
 /**
@@ -44,6 +46,12 @@ public final class JsonValidator {
             "/schemajson/collect-flow/collect-completion.schema.json");
     public static final SchemaRef<CollectFailure> COLLECT_FAILURE = new SchemaRef<>(CollectFailure.class,
             "/schemajson/collect-flow/collect-failure.schema.json");
+    public static final SchemaRef<CollectEventPublishRequest> COLLECT_EVENT_PUBLISH_REQUEST = new SchemaRef<>(
+            CollectEventPublishRequest.class,
+            "/schemajson/collect-flow/collect-event-publish-request.schema.json");
+    public static final SchemaRef<CollectOrchestratorEventV1> COLLECT_ORCHESTRATOR_EVENT_V1 = new SchemaRef<>(
+            CollectOrchestratorEventV1.class,
+            "/schemajson/collect-flow/collect-orchestrator-event-v1.schema.json");
 
     private static final List<SchemaRef<?>> SCHEMA_REFS = List.of(
             COLLECT_ACTIVITY_REQUEST,
@@ -51,7 +59,9 @@ public final class JsonValidator {
             COLLECT_ORCHESTRATION_INPUT,
             COLLECT_RESULT,
             COLLECT_COMPLETION,
-            COLLECT_FAILURE);
+            COLLECT_FAILURE,
+            COLLECT_EVENT_PUBLISH_REQUEST,
+            COLLECT_ORCHESTRATOR_EVENT_V1);
 
     private static final JsonSchemaFactory SCHEMA_FACTORY = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
 
