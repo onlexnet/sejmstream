@@ -17,7 +17,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import onlexnet.app.ports.out.SejmApiClient.VotingItem;
 import onlexnet.app.usecases.SejmDigestService;
-import onlexnet.infra.adapters.out.DefaultSejmDailyDigestPersistence;
+import onlexnet.infra.adapters.out.db.DefaultSejmDailyDigestPersistence;
 import liquibase.integration.spring.SpringLiquibase;
 import onlexnet.testsupport.AppTest;
 import onlexnet.testsupport.PostgresIntegrationTestSupport;

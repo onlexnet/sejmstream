@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.out;
+package onlexnet.infra.adapters.out.db;
 
 import java.sql.Date;
 import java.sql.Timestamp;

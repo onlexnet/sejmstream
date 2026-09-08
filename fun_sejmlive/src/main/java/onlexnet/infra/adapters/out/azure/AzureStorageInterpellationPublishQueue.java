@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.out;
+package onlexnet.infra.adapters.out.azure;
 
 import java.time.Duration;
 
