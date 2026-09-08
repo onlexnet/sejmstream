@@ -62,6 +62,7 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - One public class per file
 - Group imports logically (java.*, javax.*, third-party, project)
 - Use package-private access when appropriate
+- For nested types (inner classes, records, enums, interfaces), avoid repeating the enclosing type name in the nested type name. Prefer concise names like `Parent.Initialized` over `Parent.InitializedParent`.
 
 ### Documentation
 - Add JavaDoc for public APIs and complex methods

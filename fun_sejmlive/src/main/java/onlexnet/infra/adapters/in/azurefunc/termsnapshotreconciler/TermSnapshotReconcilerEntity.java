@@ -17,6 +17,7 @@ import com.microsoft.durabletask.TaskEntityOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
+import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 
 @Component
 @Slf4j
@@ -24,7 +25,7 @@ import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotReconcilerContractV1 {
 
     private TermSnapshotReconcilerEntityState state = UninitializedTermSnapshotReconcilerState.INSTANCE;
-    private TermSnapshotReconcilerEntityContext context = UninitializedTermSnapshotReconcilerEntityContext.INSTANCE;
+    private TaskEntityLifecycleContext context = TaskEntityLifecycleContext.uninitialized();
 
     protected Class<TermSnapshotReconcilerState> getStateType() {
         return TermSnapshotReconcilerState.class;
@@ -36,7 +37,7 @@ public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotRec
 
     @Override
     public @Nullable Object run(TaskEntityOperation operation) {
-        this.context = new InitializedTermSnapshotReconcilerEntityContext(operation.getContext());
+        this.context = TaskEntityLifecycleContext.initialized(operation.getContext());
 
         var stateType = getStateType();
         var persistedState = operation.getState().getState(stateType);
@@ -129,10 +130,7 @@ public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotRec
     }
 
     private TaskEntityContext requireContext() {
-        if (this.context instanceof InitializedTermSnapshotReconcilerEntityContext initializedContext) {
-            return initializedContext.value();
-        }
-        throw new IllegalStateException("context must be initialized in run() before contract dispatch");
+        return this.context.requireInitialized("context must be initialized in run() before contract dispatch");
     }
 
     private int requireContextTermNum() {
@@ -242,16 +240,5 @@ sealed interface TermSnapshotReconcilerEntityState permits TermSnapshotReconcile
 }
 
 enum UninitializedTermSnapshotReconcilerState implements TermSnapshotReconcilerEntityState {
-    INSTANCE
-}
-
-sealed interface TermSnapshotReconcilerEntityContext
-        permits InitializedTermSnapshotReconcilerEntityContext, UninitializedTermSnapshotReconcilerEntityContext {
-}
-
-record InitializedTermSnapshotReconcilerEntityContext(TaskEntityContext value) implements TermSnapshotReconcilerEntityContext {
-}
-
-enum UninitializedTermSnapshotReconcilerEntityContext implements TermSnapshotReconcilerEntityContext {
     INSTANCE
 }

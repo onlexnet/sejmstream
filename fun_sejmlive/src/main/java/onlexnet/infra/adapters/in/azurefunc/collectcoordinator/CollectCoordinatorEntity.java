@@ -15,6 +15,7 @@ import onlexnet.app.usecases.CollectCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommandDTO;
@@ -30,7 +31,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     // private static final String DELETE_OPERATION_NAME = "delete";
     private final JsonValidator jsonValidator;
     private EntityState state = None.INSTANCE;
-    private CollectCoordinatorEntityContext context = UninitializedCollectCoordinatorEntityContext.INSTANCE;
+    private TaskEntityLifecycleContext context = TaskEntityLifecycleContext.uninitialized();
 
     protected Class<Some> getStateType() {
         return Some.class;
@@ -42,7 +43,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
 
     @Override
     public @Nullable Object run(TaskEntityOperation operation) {
-        this.context = new InitializedCollectCoordinatorEntityContext(operation.getContext());
+        this.context = TaskEntityLifecycleContext.initialized(operation.getContext());
 
         var stateType = getStateType();
         var persistedState = operation.getState().getState(stateType);
@@ -161,10 +162,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 
     private TaskEntityContext requireContext() {
-        if (this.context instanceof InitializedCollectCoordinatorEntityContext initializedContext) {
-            return initializedContext.value();
-        }
-        throw new IllegalStateException("context must be initialized in run() before contract dispatch");
+        return this.context.requireInitialized("context must be initialized in run() before contract dispatch");
     }
 }
 
@@ -172,14 +170,3 @@ sealed interface EntityState permits Some, None {
 }
 
 enum None implements EntityState { INSTANCE }
-
-
-sealed interface CollectCoordinatorEntityContext permits InitializedCollectCoordinatorEntityContext, UninitializedCollectCoordinatorEntityContext {
-}
-
-record InitializedCollectCoordinatorEntityContext(TaskEntityContext value) implements CollectCoordinatorEntityContext {
-}
-
-enum UninitializedCollectCoordinatorEntityContext implements CollectCoordinatorEntityContext {
-    INSTANCE
-}
