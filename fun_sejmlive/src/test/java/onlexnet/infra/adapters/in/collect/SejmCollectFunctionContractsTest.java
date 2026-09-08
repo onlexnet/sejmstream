@@ -17,11 +17,14 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
+import com.microsoft.azure.functions.annotation.Cardinality;
+import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
+import com.microsoft.durabletask.azurefunctions.DurableClientInput;
 import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
 import com.restfb.FacebookClient;
@@ -43,6 +46,7 @@ import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinato
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractV1;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorEntity;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.SejmCollectCoordinatorEntityFunction;
+import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerCollectEventFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
@@ -172,6 +176,30 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
                 assertThat(trigger.name()).isEqualTo("entityRequest");
                 assertThat(trigger.entityName()).isEqualTo(TERM_SNAPSHOT_ENTITY_NAME);
         }
+
+    @Test
+    void givenTermSnapshotCollectEventFunction_whenCheckingTriggerContract_thenEventHubAndDurableClientBindingsAreConfigured()
+            throws NoSuchMethodException {
+        var method = TermSnapshotReconcilerCollectEventFunction.class.getDeclaredMethod(
+                "runFromCollectEvent",
+                String.class,
+                DurableClientContext.class,
+                ExecutionContext.class);
+
+        var functionName = method.getAnnotation(FunctionName.class);
+        var eventHubTrigger = method.getParameters()[0].getAnnotation(EventHubTrigger.class);
+        var durableClientInput = method.getParameters()[1].getAnnotation(DurableClientInput.class);
+
+        assertThat(functionName).isNotNull();
+        assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.TERM_SNAPSHOT_COLLECT_EVENT_FUNCTION_NAME);
+        assertThat(eventHubTrigger).isNotNull();
+        assertThat(eventHubTrigger.name()).isEqualTo("eventPayload");
+        assertThat(eventHubTrigger.eventHubName()).isEqualTo("%COLLECT_ORCHESTRATOR_EVENT_HUB_NAME%");
+        assertThat(eventHubTrigger.connection()).isEqualTo("COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION");
+        assertThat(eventHubTrigger.cardinality()).isEqualTo(Cardinality.ONE);
+        assertThat(durableClientInput).isNotNull();
+        assertThat(durableClientInput.name()).isEqualTo("durableContext");
+    }
 
     @Test
     void givenActivities_whenCheckingTriggerContract_thenFunctionAndActivityTriggersAreConfigured()

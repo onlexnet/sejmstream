@@ -17,6 +17,7 @@ Container_Boundary(func_app, "Azure Function App (Java)") {
   Component(collect_in, "SejmCollectFunctions", "Timer/HTTP + Durable starter")
   Component(collect_uc, "CollectDailyDigestUseCase", "Use case")
   Component(collect_ops, "SejmCollectService", "Collection orchestrator")
+  Component(term_snapshot_in, "TermSnapshotReconcilerCollectEventFunction", "Event Hub trigger", "Materializes collect v1 event to term snapshot payload and signals durable entity")
 
   Component(publish_in, "FacebookPublishingFunctions", "Timer/HTTP")
   Component(publish_uc, "PublishDailyDigestUseCase", "Use case")
@@ -36,6 +37,9 @@ Rel(collect_ops, sejm_api, "A4 fetch terms + daily slices")
 Rel(collect_ops, postgres, "A5 upsert SejmDailyDigestItem")
 Rel(collect_ops, domain_storage, "A6 enqueue interpellation publish messages")
 Rel(collect_in, collect_event_hub, "A7 publish collect completion event")
+Rel(collect_event_hub, term_snapshot_in, "A8 trigger collect v1 event consumer")
+Rel(term_snapshot_in, postgres, "A9 load snapshot rows by collection date")
+Rel(term_snapshot_in, durable_scheduler, "A10 signal SejmTermSnapshot durable entity")
 
 ' B) Daily publish flow
 Rel(publish_in, publish_uc, "B1 timer/manual publish command")

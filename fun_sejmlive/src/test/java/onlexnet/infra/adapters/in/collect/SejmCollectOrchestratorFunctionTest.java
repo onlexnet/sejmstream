@@ -35,14 +35,12 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCo
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
-import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations;
 import onlexnet.shared.JsonDateNumbers;
 
 class SejmCollectOrchestratorFunctionTest {
 
     private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
     private static final String COORDINATOR_ENTITY_KEY = "singleton";
-    private static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
 
         private static CollectOrchestrationInputDTO validInput() {
                 var input = new CollectOrchestrationInputDTO();
@@ -146,10 +144,6 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
                 eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
                 argThat(command -> isCompletedDispatchCommand(command, "collect-instance-1")));
-        verify(orchestrationContext).signalEntity(
-                eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
-                eq(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
-                any());
     }
 
     @Test
@@ -222,85 +216,6 @@ class SejmCollectOrchestratorFunctionTest {
                         command,
                         "collect-instance-2",
                         "Collect orchestrator failed in activity " + SejmCollectFunctions.ACTIVITY_VOTINGS)));
-    }
-
-    @Test
-    void givenSnapshotSignalFails_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
-                var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
-        var orchestrationContext = mock(TaskOrchestrationContext.class);
-        var collectionDate = LocalDate.of(2026, 8, 27);
-                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
-        var activityTask = SejmCollectFunctionTestSupport.completedTask(
-                SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")));
-
-        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-3");
-        when(orchestrationContext.callActivity(
-                any(String.class),
-                any(CollectActivityRequestDTO.class),
-                any(TaskOptions.class),
-                eq(CollectActivityResultWire.class))).thenReturn(activityTask);
-
-        var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
-        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
-        @SuppressWarnings("unchecked")
-        Task<Task<?>> winnerTask = mock(Task.class);
-        doReturn(activityTask).when(winnerTask).await();
-        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenReturn(winnerTask);
-
-        org.mockito.Mockito.doThrow(new IllegalStateException("snapshot signal failed"))
-                .when(orchestrationContext)
-                .signalEntity(
-                        eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
-                        eq(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
-                        any());
-
-        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("snapshot signal failed");
-
-        verify(orchestrationContext).signalEntity(
-                any(),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
-                argThat(command -> isFailedDispatchCommand(command, "collect-instance-3", "snapshot signal failed")));
-    }
-
-    @Test
-    void givenFinalizationBlocked_whenOrchestratorRuns_thenPropagatesBlockedWithoutFailureSignal() {
-                var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
-        var orchestrationContext = mock(TaskOrchestrationContext.class);
-        var collectionDate = LocalDate.of(2026, 8, 27);
-                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
-        var activityTask = SejmCollectFunctionTestSupport.completedTask(
-                SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")));
-
-        when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-blocked-finalization");
-        when(orchestrationContext.callActivity(
-                any(String.class),
-                any(CollectActivityRequestDTO.class),
-                any(TaskOptions.class),
-                eq(CollectActivityResultWire.class))).thenReturn(activityTask);
-
-        var cancelEventTask = SejmCollectFunctionTestSupport.completedTask("unused");
-        when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
-        @SuppressWarnings("unchecked")
-        Task<Task<?>> winnerTask = mock(Task.class);
-        doReturn(activityTask).when(winnerTask).await();
-        when(orchestrationContext.anyOf(org.mockito.ArgumentMatchers.<List<Task<?>>>any())).thenReturn(winnerTask);
-
-        var blocked = new OrchestratorBlockedException("yield after finalization");
-        org.mockito.Mockito.doThrow(blocked)
-                .when(orchestrationContext)
-                .signalEntity(
-                        eq(new EntityInstanceId(TERM_SNAPSHOT_ENTITY_NAME, "term10")),
-                        eq(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()),
-                        any());
-
-        assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext)).isSameAs(blocked);
-
-        verify(orchestrationContext, never()).signalEntity(
-                any(),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
-                isA(CollectCoordinatorCollectFailedCommandDTO.class));
     }
 
     @Test

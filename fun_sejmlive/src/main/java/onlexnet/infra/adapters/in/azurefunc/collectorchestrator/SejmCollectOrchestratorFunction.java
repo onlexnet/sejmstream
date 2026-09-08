@@ -1,7 +1,6 @@
 package onlexnet.infra.adapters.in.azurefunc.collectorchestrator;
 
 import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.DISPATCH;
-import static onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -10,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import com.microsoft.azure.functions.annotation.FunctionName;
@@ -35,7 +33,6 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishR
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResultDTO;
-import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotCollectedEvent;
 import onlexnet.shared.JsonDateNumbers;
 
 @Component
@@ -136,7 +133,6 @@ public final class SejmCollectOrchestratorFunction {
             var snapshotTermNum = requireSnapshotTermNum(interpellationsResult);
             var snapshotDate = requireSnapshotDate(interpellationsResult);
 
-            reconcileTermSnapshot(ctx, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
             publishCollectEvent(ctx, activitySource, snapshotTermNum, snapshotDate, counts);
 
             var result = new CollectResultDTO();
@@ -285,33 +281,6 @@ public final class SejmCollectOrchestratorFunction {
         }
     }
 
-    private void reconcileTermSnapshot(
-            OrchestrationContext orchestrationContext,
-            String activitySource,
-            CollectActivityResultDTO interpellationsResult,
-            CollectActivityResultDTO questionsResult,
-            CollectActivityResultDTO printsResult,
-            CollectActivityResultDTO billsResult) {
-        var termNum = requireSnapshotTermNum(interpellationsResult);
-        var date = requireSnapshotDate(interpellationsResult);
-        var event = new TermSnapshotCollectedEvent(
-                date,
-                activitySource,
-                orchestrationContext.getInstanceId(),
-                Map.copyOf(orEmptyMap(interpellationsResult.getInterpellationFingerprints())),
-                List.copyOf(orEmptyList(questionsResult.getItemKeys())),
-                List.copyOf(orEmptyList(printsResult.getItemKeys())),
-                List.copyOf(orEmptyList(billsResult.getItemKeys())));
-        orchestrationContext.signalEntity(
-                termSnapshotEntityId(termNum),
-                TERM_SNAPSHOT_COLLECTED.methodName(),
-                event);
-    }
-
-    private static EntityInstanceId termSnapshotEntityId(int termNum) {
-        return new EntityInstanceId(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME, "term" + termNum);
-    }
-
     private static int requireCount(CollectActivityResultDTO result) {
         return Objects.requireNonNull(result.getCount(), "Activity result count must not be null");
     }
@@ -324,14 +293,6 @@ public final class SejmCollectOrchestratorFunction {
         var collectionDate = Objects.requireNonNull(result.getCollectionDate(), "Activity result collectionDate must not be null");
         JsonDateNumbers.fromYyyyMmDd(collectionDate);
         return collectionDate;
-    }
-
-    private static List<String> orEmptyList(@Nullable List<String> value) {
-        return value == null ? List.of() : value;
-    }
-
-    private static Map<String, String> orEmptyMap(@Nullable Map<String, String> value) {
-        return value == null ? Map.of() : value;
     }
 
     private static String orchestrationFailureMessage(RuntimeException exception) {

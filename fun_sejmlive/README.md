@@ -31,7 +31,8 @@ Main boundaries:
 - `Fun_CollectOrchestrator` - durable orchestrator.
 - `Fun_CollectCoordinatorEntity` - durable entity to serialize collect requests.
 - `Fun_TermSnapshotReconcilerEntity` - durable entity to keep latest term snapshot and dispatch per-event handlers after diffing.
-- Orchestrator sends currently collected snapshot state (from activity outputs) directly to the term snapshot entity for diffing.
+- `Fun_TermSnapshotReconcilerFromCollectEvent` - Event Hub trigger that consumes collect v1 events, materializes persisted snapshot data, and signals the term snapshot entity.
+- Orchestrator publishes collect completion events to Event Hub; term snapshot reconciliation is triggered from that stream.
 - Coordinator entity exposes admin recovery operation `forceStartNext` (durable entity op) to resume queue processing when state is stuck and no orchestrator is running.
 - Activities:
    - `Intern_CollectVotings`

@@ -22,6 +22,8 @@ public final class SejmCollectFunctions {
     public static final String COORDINATOR_ENTITY_KEY = "singleton";
     /** Durable entity function name for term snapshot state and diffing. */
     public static final String TERM_SNAPSHOT_ENTITY_FUNCTION_NAME = "Fun_TermSnapshotReconcilerEntity";
+    /** Event Hub trigger function name for term snapshot reconciliation events. */
+    public static final String TERM_SNAPSHOT_COLLECT_EVENT_FUNCTION_NAME = "Fun_TermSnapshotReconcilerFromCollectEvent";
     /** Durable entity logical name used by the runtime for term snapshots. */
     public static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
     /** Durable entity key for term snapshot state is dynamic: String.valueOf(termNum). */

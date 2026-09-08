@@ -10,6 +10,8 @@ participant "SejmDailyDigestPersistence" as db
 participant "InterpellationPublishQueuePort" as queue
 participant "CollectEventPublishActivity" as publish_activity
 participant "Azure Event Hub" as event_hub
+participant "TermSnapshotReconcilerCollectEventFunction" as snapshot_event_fn
+participant "TermSnapshotReconcilerEntity" as snapshot_entity
 
 trigger -> fn: Timer fires (0 0 * * * *)\nor HTTP POST
 activate fn
@@ -85,6 +87,15 @@ activate publish_activity
 publish_activity -> event_hub: publish collect orchestration event
 publish_activity --> orch: "published"
 deactivate publish_activity
+
+event_hub -> snapshot_event_fn: trigger collect-orchestrator-event-v1
+activate snapshot_event_fn
+snapshot_event_fn -> db: findByDateAndType(collectionDate,
+  INTERPELLATION / WRITTEN_QUESTION / PRINT / BILL)
+db --> snapshot_event_fn: digest rows by type
+snapshot_event_fn -> snapshot_entity: signalEntity("termSnapshotCollected",
+  key=String.valueOf(termNum), enriched snapshot payload)
+deactivate snapshot_event_fn
 
 orch --> fn: CollectResult(countsByType)
 deactivate orch
