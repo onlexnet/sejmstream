@@ -78,7 +78,7 @@ public final class JsonValidator {
     }
 
     public <T> T validateReceived(SchemaRef<T> schemaRef, T payload) {
-        return validate(schemaRef, payload, "Received");
+        return validate(schemaRef, payload, ValidationDirection.RECEIVED);
     }
 
     public <T> @Nullable T validateReceivedIfPresent(SchemaRef<T> schemaRef, @Nullable T payload) {
@@ -89,10 +89,10 @@ public final class JsonValidator {
     }
 
     public <T> T validateToSend(SchemaRef<T> schemaRef, T payload) {
-        return validate(schemaRef, payload, "Outgoing");
+        return validate(schemaRef, payload, ValidationDirection.OUTGOING);
     }
 
-    private <T> T validate(SchemaRef<T> schemaRef, T payload, String direction) {
+    private <T> T validate(SchemaRef<T> schemaRef, T payload, ValidationDirection direction) {
         var typedPayload = schemaRef.modelType().cast(payload);
         var jsonNode = this.objectMapper.valueToTree(typedPayload);
         var schema = this.schemas.get(schemaRef);
@@ -106,9 +106,24 @@ public final class JsonValidator {
                     .sorted()
                     .collect(Collectors.joining("; "));
             throw new IllegalArgumentException(
-                    direction + " payload does not match schema " + schemaRef.resourcePath() + ": " + details);
+                    direction.label() + " payload does not match schema " + schemaRef.resourcePath() + ": " + details);
         }
         return typedPayload;
+    }
+
+    private enum ValidationDirection {
+        RECEIVED("Received"),
+        OUTGOING("Outgoing");
+
+        private final String label;
+
+        ValidationDirection(String label) {
+            this.label = label;
+        }
+
+        private String label() {
+            return this.label;
+        }
     }
 
     private static JsonSchema loadSchema(SchemaRef<?> schemaRef) {
