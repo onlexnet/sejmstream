@@ -40,14 +40,16 @@ public class AzureEventHubsCollectOrchestratorEventPublisher implements CollectO
     private volatile @Nullable EventHubProducerClient producerClient;
 
     public AzureEventHubsCollectOrchestratorEventPublisher(
-            @Value("${collect.orchestrator.event-hub.name:}") String eventHubName,
-            @Value("${collect.orchestrator.event-hub.fully-qualified-namespace:}") String fullyQualifiedNamespace,
+            @Value("${collect.orchestrator.event-hub.name}") String eventHubName,
+            @Value("${collect.orchestrator.event-hub.fully-qualified-namespace}") String fullyQualifiedNamespace,
             @Value("${collect.orchestrator.event-hub.managed-identity-client-id:}") String managedIdentityClientId,
             ObjectMapper objectMapper,
             JsonValidator jsonValidator) {
-        this.eventHubName = eventHubName;
-        this.fullyQualifiedNamespace = fullyQualifiedNamespace;
-        this.managedIdentityClientId = managedIdentityClientId;
+        this.eventHubName = normalizedRequiredConfig(eventHubName, "collect.orchestrator.event-hub.name");
+        this.fullyQualifiedNamespace = normalizedRequiredConfig(
+                fullyQualifiedNamespace,
+                "collect.orchestrator.event-hub.fully-qualified-namespace");
+        this.managedIdentityClientId = managedIdentityClientId.trim();
         this.objectMapper = objectMapper;
         this.jsonValidator = jsonValidator;
     }
@@ -88,19 +90,13 @@ public class AzureEventHubsCollectOrchestratorEventPublisher implements CollectO
                 return this.producerClient;
             }
 
-            var normalizedHubName = normalizedRequiredConfig(this.eventHubName, "collect.orchestrator.event-hub.name");
-            var normalizedNamespace = normalizedRequiredConfig(
-                    this.fullyQualifiedNamespace,
-                    "collect.orchestrator.event-hub.fully-qualified-namespace");
-
             var credentialBuilder = new DefaultAzureCredentialBuilder();
-            var normalizedClientId = this.managedIdentityClientId.trim();
-            if (!normalizedClientId.isEmpty()) {
-                credentialBuilder.managedIdentityClientId(normalizedClientId);
+            if (!this.managedIdentityClientId.isEmpty()) {
+                credentialBuilder.managedIdentityClientId(this.managedIdentityClientId);
             }
 
             this.producerClient = new EventHubClientBuilder()
-                    .credential(normalizedNamespace, normalizedHubName, credentialBuilder.build())
+                    .credential(this.fullyQualifiedNamespace, this.eventHubName, credentialBuilder.build())
                     .buildProducerClient();
             return this.producerClient;
         }

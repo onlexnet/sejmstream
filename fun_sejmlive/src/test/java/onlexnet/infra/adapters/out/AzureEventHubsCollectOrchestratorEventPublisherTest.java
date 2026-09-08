@@ -25,6 +25,22 @@ import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 
 class AzureEventHubsCollectOrchestratorEventPublisherTest {
 
+        @Test
+        void shouldFailFastWhenEventHubNameIsBlank() {
+                var objectMapper = new ObjectMapper().findAndRegisterModules();
+                var jsonValidator = new JsonValidator(objectMapper);
+                jsonValidator.init();
+
+                assertThatThrownBy(() -> new AzureEventHubsCollectOrchestratorEventPublisher(
+                                "  ",
+                                "ns.servicebus.windows.net",
+                                "",
+                                objectMapper,
+                                jsonValidator))
+                                .isInstanceOf(IllegalStateException.class)
+                                .hasMessageContaining("collect.orchestrator.event-hub.name");
+        }
+
     @Test
         void shouldPublishV1PayloadWithContractMetadata() {
         var objectMapper = new ObjectMapper().findAndRegisterModules();
