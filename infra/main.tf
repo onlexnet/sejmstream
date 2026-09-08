@@ -311,6 +311,12 @@ resource "azurerm_role_assignment" "function_event_hubs_data_sender" {
   principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
+resource "azurerm_role_assignment" "function_event_hubs_data_receiver" {
+  scope                = azurerm_eventhub.collect.id
+  role_definition_name = "Azure Event Hubs Data Receiver"
+  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
+}
+
 # Domain storage account access: function app identity needs queue read/write for the
 # interpellation publish queue trigger and the outbound queue adapter.
 resource "azurerm_role_assignment" "domain_storage_queue_data_contributor" {

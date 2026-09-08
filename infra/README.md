@@ -91,6 +91,7 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
    - `Durable Task Data Contributor` (task hub scope)
 - Event Hub RBAC assignment for Function App identity:
    - `Azure Event Hubs Data Sender` (event hub scope)
+   - `Azure Event Hubs Data Receiver` (event hub scope)
 - Storage blob data-plane role assignment for the deployment principal (`data.azurerm_client_config.current.object_id`) used by the GitHub OIDC deploy job
 - Key Vault secret read access for the Function App managed identity via `azurerm_key_vault_access_policy.function_app`
 - Application Insights telemetry enabled by default for the Function App runtime

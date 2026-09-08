@@ -77,7 +77,7 @@ variable "eventhub_namespace_name" {
   nullable    = true
 
   validation {
-    condition = var.eventhub_namespace_name == null ? true : can(regex("^[a-z][a-z0-9-]{4,48}[a-z0-9]$", var.eventhub_namespace_name))
+    condition     = var.eventhub_namespace_name == null ? true : can(regex("^[a-z][a-z0-9-]{4,48}[a-z0-9]$", var.eventhub_namespace_name))
     error_message = "eventhub_namespace_name must be null or 6-50 chars, lowercase alphanumeric/hyphen, start with a letter, and end with alphanumeric."
   }
 }
