@@ -1,6 +1,5 @@
 package onlexnet.infra.adapters.in.azurefunc.collectactivity;
 
-import java.time.LocalDate;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -17,6 +16,7 @@ import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.Log;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
+import onlexnet.shared.JsonDateNumbers;
 
 @Component
 @Slf4j
@@ -37,7 +37,7 @@ public final class SejmCollectPublishCollectEventActivityFunction {
                     requiredText(validatedRequest.getOrchestrationInstanceId(), "orchestrationInstanceId"),
                     requiredText(validatedRequest.getSource(), "source"),
                     requiredInt(validatedRequest.getTermNum(), "termNum"),
-                    requiredDate(validatedRequest.getCollectionDate(), "collectionDate"),
+                    requiredDateNumber(validatedRequest.getCollectionDate(), "collectionDate"),
                     requiredCounts(validatedRequest.getCountsByType(), "countsByType"));
             this.eventPublisher.publish(event);
             Log.info(execCtx, "Published collect orchestration event to Event Hub for instance="
@@ -65,10 +65,11 @@ public final class SejmCollectPublishCollectEventActivityFunction {
         return value;
     }
 
-    private static LocalDate requiredDate(LocalDate value, String fieldName) {
+    private static int requiredDateNumber(Integer value, String fieldName) {
         if (value == null) {
             throw new IllegalStateException("Collect event request field " + fieldName + " must not be null");
         }
+        JsonDateNumbers.fromYyyyMmDd(value);
         return value;
     }
 

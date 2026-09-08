@@ -9,7 +9,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
-import java.time.LocalDate;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -54,7 +53,7 @@ class AzureEventHubsCollectOrchestratorEventPublisherTest {
                 "collect-instance-1",
                 "timer",
                 10,
-                LocalDate.of(2026, 9, 7),
+                20260907,
                 Map.of("VOTING", 3));
 
         publisher.publish(event);
@@ -88,7 +87,7 @@ class AzureEventHubsCollectOrchestratorEventPublisherTest {
                 "collect-instance-1",
                 "timer",
                 10,
-                LocalDate.of(2026, 9, 7),
+                20260907,
                 Map.of("VOTING", -1));
 
         assertThatThrownBy(() -> publisher.publish(invalidEvent))

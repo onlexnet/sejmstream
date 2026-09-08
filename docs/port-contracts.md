@@ -119,12 +119,14 @@ therefore use a serializer-neutral JSON wire contract.
 
 - Durable activity return types use explicit `...Wire` records rather than generated DTOs containing
     `java.time` values.
-- Temporal values are represented as ISO-8601 strings, for example `"2026-08-30"`, at the Durable boundary.
+- Temporal values are represented as numeric date codes at the Durable boundary.
+- `LocalDate` uses `yyyyMMdd` integer encoding, for example `20260830`.
+- If a `LocalDateTime` value is ever added to a wire contract, it must use `yyyyMMddHHmmss` as a `long`.
 - The orchestrator maps a wire record back to the generated schema DTO and validates it before business use.
 - Each wire contract requires a `Gson -> JacksonDataConverter` round-trip test to prevent serializer drift.
 
 `CollectActivityResultWire` is the collect-flow implementation of this rule. Its `collectionDate` field is a
-string on the wire and becomes `LocalDate` only after the orchestrator receives it.
+numeric `yyyyMMdd` value on the wire.
 
 ---
 

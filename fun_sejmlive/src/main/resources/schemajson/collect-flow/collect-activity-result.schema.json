@@ -17,8 +17,10 @@
       "minimum": 0
     },
     "collectionDate": {
-      "type": "string",
-      "format": "date"
+      "type": "integer",
+      "minimum": 10000101,
+      "maximum": 99991231,
+      "description": "Local date encoded as yyyyMMdd (for example 20070102)."
     },
     "itemKeys": {
       "type": "array",

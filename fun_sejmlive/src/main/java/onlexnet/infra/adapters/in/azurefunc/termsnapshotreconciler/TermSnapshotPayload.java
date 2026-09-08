@@ -1,6 +1,5 @@
 package onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -9,7 +8,7 @@ import java.util.Map;
  */
 public record TermSnapshotPayload(
         int termNum,
-        LocalDate collectionDate,
+        int collectionDate,
         Map<String, String> interpellationFingerprints,
         List<String> writtenQuestionKeys,
         List<String> printKeys,

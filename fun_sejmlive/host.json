@@ -7,10 +7,14 @@
   "extensions": {
     "durableTask": {
       "hubName": "%TASKHUB_NAME%",
+      "tracing": {
+        "DistributedTracingEnabled": true,
+        "Version": "V2"
+      },
       "storageProvider": {
         "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
-      }
+      }      
     },
     "queues": {
       "maxPollingInterval": "00:00:05",

@@ -193,7 +193,7 @@ class SejmCollectActivitiesFunctionTest {
         request.setOrchestrationInstanceId("collect-instance-1");
         request.setSource("timer");
         request.setTermNum(10);
-        request.setCollectionDate(LocalDate.of(2026, 9, 7));
+        request.setCollectionDate(20260907);
         request.setCountsByType(Map.of("VOTING", 3, "INTERPELLATION", 4));
 
         var result = activity.publishCollectEvent(request, new SejmCollectFunctionTestSupport.FakeExecutionContext());
@@ -203,7 +203,7 @@ class SejmCollectActivitiesFunctionTest {
                 event.orchestrationInstanceId().equals("collect-instance-1")
                         && event.source().equals("timer")
                         && event.termNum() == 10
-                        && event.collectionDate().equals(LocalDate.of(2026, 9, 7))
+                        && event.collectionDate() == 20260907
                         && event.countsByType().equals(Map.of("VOTING", 3, "INTERPELLATION", 4))));
     }
 
@@ -218,7 +218,7 @@ class SejmCollectActivitiesFunctionTest {
         request.setOrchestrationInstanceId("collect-instance-2");
         request.setSource("timer");
         request.setTermNum(10);
-        request.setCollectionDate(LocalDate.of(2026, 9, 7));
+        request.setCollectionDate(20260907);
         request.setCountsByType(Map.of("VOTING", 3));
 
         assertThatThrownBy(() -> activity.publishCollectEvent(request, new SejmCollectFunctionTestSupport.FakeExecutionContext()))

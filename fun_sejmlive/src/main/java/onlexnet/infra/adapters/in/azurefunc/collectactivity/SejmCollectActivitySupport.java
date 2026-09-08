@@ -21,6 +21,7 @@ import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityR
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
 import onlexnet.shared.Guards;
+import onlexnet.shared.JsonDateNumbers;
 
 /**
  * Shared helpers for collect activity entrypoints.
@@ -82,7 +83,7 @@ public final class SejmCollectActivitySupport {
         var result = new CollectActivityResult();
         result.setCount(count);
         result.setTermNum(termNum);
-        result.setCollectionDate(date);
+        result.setCollectionDate(JsonDateNumbers.toYyyyMmDd(date));
         result.setItemKeys(List.copyOf(itemKeys));
         result.setInterpellationFingerprints(Map.copyOf(interpellationFingerprints));
         return CollectActivityResultWire.from(

@@ -6,7 +6,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +40,7 @@ class TermSnapshotReconcilerEntityTest {
         when(operation.getContext()).thenReturn(context);
         when(context.getId()).thenReturn(new EntityInstanceId("sejmTermSnapshot", "10"));
         var event = new TermSnapshotCollectedEvent(
-                LocalDate.of(2026, 8, 27),
+            20260827,
                 "timer",
                 "instance-1",
                 Map.of("77", "hash-1"),
@@ -61,14 +60,14 @@ class TermSnapshotReconcilerEntityTest {
         state.setLatestSnapshot(
                 new TermSnapshotPayload(
                         10,
-                        LocalDate.of(2026, 8, 27),
+                20260827,
                         Map.of("77", "hash-old", "78", "hash-same"),
                         List.of("301"),
                         List.of("401"),
                         List.of("501")));
 
         var event = new TermSnapshotCollectedEvent(
-                LocalDate.of(2026, 8, 27),
+            20260827,
                 "timer",
                 "instance-1",
                 Map.of("77", "hash-new", "78", "hash-same", "79", "hash-79"),

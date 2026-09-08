@@ -4,7 +4,6 @@ import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoo
 import static onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +36,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotCollectedEvent;
+import onlexnet.shared.JsonDateNumbers;
 
 @Component
 @RequiredArgsConstructor
@@ -183,7 +183,7 @@ public final class SejmCollectOrchestratorFunction {
             OrchestrationContext orchestrationContext,
             String source,
             int termNum,
-            LocalDate collectionDate,
+            int collectionDate,
             Map<String, Integer> countsByType) {
         var request = new CollectEventPublishRequest();
         request.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
@@ -320,8 +320,10 @@ public final class SejmCollectOrchestratorFunction {
         return Objects.requireNonNull(result.getTermNum(), "Activity result termNum must not be null");
     }
 
-    private static LocalDate requireSnapshotDate(CollectActivityResult result) {
-        return Objects.requireNonNull(result.getCollectionDate(), "Activity result collectionDate must not be null");
+    private static int requireSnapshotDate(CollectActivityResult result) {
+        var collectionDate = Objects.requireNonNull(result.getCollectionDate(), "Activity result collectionDate must not be null");
+        JsonDateNumbers.fromYyyyMmDd(collectionDate);
+        return collectionDate;
     }
 
     private static List<String> orEmptyList(@Nullable List<String> value) {

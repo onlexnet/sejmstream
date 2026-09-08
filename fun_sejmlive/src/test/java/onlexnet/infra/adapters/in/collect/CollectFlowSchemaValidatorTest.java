@@ -10,6 +10,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.google.gson.Gson;
 import com.microsoft.durabletask.JacksonDataConverter;
+import com.networknt.schema.JsonSchemaFactory;
+import com.networknt.schema.SpecVersion;
 
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
@@ -26,7 +28,7 @@ class CollectFlowSchemaValidatorTest {
 		var result = new CollectActivityResult();
 		result.setCount(3);
 		result.setTermNum(10);
-		result.setCollectionDate(java.time.LocalDate.of(2026, 8, 27));
+		result.setCollectionDate(20260827);
 
 		assertThatCode(() -> validator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, new CollectActivityRequest()))
 				.doesNotThrowAnyException();
@@ -37,7 +39,7 @@ class CollectFlowSchemaValidatorTest {
 		publishRequest.setOrchestrationInstanceId("collect-instance-1");
 		publishRequest.setSource("timer");
 		publishRequest.setTermNum(10);
-		publishRequest.setCollectionDate(java.time.LocalDate.of(2026, 9, 7));
+		publishRequest.setCollectionDate(20260907);
 		publishRequest.setCountsByType(java.util.Map.of("VOTING", 1));
 		assertThatCode(() -> validator.validateToSend(JsonValidator.COLLECT_EVENT_PUBLISH_REQUEST, publishRequest))
 				.doesNotThrowAnyException();
@@ -46,7 +48,7 @@ class CollectFlowSchemaValidatorTest {
 				.orchestrationInstanceId("collect-instance-1")
 				.source("timer")
 				.termNum(10)
-				.collectionDate(java.time.LocalDate.of(2026, 9, 7))
+				.collectionDate(20260907)
 				.countsByType(java.util.Map.of("VOTING", 1));
 		assertThatCode(() -> validator.validateToSend(JsonValidator.COLLECT_ORCHESTRATOR_EVENT_V1, outboundEvent))
 				.doesNotThrowAnyException();
@@ -71,7 +73,7 @@ class CollectFlowSchemaValidatorTest {
 				new CollectOrchestratorEventV1()
 						.source("timer")
 						.termNum(10)
-						.collectionDate(java.time.LocalDate.of(2026, 9, 7))
+						.collectionDate(20260907)
 						.countsByType(java.util.Map.of("VOTING", 1))))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("collect-orchestrator-event-v1.schema.json");
@@ -82,10 +84,37 @@ class CollectFlowSchemaValidatorTest {
 						.orchestrationInstanceId("collect-instance-1")
 						.source("timer")
 						.termNum(10)
-						.collectionDate(java.time.LocalDate.of(2026, 9, 7))
+						.collectionDate(20260907)
 						.countsByType(java.util.Map.of("VOTING", -1))))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("collect-orchestrator-event-v1.schema.json");
+	}
+
+	@Test
+	void givenLegacyIsoCollectionDateString_whenSchemaValidates_thenFails() throws Exception {
+		var objectMapper = new ObjectMapper();
+		var payload = objectMapper.readTree("""
+				{
+				  "orchestrationInstanceId": "collect-instance-1",
+				  "source": "timer",
+				  "termNum": 10,
+				  "collectionDate": "2026-09-07",
+				  "countsByType": {
+				    "VOTING": 1
+				  }
+				}
+				""");
+		var schemaFactory = JsonSchemaFactory.getInstance(SpecVersion.VersionFlag.V202012);
+		try (var schemaStream = CollectFlowSchemaValidatorTest.class.getResourceAsStream(
+				"/schemajson/collect-flow/collect-event-publish-request.schema.json")) {
+			assertThat(schemaStream).isNotNull();
+			var schema = schemaFactory.getSchema(schemaStream);
+			var errors = schema.validate(payload);
+
+			assertThat(errors).isNotEmpty();
+			assertThat(errors)
+					.anyMatch(message -> message.getMessage().contains("integer"));
+		}
 	}
 
 	@Test
@@ -93,7 +122,7 @@ class CollectFlowSchemaValidatorTest {
 		var wirePayload = new CollectActivityResultWire(
 				3,
 				10,
-				"2026-08-27",
+				20260827,
 				java.util.List.of("item-1"),
 				java.util.Map.of("item-1", "fingerprint"));
 
@@ -102,7 +131,7 @@ class CollectFlowSchemaValidatorTest {
 				serializedByFunctionWorker,
 				CollectActivityResultWire.class);
 
-		assertThat(serializedByFunctionWorker).contains("\"collectionDate\":\"2026-08-27\"");
+		assertThat(serializedByFunctionWorker).contains("\"collectionDate\":20260827");
 		assertThat(restoredByDurable).isEqualTo(wirePayload);
 	}
 

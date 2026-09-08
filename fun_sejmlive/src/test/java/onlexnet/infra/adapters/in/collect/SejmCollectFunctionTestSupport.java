@@ -51,6 +51,7 @@ import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectInterpell
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectPrintsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectQuestionsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectVotingsActivityFunction;
+import onlexnet.shared.JsonDateNumbers;
 
 final class SejmCollectFunctionTestSupport {
 
@@ -130,7 +131,7 @@ final class SejmCollectFunctionTestSupport {
         return new CollectActivityResultWire(
                 count,
                 termNum,
-                collectionDate.toString(),
+            JsonDateNumbers.toYyyyMmDd(collectionDate),
                 itemKeys,
                 interpellationFingerprints);
     }

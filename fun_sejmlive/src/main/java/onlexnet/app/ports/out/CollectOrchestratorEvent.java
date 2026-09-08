@@ -1,6 +1,5 @@
 package onlexnet.app.ports.out;
 
-import java.time.LocalDate;
 import java.util.Map;
 
 /**
@@ -10,6 +9,6 @@ public record CollectOrchestratorEvent(
         String orchestrationInstanceId,
         String source,
         int termNum,
-        LocalDate collectionDate,
+        int collectionDate,
         Map<String, Integer> countsByType) {
 }

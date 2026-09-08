@@ -36,6 +36,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCo
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations;
+import onlexnet.shared.JsonDateNumbers;
 
 class SejmCollectOrchestratorFunctionTest {
 
@@ -137,7 +138,8 @@ class SejmCollectOrchestratorFunctionTest {
                         "collect-instance-1".equals(request.getOrchestrationInstanceId())
                                 && "orchestrator".equals(request.getSource())
                                 && Integer.valueOf(10).equals(request.getTermNum())
-                                && collectionDate.equals(request.getCollectionDate())),
+                                && Integer.valueOf(JsonDateNumbers.toYyyyMmDd(collectionDate))
+                                        .equals(request.getCollectionDate())),
                 any(TaskOptions.class),
                 eq(String.class));
         verify(orchestrationContext).signalEntity(
