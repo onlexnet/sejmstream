@@ -28,7 +28,7 @@ import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.CollectOrchestratorEventPublisher;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectPublishCollectEventActivityFunction;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
 
 class SejmCollectActivitiesFunctionTest {
 
@@ -189,7 +189,7 @@ class SejmCollectActivitiesFunctionTest {
         var activity = new SejmCollectPublishCollectEventActivityFunction(
                 eventPublisher,
                 SejmCollectFunctionTestSupport.newJsonValidator());
-        var request = new CollectEventPublishRequest();
+        var request = new CollectEventPublishRequestDTO();
         request.setOrchestrationInstanceId("collect-instance-1");
         request.setSource("timer");
         request.setTermNum(10);
@@ -214,7 +214,7 @@ class SejmCollectActivitiesFunctionTest {
         var activity = new SejmCollectPublishCollectEventActivityFunction(
                 eventPublisher,
                 SejmCollectFunctionTestSupport.newJsonValidator());
-        var request = new CollectEventPublishRequest();
+        var request = new CollectEventPublishRequestDTO();
         request.setOrchestrationInstanceId("collect-instance-2");
         request.setSource("timer");
         request.setTermNum(10);

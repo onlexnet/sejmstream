@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import onlexnet.infra.adapters.in.azurefunc.Log;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityResultWire;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
 
 @Component
 @Slf4j
@@ -26,7 +26,7 @@ public final class SejmCollectVotingsActivityFunction {
 
     @FunctionName(SejmCollectFunctions.ACTIVITY_VOTINGS)
     public CollectActivityResultWire collectVotings(
-            @DurableActivityTrigger(name = "request") CollectActivityRequest request,
+            @DurableActivityTrigger(name = "request") CollectActivityRequestDTO request,
             ExecutionContext execCtx) {
         this.activitySupport.validateActivityRequest(request);
 

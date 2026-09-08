@@ -114,7 +114,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
             }
             case CollectDailyDigestOutcome.Failed failed -> {
                 LOGGER.warn("Admin collect action failed", failed.exception());
-                yield new AdminOutcome.CollectFailure(this.safeErrorMessage(failed.exception()));
+                yield new AdminOutcome.CollectFailureDTO(this.safeErrorMessage(failed.exception()));
             }
         };
     }

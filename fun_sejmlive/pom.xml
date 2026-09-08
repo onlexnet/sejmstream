@@ -278,6 +278,7 @@
 							<generatorName>java</generatorName>
 							<library>restclient</library>
 							<modelPackage>onlexnet.infra.adapters.in.azurefunc.generated.model</modelPackage>
+							<modelNameSuffix>DTO</modelNameSuffix>
 							<output>${project.build.directory}/generated-sources/collect-flow-schemas</output>
 							<addCompileSourceRoot>true</addCompileSourceRoot>
 							<generateApis>false</generateApis>

@@ -26,15 +26,15 @@ import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 import lombok.RequiredArgsConstructor;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResultDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletionDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResultDTO;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotCollectedEvent;
 import onlexnet.shared.JsonDateNumbers;
 
@@ -50,19 +50,19 @@ public final class SejmCollectOrchestratorFunction {
     private final JsonValidator jsonValidator;
 
     @FunctionName(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME)
-    public CollectResult runOrchestrator(
+    public CollectResultDTO runOrchestrator(
             @DurableOrchestrationTrigger(name = "orchestrationContext") TaskOrchestrationContext orchestrationContext) {
         return runOrchestratorInter(new OrchestrationContext(orchestrationContext));
     }
 
-    CollectResult runOrchestratorInter(OrchestrationContext ctx) {
+    CollectResultDTO runOrchestratorInter(OrchestrationContext ctx) {
         EntityInstanceId coordinatorEntityId = COLLECT_COORDINATOR_ENTITY_ID;
         String activitySource;
 
         try {
             var input = this.jsonValidator.validateReceived(
                     JsonValidator.COLLECT_ORCHESTRATION_INPUT,
-                    ctx.getInput(CollectOrchestrationInput.class));
+                    ctx.getInput(CollectOrchestrationInputDTO.class));
             coordinatorEntityId = EntityInstanceId.fromString(input.getCoordinatorEntityId());
             activitySource = input.getSource();
         } catch (RuntimeException e) {
@@ -139,13 +139,13 @@ public final class SejmCollectOrchestratorFunction {
             reconcileTermSnapshot(ctx, activitySource, interpellationsResult, questionsResult, printsResult, billsResult);
             publishCollectEvent(ctx, activitySource, snapshotTermNum, snapshotDate, counts);
 
-            var result = new CollectResult();
+            var result = new CollectResultDTO();
             result.setCountsByType(Collections.unmodifiableMap(new HashMap<>(counts)));
             this.jsonValidator.validateToSend(JsonValidator.COLLECT_RESULT, result);
-            var completion = new CollectCompletion();
+            var completion = new CollectCompletionDTO();
             completion.setOrchestrationInstanceId(ctx.getInstanceId());
             this.jsonValidator.validateToSend(JsonValidator.COLLECT_COMPLETION, completion);
-            var completionCommand = new CollectCoordinatorCollectCompletedCommand();
+            var completionCommand = new CollectCoordinatorCollectCompletedCommandDTO();
             completionCommand.setCompletion(completion);
             ctx.signalEntity(coordinatorEntityId, DISPATCH.methodName(), completionCommand);
             return result;
@@ -161,7 +161,7 @@ public final class SejmCollectOrchestratorFunction {
             OrchestrationContext orchestrationContext,
             String activityName,
             String source) {
-        var request = new CollectActivityRequest();
+        var request = new CollectActivityRequestDTO();
         request.setSource(source);
         this.jsonValidator.validateToSend(JsonValidator.COLLECT_ACTIVITY_REQUEST, request);
         return orchestrationContext.callActivity(
@@ -185,7 +185,7 @@ public final class SejmCollectOrchestratorFunction {
             int termNum,
             int collectionDate,
             Map<String, Integer> countsByType) {
-        var request = new CollectEventPublishRequest();
+        var request = new CollectEventPublishRequestDTO();
         request.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
         request.setSource(source);
         request.setTermNum(termNum);
@@ -219,7 +219,7 @@ public final class SejmCollectOrchestratorFunction {
         }
     }
 
-    private CollectActivityResult awaitActivityWithFailureContext(Task<CollectActivityResultWire> task, String activityName) {
+    private CollectActivityResultDTO awaitActivityWithFailureContext(Task<CollectActivityResultWire> task, String activityName) {
         try {
             var activityResultWire = task.await();
             if (activityResultWire == null) {
@@ -242,7 +242,7 @@ public final class SejmCollectOrchestratorFunction {
         }
     }
 
-    private CollectActivityResult awaitActivityOrCancel(
+    private CollectActivityResultDTO awaitActivityOrCancel(
             OrchestrationContext orchestrationContext,
             EntityInstanceId coordinatorEntityId,
             Task<String> cancelRequestedTask,
@@ -288,10 +288,10 @@ public final class SejmCollectOrchestratorFunction {
     private void reconcileTermSnapshot(
             OrchestrationContext orchestrationContext,
             String activitySource,
-            CollectActivityResult interpellationsResult,
-            CollectActivityResult questionsResult,
-            CollectActivityResult printsResult,
-            CollectActivityResult billsResult) {
+            CollectActivityResultDTO interpellationsResult,
+            CollectActivityResultDTO questionsResult,
+            CollectActivityResultDTO printsResult,
+            CollectActivityResultDTO billsResult) {
         var termNum = requireSnapshotTermNum(interpellationsResult);
         var date = requireSnapshotDate(interpellationsResult);
         var event = new TermSnapshotCollectedEvent(
@@ -312,15 +312,15 @@ public final class SejmCollectOrchestratorFunction {
         return new EntityInstanceId(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME, "term" + termNum);
     }
 
-    private static int requireCount(CollectActivityResult result) {
+    private static int requireCount(CollectActivityResultDTO result) {
         return Objects.requireNonNull(result.getCount(), "Activity result count must not be null");
     }
 
-    private static int requireSnapshotTermNum(CollectActivityResult result) {
+    private static int requireSnapshotTermNum(CollectActivityResultDTO result) {
         return Objects.requireNonNull(result.getTermNum(), "Activity result termNum must not be null");
     }
 
-    private static int requireSnapshotDate(CollectActivityResult result) {
+    private static int requireSnapshotDate(CollectActivityResultDTO result) {
         var collectionDate = Objects.requireNonNull(result.getCollectionDate(), "Activity result collectionDate must not be null");
         JsonDateNumbers.fromYyyyMmDd(collectionDate);
         return collectionDate;
@@ -346,11 +346,11 @@ public final class SejmCollectOrchestratorFunction {
             OrchestrationContext orchestrationContext,
             EntityInstanceId coordinatorEntityId,
             RuntimeException exception) {
-        var failure = new CollectFailure();
+        var failure = new CollectFailureDTO();
         failure.setOrchestrationInstanceId(orchestrationContext.getInstanceId());
         failure.setMessage(orchestrationFailureMessage(exception));
         this.jsonValidator.validateToSend(JsonValidator.COLLECT_FAILURE, failure);
-        var failureCommand = new CollectCoordinatorCollectFailedCommand();
+        var failureCommand = new CollectCoordinatorCollectFailedCommandDTO();
         failureCommand.setFailure(failure);
         orchestrationContext.signalEntity(coordinatorEntityId, DISPATCH.methodName(), failureCommand);
     }

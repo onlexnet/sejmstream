@@ -18,8 +18,8 @@ import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityResultWire;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResultDTO;
 import onlexnet.shared.Guards;
 import onlexnet.shared.JsonDateNumbers;
 
@@ -52,8 +52,8 @@ public final class SejmCollectActivitySupport {
         return this.collectService;
     }
 
-    void validateActivityRequest(CollectActivityRequest request) {
-        var normalizedRequest = request == null ? new CollectActivityRequest() : request;
+    void validateActivityRequest(CollectActivityRequestDTO request) {
+        var normalizedRequest = request == null ? new CollectActivityRequestDTO() : request;
         this.jsonValidator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, normalizedRequest);
     }
 
@@ -80,7 +80,7 @@ public final class SejmCollectActivitySupport {
             LocalDate date,
             List<String> itemKeys,
             Map<String, String> interpellationFingerprints) {
-        var result = new CollectActivityResult();
+        var result = new CollectActivityResultDTO();
         result.setCount(count);
         result.setTermNum(termNum);
         result.setCollectionDate(JsonDateNumbers.toYyyyMmDd(date));

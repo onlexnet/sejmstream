@@ -15,12 +15,12 @@ import onlexnet.app.usecases.CollectCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
 
 @Component
 @RequiredArgsConstructor
@@ -65,19 +65,19 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 
     @Override
-    public void dispatch(CollectCoordinatorDispatchCommand command) {
+    public void dispatch(CollectCoordinatorDispatchCommandDTO command) {
         if (command == null) {
             throw new IllegalArgumentException("Collect coordinator command payload is required");
         }
 
         switch (command) {
-            case CollectCoordinatorRequestCollectCommand requestCollectCommand ->
+            case CollectCoordinatorRequestCollectCommandDTO requestCollectCommand ->
                     handleRequestCollect(requestCollectCommand.getSource());
-            case CollectCoordinatorCollectCompletedCommand collectCompletedCommand ->
+            case CollectCoordinatorCollectCompletedCommandDTO collectCompletedCommand ->
                     handleCollectCompleted(collectCompletedCommand);
-            case CollectCoordinatorCollectFailedCommand collectFailedCommand ->
+            case CollectCoordinatorCollectFailedCommandDTO collectFailedCommand ->
                     handleCollectFailed(collectFailedCommand);
-            case CollectCoordinatorForceStartNextCommand forceStartNextCommand ->
+            case CollectCoordinatorForceStartNextCommandDTO forceStartNextCommand ->
                     handleForceStartNext(forceStartNextCommand.getSource());
             default -> throw new UnsupportedOperationException(
                     "Unsupported collect coordinator dispatch command type: " + command.getClass().getName());
@@ -91,7 +91,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
         applyDecision(decision);
     }
 
-    private void handleCollectCompleted(CollectCoordinatorCollectCompletedCommand command) {
+    private void handleCollectCompleted(CollectCoordinatorCollectCompletedCommandDTO command) {
         var validatedCompletion = this.jsonValidator.validateReceived(
                 JsonValidator.COLLECT_COMPLETION,
                 command.getCompletion());
@@ -101,7 +101,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
         applyDecision(decision);
     }
 
-    private void handleCollectFailed(CollectCoordinatorCollectFailedCommand command) {
+    private void handleCollectFailed(CollectCoordinatorCollectFailedCommandDTO command) {
         var validatedFailure = this.jsonValidator.validateReceived(
                 JsonValidator.COLLECT_FAILURE,
                 command.getFailure());
@@ -141,7 +141,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
         if (startTime != null) {
             options.setStartTime(startTime);
         }
-        var orchestrationInput = new CollectOrchestrationInput();
+        var orchestrationInput = new CollectOrchestrationInputDTO();
         orchestrationInput.setCoordinatorEntityId(requireContext().getId().toString());
         orchestrationInput.setSource(source);
         this.jsonValidator.validateToSend(

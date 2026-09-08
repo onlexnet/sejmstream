@@ -15,7 +15,7 @@ import onlexnet.app.ports.out.CollectOrchestratorEventPublisher;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.Log;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
 import onlexnet.shared.JsonDateNumbers;
 
 @Component
@@ -28,7 +28,7 @@ public final class SejmCollectPublishCollectEventActivityFunction {
 
     @FunctionName(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT)
     public String publishCollectEvent(
-            @DurableActivityTrigger(name = "request") CollectEventPublishRequest request,
+            @DurableActivityTrigger(name = "request") CollectEventPublishRequestDTO request,
             ExecutionContext execCtx) {
         var validatedRequest = this.jsonValidator.validateReceived(JsonValidator.COLLECT_EVENT_PUBLISH_REQUEST, request);
 

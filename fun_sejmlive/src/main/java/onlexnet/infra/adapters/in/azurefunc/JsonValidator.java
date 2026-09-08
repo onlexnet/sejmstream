@@ -17,14 +17,14 @@ import com.networknt.schema.ValidationMessage;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResultDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletionDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1DTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResultDTO;
 
 /**
  * Validates collect-flow transport DTOs against their source JSON schemas.
@@ -34,23 +34,23 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectResult;
 @RequiredArgsConstructor
 public final class JsonValidator {
 
-    public static final SchemaRef<CollectActivityRequest> COLLECT_ACTIVITY_REQUEST = new SchemaRef<>(
-            CollectActivityRequest.class, "/schemajson/collect-flow/collect-activity-request.schema.json");
-    public static final SchemaRef<CollectActivityResult> COLLECT_ACTIVITY_RESULT = new SchemaRef<>(
-            CollectActivityResult.class, "/schemajson/collect-flow/collect-activity-result.schema.json");
-    public static final SchemaRef<CollectOrchestrationInput> COLLECT_ORCHESTRATION_INPUT = new SchemaRef<>(
-            CollectOrchestrationInput.class, "/schemajson/collect-flow/collect-orchestration-input.schema.json");
-    public static final SchemaRef<CollectResult> COLLECT_RESULT = new SchemaRef<>(CollectResult.class,
+    public static final SchemaRef<CollectActivityRequestDTO> COLLECT_ACTIVITY_REQUEST = new SchemaRef<>(
+            CollectActivityRequestDTO.class, "/schemajson/collect-flow/collect-activity-request.schema.json");
+    public static final SchemaRef<CollectActivityResultDTO> COLLECT_ACTIVITY_RESULT = new SchemaRef<>(
+            CollectActivityResultDTO.class, "/schemajson/collect-flow/collect-activity-result.schema.json");
+    public static final SchemaRef<CollectOrchestrationInputDTO> COLLECT_ORCHESTRATION_INPUT = new SchemaRef<>(
+            CollectOrchestrationInputDTO.class, "/schemajson/collect-flow/collect-orchestration-input.schema.json");
+    public static final SchemaRef<CollectResultDTO> COLLECT_RESULT = new SchemaRef<>(CollectResultDTO.class,
             "/schemajson/collect-flow/collect-result.schema.json");
-    public static final SchemaRef<CollectCompletion> COLLECT_COMPLETION = new SchemaRef<>(CollectCompletion.class,
+    public static final SchemaRef<CollectCompletionDTO> COLLECT_COMPLETION = new SchemaRef<>(CollectCompletionDTO.class,
             "/schemajson/collect-flow/collect-completion.schema.json");
-    public static final SchemaRef<CollectFailure> COLLECT_FAILURE = new SchemaRef<>(CollectFailure.class,
+    public static final SchemaRef<CollectFailureDTO> COLLECT_FAILURE = new SchemaRef<>(CollectFailureDTO.class,
             "/schemajson/collect-flow/collect-failure.schema.json");
-    public static final SchemaRef<CollectEventPublishRequest> COLLECT_EVENT_PUBLISH_REQUEST = new SchemaRef<>(
-            CollectEventPublishRequest.class,
+    public static final SchemaRef<CollectEventPublishRequestDTO> COLLECT_EVENT_PUBLISH_REQUEST = new SchemaRef<>(
+            CollectEventPublishRequestDTO.class,
             "/schemajson/collect-flow/collect-event-publish-request.schema.json");
-    public static final SchemaRef<CollectOrchestratorEventV1> COLLECT_ORCHESTRATOR_EVENT_V1 = new SchemaRef<>(
-            CollectOrchestratorEventV1.class,
+    public static final SchemaRef<CollectOrchestratorEventV1DTO> COLLECT_ORCHESTRATOR_EVENT_V1 = new SchemaRef<>(
+            CollectOrchestratorEventV1DTO.class,
             "/schemajson/collect-flow/collect-orchestrator-event-v1.schema.json");
 
     private static final List<SchemaRef<?>> SCHEMA_REFS = List.of(

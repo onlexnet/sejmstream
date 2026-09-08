@@ -15,7 +15,7 @@ import com.microsoft.durabletask.EntityInstanceId;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 
 class SejmCollectTimerAndHttpFunctionTest {
 
@@ -35,8 +35,8 @@ class SejmCollectTimerAndHttpFunctionTest {
                 .isEqualTo(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY));
         assertThat(clientCtx.lastEntityOperationName)
             .isEqualTo(CollectCoordinatorContractOperations.DISPATCH.methodName());
-        assertThat(clientCtx.lastEntityPayload).isInstanceOf(CollectCoordinatorRequestCollectCommand.class);
-        var command = (CollectCoordinatorRequestCollectCommand) clientCtx.lastEntityPayload;
+        assertThat(clientCtx.lastEntityPayload).isInstanceOf(CollectCoordinatorRequestCollectCommandDTO.class);
+        var command = (CollectCoordinatorRequestCollectCommandDTO) clientCtx.lastEntityPayload;
         assertThat(command.getSource()).isEqualTo("timer");
     }
 
@@ -73,8 +73,8 @@ class SejmCollectTimerAndHttpFunctionTest {
             .isEqualTo(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY));
         assertThat(clientCtx.lastEntityOperationName)
             .isEqualTo(CollectCoordinatorContractOperations.DISPATCH.methodName());
-        assertThat(clientCtx.lastEntityPayload).isInstanceOf(CollectCoordinatorRequestCollectCommand.class);
-        var command = (CollectCoordinatorRequestCollectCommand) clientCtx.lastEntityPayload;
+        assertThat(clientCtx.lastEntityPayload).isInstanceOf(CollectCoordinatorRequestCollectCommandDTO.class);
+        var command = (CollectCoordinatorRequestCollectCommandDTO) clientCtx.lastEntityPayload;
         assertThat(command.getSource()).isEqualTo("http");
     }
 
@@ -107,8 +107,8 @@ class SejmCollectTimerAndHttpFunctionTest {
                 .isEqualTo(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY));
         assertThat(clientCtx.lastEntityOperationName)
             .isEqualTo(CollectCoordinatorContractOperations.DISPATCH.methodName());
-        assertThat(clientCtx.lastEntityPayload).isInstanceOf(CollectCoordinatorRequestCollectCommand.class);
-        var command = (CollectCoordinatorRequestCollectCommand) clientCtx.lastEntityPayload;
+        assertThat(clientCtx.lastEntityPayload).isInstanceOf(CollectCoordinatorRequestCollectCommandDTO.class);
+        var command = (CollectCoordinatorRequestCollectCommandDTO) clientCtx.lastEntityPayload;
         assertThat(command.getSource()).isEqualTo("timer");
     }
 }

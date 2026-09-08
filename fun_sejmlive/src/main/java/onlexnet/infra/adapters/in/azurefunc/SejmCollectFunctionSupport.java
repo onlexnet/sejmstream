@@ -15,7 +15,7 @@ import com.microsoft.durabletask.EntityInstanceId;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 
 import lombok.extern.slf4j.Slf4j;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 
 /**
  * Shared implementation for timer and HTTP collect Azure Functions.
@@ -66,7 +66,7 @@ public class SejmCollectFunctionSupport {
 
     private String enqueueCollectRequest(DurableClientContext clientCtx, String source) {
         var client = clientCtx.getClient().getEntities();
-        var command = new CollectCoordinatorRequestCollectCommand();
+        var command = new CollectCoordinatorRequestCollectCommandDTO();
         command.setSource(source);
         client.signalEntity(COLLECT_COORDINATOR_ENTITY_ID, DISPATCH.methodName(), command);
         return COLLECT_COORDINATOR_ENTITY_ID.toString();

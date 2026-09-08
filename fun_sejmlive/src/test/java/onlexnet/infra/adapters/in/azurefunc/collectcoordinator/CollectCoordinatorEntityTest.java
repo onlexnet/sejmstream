@@ -26,14 +26,14 @@ import com.microsoft.durabletask.TaskEntityState;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletion;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailure;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletionDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
 
 class CollectCoordinatorEntityTest {
 
@@ -78,9 +78,9 @@ class CollectCoordinatorEntityTest {
         void shouldInvokeDispatchWithRequestCollectCommandPayload() {
                 var target = mock(CollectCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
-                var command = new CollectCoordinatorRequestCollectCommand();
+                var command = new CollectCoordinatorRequestCollectCommandDTO();
                 command.setSource("timer");
-                when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
+                when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
 
                 CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
@@ -91,11 +91,11 @@ class CollectCoordinatorEntityTest {
         void shouldInvokeDispatchWithCollectCompletedCommandPayload() {
                 var target = mock(CollectCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
-                var completion = new CollectCompletion();
+                var completion = new CollectCompletionDTO();
                 completion.setOrchestrationInstanceId("instance-1");
-                var command = new CollectCoordinatorCollectCompletedCommand();
+                var command = new CollectCoordinatorCollectCompletedCommandDTO();
                 command.setCompletion(completion);
-                when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
+                when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
 
                 CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
@@ -106,12 +106,12 @@ class CollectCoordinatorEntityTest {
         void shouldInvokeDispatchWithCollectFailedCommandPayload() {
                 var target = mock(CollectCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
-                var failure = new CollectFailure();
+                var failure = new CollectFailureDTO();
                 failure.setOrchestrationInstanceId("instance-1");
                 failure.setMessage("boom");
-                var command = new CollectCoordinatorCollectFailedCommand();
+                var command = new CollectCoordinatorCollectFailedCommandDTO();
                 command.setFailure(failure);
-                when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
+                when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
 
                 CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
@@ -122,9 +122,9 @@ class CollectCoordinatorEntityTest {
         void shouldInvokeDispatchWithForceStartNextCommandPayload() {
                 var target = mock(CollectCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
-                var command = new CollectCoordinatorForceStartNextCommand();
+                var command = new CollectCoordinatorForceStartNextCommandDTO();
                 command.setSource("manual-recovery");
-                when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
+                when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
 
                 CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
@@ -134,9 +134,9 @@ class CollectCoordinatorEntityTest {
     @Test
     void givenRunningStateAndTimeoutFailure_whenCollectFailed_thenSchedulesNewRunOneHourLater() {
         var jsonValidator = mock(JsonValidator.class);
-        when(jsonValidator.validateReceived(eq(JsonValidator.COLLECT_FAILURE), any(CollectFailure.class)))
+        when(jsonValidator.validateReceived(eq(JsonValidator.COLLECT_FAILURE), any(CollectFailureDTO.class)))
                 .thenAnswer(invocation -> invocation.getArgument(1));
-        when(jsonValidator.validateToSend(eq(JsonValidator.COLLECT_ORCHESTRATION_INPUT), any(CollectOrchestrationInput.class)))
+        when(jsonValidator.validateToSend(eq(JsonValidator.COLLECT_ORCHESTRATION_INPUT), any(CollectOrchestrationInputDTO.class)))
                 .thenAnswer(invocation -> invocation.getArgument(1));
 
         var entity = new CollectCoordinatorEntity(jsonValidator);
@@ -146,22 +146,22 @@ class CollectCoordinatorEntityTest {
 
         var persistedState = new Some();
         persistedState.setRunning(true);
-        var failure = new CollectFailure();
+        var failure = new CollectFailureDTO();
         failure.setOrchestrationInstanceId("collect-instance-1");
         failure.setMessage("io.netty.handler.timeout.ReadTimeoutException");
-        var command = new CollectCoordinatorCollectFailedCommand();
+        var command = new CollectCoordinatorCollectFailedCommandDTO();
         command.setFailure(failure);
 
         when(operation.getName()).thenReturn(CollectCoordinatorContractOperations.DISPATCH.methodName());
         when(operation.getContext()).thenReturn(context);
         when(operation.getState()).thenReturn(state);
         when(state.getState(Some.class)).thenReturn(persistedState);
-        when(operation.getInput(CollectCoordinatorDispatchCommand.class)).thenReturn(command);
+        when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
         when(context.getId()).thenReturn(new EntityInstanceId(
                 SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
                 SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
 
-        var inputCaptor = ArgumentCaptor.forClass(CollectOrchestrationInput.class);
+        var inputCaptor = ArgumentCaptor.forClass(CollectOrchestrationInputDTO.class);
         var optionsCaptor = ArgumentCaptor.forClass(NewOrchestrationInstanceOptions.class);
         var before = Instant.now();
 

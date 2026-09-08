@@ -30,8 +30,8 @@ import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 import onlexnet.infra.adapters.in.telegram.model.TelegramUpdate;
 
 /**
@@ -124,7 +124,7 @@ public final class TelegramBotFunctions {
         try {
             var entityClient = durableClientContext.getClient().getEntities();
             try {
-                var forceStartNextCommand = new CollectCoordinatorForceStartNextCommand();
+                var forceStartNextCommand = new CollectCoordinatorForceStartNextCommandDTO();
                 forceStartNextCommand.setSource(COLLECT_RECOVER_SOURCE);
                 entityClient.signalEntity(
                         COLLECT_COORDINATOR_ENTITY_ID,
@@ -134,7 +134,7 @@ public final class TelegramBotFunctions {
                         chatId,
                         "Wysłano recovery collecta (forceStartNext). Koordynator powinien uruchomić kolejny przebieg.");
             } catch (RuntimeException forceStartException) {
-                var requestCollectCommand = new CollectCoordinatorRequestCollectCommand();
+                var requestCollectCommand = new CollectCoordinatorRequestCollectCommandDTO();
                 requestCollectCommand.setSource(COLLECT_RECOVER_SOURCE);
                 entityClient.signalEntity(
                         COLLECT_COORDINATOR_ENTITY_ID,

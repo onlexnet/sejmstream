@@ -42,8 +42,8 @@ import onlexnet.app.ports.in.admin.AdminUseCase;
 import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommand;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 
 @NullUnmarked
 class TelegramBotFunctionsTest {
@@ -272,8 +272,8 @@ class TelegramBotFunctionsTest {
             eq(new EntityInstanceId("CollectCoordinator", "singleton")),
             eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
             payloadCaptor.capture());
-        assertThat(payloadCaptor.getValue()).isInstanceOf(CollectCoordinatorForceStartNextCommand.class);
-        var command = (CollectCoordinatorForceStartNextCommand) payloadCaptor.getValue();
+        assertThat(payloadCaptor.getValue()).isInstanceOf(CollectCoordinatorForceStartNextCommandDTO.class);
+        var command = (CollectCoordinatorForceStartNextCommandDTO) payloadCaptor.getValue();
         assertThat(command.getSource()).isEqualTo("telegram-recovery");
         verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
         verify(telegramNotifier).sendMessage(eq(1001L), contains("forceStartNext"));
@@ -296,7 +296,7 @@ class TelegramBotFunctionsTest {
                         .signalEntity(
                                 eq(new EntityInstanceId("CollectCoordinator", "singleton")),
                         eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
-                        any(CollectCoordinatorForceStartNextCommand.class));
+                        any(CollectCoordinatorForceStartNextCommandDTO.class));
 
                 var functions = new TelegramBotFunctions(
                         adminUseCase,
@@ -331,9 +331,9 @@ class TelegramBotFunctionsTest {
                     eq(new EntityInstanceId("CollectCoordinator", "singleton")),
                     eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
                     payloadCaptor.capture());
-                assertThat(payloadCaptor.getAllValues().get(0)).isInstanceOf(CollectCoordinatorForceStartNextCommand.class);
-                assertThat(payloadCaptor.getAllValues().get(1)).isInstanceOf(CollectCoordinatorRequestCollectCommand.class);
-                var fallbackCommand = (CollectCoordinatorRequestCollectCommand) payloadCaptor.getAllValues().get(1);
+                assertThat(payloadCaptor.getAllValues().get(0)).isInstanceOf(CollectCoordinatorForceStartNextCommandDTO.class);
+                assertThat(payloadCaptor.getAllValues().get(1)).isInstanceOf(CollectCoordinatorRequestCollectCommandDTO.class);
+                var fallbackCommand = (CollectCoordinatorRequestCollectCommandDTO) payloadCaptor.getAllValues().get(1);
                 assertThat(fallbackCommand.getSource()).isEqualTo("telegram-recovery");
                 verify(adminUseCase, never()).handleAdminAction(any(AdminCommandRequest.class));
                 verify(telegramNotifier).sendMessage(eq(1001L), contains("fallback requestCollect"));

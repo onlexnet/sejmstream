@@ -17,7 +17,7 @@ import jakarta.annotation.PreDestroy;
 import onlexnet.app.ports.out.CollectOrchestratorEvent;
 import onlexnet.app.ports.out.CollectOrchestratorEventPublisher;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1DTO;
 
 /**
  * Event Hub adapter for collect orchestrator completion events.
@@ -102,8 +102,8 @@ public class AzureEventHubsCollectOrchestratorEventPublisher implements CollectO
         }
     }
 
-    private static CollectOrchestratorEventV1 toGeneratedV1Payload(CollectOrchestratorEvent event) {
-        return new CollectOrchestratorEventV1()
+    private static CollectOrchestratorEventV1DTO toGeneratedV1Payload(CollectOrchestratorEvent event) {
+        return new CollectOrchestratorEventV1DTO()
                 .orchestrationInstanceId(event.orchestrationInstanceId())
                 .source(event.source())
                 .termNum(event.termNum())
@@ -111,7 +111,7 @@ public class AzureEventHubsCollectOrchestratorEventPublisher implements CollectO
                 .countsByType(Map.copyOf(event.countsByType()));
     }
 
-    private String serialize(CollectOrchestratorEventV1 event) {
+    private String serialize(CollectOrchestratorEventV1DTO event) {
         try {
             return this.objectMapper.writeValueAsString(event);
         } catch (JsonProcessingException exception) {

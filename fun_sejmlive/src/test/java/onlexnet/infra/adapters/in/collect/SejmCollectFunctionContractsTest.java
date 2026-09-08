@@ -44,8 +44,8 @@ import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinato
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorEntity;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.SejmCollectCoordinatorEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntityFunction;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
 import onlexnet.testsupport.PostgresIntegrationTestSupport;
@@ -195,7 +195,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
                 SejmCollectPublishCollectEventActivityFunction.class,
                 "publishCollectEvent",
                 SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT,
-                CollectEventPublishRequest.class,
+                CollectEventPublishRequestDTO.class,
                 String.class);
     }
 
@@ -251,7 +251,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
                 ownerType,
                 methodName,
                 expectedFunctionName,
-                CollectActivityRequest.class,
+                CollectActivityRequestDTO.class,
                 CollectActivityResultWire.class);
     }
 

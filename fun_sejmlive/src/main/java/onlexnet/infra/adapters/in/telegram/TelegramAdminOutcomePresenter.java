@@ -34,7 +34,7 @@ public final class TelegramAdminOutcomePresenter {
             case AdminOutcome.DataSummary dataSummary -> this.renderDataSummary(dataSummary);
             case AdminOutcome.CollectTermMissing _ -> "Nie udało się ustalić aktualnej kadencji Sejmu.";
             case AdminOutcome.CollectSuccess collectSuccess -> this.renderCollectSummary(collectSuccess);
-            case AdminOutcome.CollectFailure collectFailure -> "Polecenie /collect nie powiodło się: " + collectFailure.reason();
+            case AdminOutcome.CollectFailureDTO collectFailure -> "Polecenie /collect nie powiodło się: " + collectFailure.reason();
             case AdminOutcome.PublishAlreadyDone publishAlreadyDone -> "Digest dla dnia "
                     + publishAlreadyDone.date()
                     + " został już opublikowany.";

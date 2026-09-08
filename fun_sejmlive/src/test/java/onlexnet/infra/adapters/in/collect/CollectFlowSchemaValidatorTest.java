@@ -15,27 +15,27 @@ import com.networknt.schema.SpecVersion;
 
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResultDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1DTO;
 
 class CollectFlowSchemaValidatorTest {
 
 	@Test
 	void givenValidActivityPayloads_whenValidated_thenPasses() {
 		var validator = newValidator();
-		var result = new CollectActivityResult();
+		var result = new CollectActivityResultDTO();
 		result.setCount(3);
 		result.setTermNum(10);
 		result.setCollectionDate(20260827);
 
-		assertThatCode(() -> validator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, new CollectActivityRequest()))
+		assertThatCode(() -> validator.validateReceived(JsonValidator.COLLECT_ACTIVITY_REQUEST, new CollectActivityRequestDTO()))
 				.doesNotThrowAnyException();
 		assertThatCode(() -> validator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, result))
 				.doesNotThrowAnyException();
 
-		var publishRequest = new CollectEventPublishRequest();
+		var publishRequest = new CollectEventPublishRequestDTO();
 		publishRequest.setOrchestrationInstanceId("collect-instance-1");
 		publishRequest.setSource("timer");
 		publishRequest.setTermNum(10);
@@ -44,7 +44,7 @@ class CollectFlowSchemaValidatorTest {
 		assertThatCode(() -> validator.validateToSend(JsonValidator.COLLECT_EVENT_PUBLISH_REQUEST, publishRequest))
 				.doesNotThrowAnyException();
 
-		var outboundEvent = new CollectOrchestratorEventV1()
+		var outboundEvent = new CollectOrchestratorEventV1DTO()
 				.orchestrationInstanceId("collect-instance-1")
 				.source("timer")
 				.termNum(10)
@@ -58,19 +58,19 @@ class CollectFlowSchemaValidatorTest {
 	void givenMissingRequiredField_whenValidated_thenFails() {
 		var validator = newValidator();
 
-		assertThatThrownBy(() -> validator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, new CollectActivityResult()))
+		assertThatThrownBy(() -> validator.validateToSend(JsonValidator.COLLECT_ACTIVITY_RESULT, new CollectActivityResultDTO()))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("collect-activity-result.schema.json");
 
 		assertThatThrownBy(() -> validator.validateToSend(
 				JsonValidator.COLLECT_EVENT_PUBLISH_REQUEST,
-				new CollectEventPublishRequest()))
+				new CollectEventPublishRequestDTO()))
 				.isInstanceOf(IllegalArgumentException.class)
 				.hasMessageContaining("collect-event-publish-request.schema.json");
 
 		assertThatThrownBy(() -> validator.validateToSend(
 				JsonValidator.COLLECT_ORCHESTRATOR_EVENT_V1,
-				new CollectOrchestratorEventV1()
+				new CollectOrchestratorEventV1DTO()
 						.source("timer")
 						.termNum(10)
 						.collectionDate(20260907)
@@ -80,7 +80,7 @@ class CollectFlowSchemaValidatorTest {
 
 		assertThatThrownBy(() -> validator.validateToSend(
 				JsonValidator.COLLECT_ORCHESTRATOR_EVENT_V1,
-				new CollectOrchestratorEventV1()
+				new CollectOrchestratorEventV1DTO()
 						.orchestrationInstanceId("collect-instance-1")
 						.source("timer")
 						.termNum(10)

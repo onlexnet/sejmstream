@@ -30,11 +30,11 @@ import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityR
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.SejmCollectOrchestratorFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommand;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequest;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInput;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerContractOperations;
 import onlexnet.shared.JsonDateNumbers;
 
@@ -44,8 +44,8 @@ class SejmCollectOrchestratorFunctionTest {
     private static final String COORDINATOR_ENTITY_KEY = "singleton";
     private static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
 
-        private static CollectOrchestrationInput validInput() {
-                var input = new CollectOrchestrationInput();
+        private static CollectOrchestrationInputDTO validInput() {
+                var input = new CollectOrchestrationInputDTO();
                 input.setCoordinatorEntityId(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY).toString());
                 input.setSource("orchestrator");
                 return input;
@@ -56,7 +56,7 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
-                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
 
         var votingTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of(), java.util.Map.of()));
@@ -75,37 +75,37 @@ class SejmCollectOrchestratorFunctionTest {
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-1");
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(votingTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_COMMITTEES),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(committeesTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PRINTS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(printsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(interpellationsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_QUESTIONS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(questionsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_BILLS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(billsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
-                any(CollectEventPublishRequest.class),
+                any(CollectEventPublishRequestDTO.class),
                 any(TaskOptions.class),
                 eq(String.class))).thenReturn(publishEventTask);
 
@@ -129,12 +129,12 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext, times(6)).callActivity(
                 any(String.class),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class));
         verify(orchestrationContext).callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
-                argThat((CollectEventPublishRequest request) ->
+                argThat((CollectEventPublishRequestDTO request) ->
                         "collect-instance-1".equals(request.getOrchestrationInstanceId())
                                 && "orchestrator".equals(request.getSource())
                                 && Integer.valueOf(10).equals(request.getTermNum())
@@ -157,14 +157,14 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var blockedException = new OrchestratorBlockedException("activity is not completed");
-                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
 
         @SuppressWarnings("unchecked")
         Task<CollectActivityResultWire> activityTask = mock(Task.class);
         when(activityTask.await()).thenThrow(blockedException);
         when(orchestrationContext.callActivity(
                 any(String.class),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
@@ -180,7 +180,7 @@ class SejmCollectOrchestratorFunctionTest {
         verify(orchestrationContext, never()).signalEntity(
                 any(),
                 eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
-                isA(CollectCoordinatorCollectFailedCommand.class));
+                isA(CollectCoordinatorCollectFailedCommandDTO.class));
     }
 
     @Test
@@ -188,7 +188,7 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var activityFailure = mock(TaskFailedException.class);
-                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
 
         when(activityFailure.getMessage()).thenReturn("activity failed");
         when(activityFailure.getErrorDetails()).thenReturn(null);
@@ -200,7 +200,7 @@ class SejmCollectOrchestratorFunctionTest {
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-2");
         when(orchestrationContext.callActivity(
                 any(String.class),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
@@ -229,14 +229,14 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
-                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")));
 
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-3");
         when(orchestrationContext.callActivity(
                 any(String.class),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
@@ -269,14 +269,14 @@ class SejmCollectOrchestratorFunctionTest {
                 var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
-                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")));
 
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-blocked-finalization");
         when(orchestrationContext.callActivity(
                 any(String.class),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
@@ -300,7 +300,7 @@ class SejmCollectOrchestratorFunctionTest {
         verify(orchestrationContext, never()).signalEntity(
                 any(),
                 eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
-                isA(CollectCoordinatorCollectFailedCommand.class));
+                isA(CollectCoordinatorCollectFailedCommandDTO.class));
     }
 
     @Test
@@ -309,12 +309,12 @@ class SejmCollectOrchestratorFunctionTest {
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var activityTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResult(0));
-                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
 
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-cancel");
         when(orchestrationContext.callActivity(
                 any(String.class),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(activityTask);
 
@@ -336,7 +336,7 @@ class SejmCollectOrchestratorFunctionTest {
         verify(orchestrationContext, never()).signalEntity(
                 any(),
                 eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
-                isA(CollectCoordinatorCollectCompletedCommand.class));
+                isA(CollectCoordinatorCollectCompletedCommandDTO.class));
     }
 
     @Test
@@ -344,7 +344,7 @@ class SejmCollectOrchestratorFunctionTest {
         var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
-        when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+        when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
 
         var votingTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of(), java.util.Map.of()));
@@ -363,37 +363,37 @@ class SejmCollectOrchestratorFunctionTest {
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-wrapper");
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(votingTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_COMMITTEES),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(committeesTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PRINTS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(printsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_INTERPELLATIONS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(interpellationsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_QUESTIONS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(questionsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_BILLS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(billsTask);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
-                any(CollectEventPublishRequest.class),
+                any(CollectEventPublishRequestDTO.class),
                 any(TaskOptions.class),
                 eq(String.class))).thenReturn(publishEventTask);
 
@@ -418,12 +418,12 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext, times(6)).callActivity(
                 any(String.class),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class));
         verify(orchestrationContext).callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
-                any(CollectEventPublishRequest.class),
+                any(CollectEventPublishRequestDTO.class),
                 any(TaskOptions.class),
                 eq(String.class));
     }
@@ -433,14 +433,14 @@ class SejmCollectOrchestratorFunctionTest {
         var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
         var collectionDate = LocalDate.of(2026, 8, 27);
-        when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+        when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-publish-failure");
 
         var collectActivityTask = SejmCollectFunctionTestSupport.completedTask(
                 SejmCollectFunctionTestSupport.activityResultWithSnapshot(1, 10, collectionDate, List.of("k"), java.util.Map.of("k", "fp")));
         when(orchestrationContext.callActivity(
                 any(String.class),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(collectActivityTask);
 
@@ -452,7 +452,7 @@ class SejmCollectOrchestratorFunctionTest {
         when(publishTask.await()).thenThrow(publishFailure);
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_PUBLISH_COLLECT_EVENT),
-                any(CollectEventPublishRequest.class),
+                any(CollectEventPublishRequestDTO.class),
                 any(TaskOptions.class),
                 eq(String.class))).thenReturn(publishTask);
 
@@ -481,13 +481,13 @@ class SejmCollectOrchestratorFunctionTest {
         void givenAnyOfReturnsTaskOutsideCandidates_whenOrchestratorRuns_thenSignalsFailureAndThrows() {
         var orchestratorFunction = new SejmCollectOrchestratorFunction(SejmCollectFunctionTestSupport.newJsonValidator());
         var orchestrationContext = mock(TaskOrchestrationContext.class);
-        when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(validInput());
+        when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(validInput());
         when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-unexpected-winner");
 
         var votingTask = SejmCollectFunctionTestSupport.completedTask(SejmCollectFunctionTestSupport.activityResult(1));
         when(orchestrationContext.callActivity(
                 eq(SejmCollectFunctions.ACTIVITY_VOTINGS),
-                any(CollectActivityRequest.class),
+                any(CollectActivityRequestDTO.class),
                 any(TaskOptions.class),
                 eq(CollectActivityResultWire.class))).thenReturn(votingTask);
 
@@ -495,7 +495,7 @@ class SejmCollectOrchestratorFunctionTest {
         when(orchestrationContext.waitForExternalEvent("collect-cancel", String.class)).thenReturn(cancelEventTask);
 
         Task<?> unknownWinnerTask = mock(Task.class);
-        doReturn("not-a-CollectActivityResult").when(unknownWinnerTask).await();
+        doReturn("not-a-CollectActivityResultDTO").when(unknownWinnerTask).await();
         @SuppressWarnings("unchecked")
         Task<Task<?>> winnerTask = mock(Task.class);
         doReturn(unknownWinnerTask).when(winnerTask).await();
@@ -520,12 +520,12 @@ class SejmCollectOrchestratorFunctionTest {
                                 SejmCollectFunctionTestSupport.newJsonValidator());
                 var orchestrationContext = mock(TaskOrchestrationContext.class);
 
-                var invalidInput = new CollectOrchestrationInput();
+                var invalidInput = new CollectOrchestrationInputDTO();
                 invalidInput.setCoordinatorEntityId("");
                 invalidInput.setSource("telegram-recovery");
 
                 when(orchestrationContext.getInstanceId()).thenReturn("collect-instance-invalid-input");
-                when(orchestrationContext.getInput(CollectOrchestrationInput.class)).thenReturn(invalidInput);
+                when(orchestrationContext.getInput(CollectOrchestrationInputDTO.class)).thenReturn(invalidInput);
 
                 assertThatThrownBy(() -> orchestratorFunction.runOrchestrator(orchestrationContext))
                                 .isInstanceOf(IllegalArgumentException.class)
@@ -541,7 +541,7 @@ class SejmCollectOrchestratorFunctionTest {
         }
 
         private static boolean isCompletedDispatchCommand(Object command, String expectedInstanceId) {
-                if (!(command instanceof CollectCoordinatorCollectCompletedCommand completedCommand)) {
+                if (!(command instanceof CollectCoordinatorCollectCompletedCommandDTO completedCommand)) {
                         return false;
                 }
                 var completion = completedCommand.getCompletion();
@@ -549,7 +549,7 @@ class SejmCollectOrchestratorFunctionTest {
         }
 
         private static boolean isFailedDispatchCommand(Object command, String expectedInstanceId, String expectedMessageFragment) {
-                if (!(command instanceof CollectCoordinatorCollectFailedCommand failedCommand)) {
+                if (!(command instanceof CollectCoordinatorCollectFailedCommandDTO failedCommand)) {
                         return false;
                 }
                 var failure = failedCommand.getFailure();

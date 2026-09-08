@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.jspecify.annotations.Nullable;
 
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResult;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityResultDTO;
 
 /**
  * JSON-safe result exchanged between a Durable activity and its orchestrator.
@@ -20,7 +20,7 @@ public record CollectActivityResultWire(
         @Nullable List<String> itemKeys,
         @Nullable Map<String, String> interpellationFingerprints) {
 
-    public static CollectActivityResultWire from(CollectActivityResult result) {
+    public static CollectActivityResultWire from(CollectActivityResultDTO result) {
         return new CollectActivityResultWire(
                 result.getCount(),
                 result.getTermNum(),
@@ -29,8 +29,8 @@ public record CollectActivityResultWire(
                 result.getInterpellationFingerprints());
     }
 
-    public CollectActivityResult toSchemaModel() {
-        var result = new CollectActivityResult();
+    public CollectActivityResultDTO toSchemaModel() {
+        var result = new CollectActivityResultDTO();
         result.setCount(this.count);
         result.setTermNum(this.termNum);
         result.setCollectionDate(this.collectionDate);

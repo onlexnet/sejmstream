@@ -87,7 +87,7 @@ public sealed interface AdminOutcome permits AdminOutcome.ImmediateReply, AdminO
     }
 
     sealed interface TechnicalImmediateReply extends ImmediateReply, TechnicalOutcome
-            permits CollectFailure, PublishFailure {
+            permits CollectFailureDTO, PublishFailure {
     }
 
     record Unauthorized() implements BusinessImmediateReply {
@@ -125,7 +125,7 @@ public sealed interface AdminOutcome permits AdminOutcome.ImmediateReply, AdminO
             int bills) implements BusinessImmediateReply {
     }
 
-    record CollectFailure(
+    record CollectFailureDTO(
             String reason) implements TechnicalImmediateReply {
     }
 
