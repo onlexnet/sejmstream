@@ -72,7 +72,7 @@ Required at runtime:
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_ALLOWED_CHAT_ID`
 - `COLLECT_ORCHESTRATOR_EVENT_HUB_NAME`
-- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__fullyQualifiedNamespace`
+- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION`
 
 Common optional settings:
 
@@ -86,7 +86,6 @@ Common optional settings:
 - `INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS` (default `60`)
 - `INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER` (default `2.0`)
 - `INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS` (default `900`)
-- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__clientId` (optional, user-assigned managed identity client id)
 - `TZ=Europe/Warsaw`
 - `WEBSITE_TIME_ZONE=Europe/Warsaw`
 

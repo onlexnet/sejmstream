@@ -33,8 +33,7 @@ class AzureEventHubsCollectOrchestratorEventPublisherTest {
 
                 assertThatThrownBy(() -> new AzureEventHubsCollectOrchestratorEventPublisher(
                                 "  ",
-                                "ns.servicebus.windows.net",
-                                "",
+                                "Endpoint=sb://ns.servicebus.windows.net/;SharedAccessKeyName=send;SharedAccessKey=test;EntityPath=collect-events",
                                 objectMapper,
                                 jsonValidator))
                                 .isInstanceOf(IllegalStateException.class)
@@ -59,8 +58,7 @@ class AzureEventHubsCollectOrchestratorEventPublisherTest {
 
         var publisher = new AzureEventHubsCollectOrchestratorEventPublisher(
                 "collect-events",
-                "ns.servicebus.windows.net",
-                "",
+                "Endpoint=sb://ns.servicebus.windows.net/;SharedAccessKeyName=send;SharedAccessKey=test;EntityPath=collect-events",
                 objectMapper,
                 jsonValidator);
         setField(publisher, "producerClient", producer);
@@ -93,8 +91,7 @@ class AzureEventHubsCollectOrchestratorEventPublisherTest {
         var producer = mock(EventHubProducerClient.class);
         var publisher = new AzureEventHubsCollectOrchestratorEventPublisher(
                 "collect-events",
-                "ns.servicebus.windows.net",
-                "",
+                "Endpoint=sb://ns.servicebus.windows.net/;SharedAccessKeyName=send;SharedAccessKey=test;EntityPath=collect-events",
                 objectMapper,
                 jsonValidator);
         setField(publisher, "producerClient", producer);

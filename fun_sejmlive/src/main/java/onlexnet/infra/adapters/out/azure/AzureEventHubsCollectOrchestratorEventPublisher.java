@@ -5,7 +5,6 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.messaging.eventhubs.EventData;
 import com.azure.messaging.eventhubs.EventHubClientBuilder;
 import com.azure.messaging.eventhubs.EventHubProducerClient;
@@ -31,8 +30,7 @@ public class AzureEventHubsCollectOrchestratorEventPublisher implements CollectO
     static final String SCHEMA_ID_PROPERTY = "collectEventSchemaId";
 
     private final String eventHubName;
-    private final String fullyQualifiedNamespace;
-    private final String managedIdentityClientId;
+    private final String connectionString;
     private final ObjectMapper objectMapper;
     private final JsonValidator jsonValidator;
 
@@ -41,15 +39,11 @@ public class AzureEventHubsCollectOrchestratorEventPublisher implements CollectO
 
     public AzureEventHubsCollectOrchestratorEventPublisher(
             @Value("${collect.orchestrator.event-hub.name}") String eventHubName,
-            @Value("${collect.orchestrator.event-hub.fully-qualified-namespace}") String fullyQualifiedNamespace,
-            @Value("${collect.orchestrator.event-hub.managed-identity-client-id:}") String managedIdentityClientId,
+            @Value("${collect.orchestrator.event-hub.connection-string}") String connectionString,
             ObjectMapper objectMapper,
             JsonValidator jsonValidator) {
         this.eventHubName = normalizedRequiredConfig(eventHubName, "collect.orchestrator.event-hub.name");
-        this.fullyQualifiedNamespace = normalizedRequiredConfig(
-                fullyQualifiedNamespace,
-                "collect.orchestrator.event-hub.fully-qualified-namespace");
-        this.managedIdentityClientId = managedIdentityClientId.trim();
+        this.connectionString = normalizedRequiredConfig(connectionString, "collect.orchestrator.event-hub.connection-string");
         this.objectMapper = objectMapper;
         this.jsonValidator = jsonValidator;
     }
@@ -90,13 +84,8 @@ public class AzureEventHubsCollectOrchestratorEventPublisher implements CollectO
                 return this.producerClient;
             }
 
-            var credentialBuilder = new DefaultAzureCredentialBuilder();
-            if (!this.managedIdentityClientId.isEmpty()) {
-                credentialBuilder.managedIdentityClientId(this.managedIdentityClientId);
-            }
-
             this.producerClient = new EventHubClientBuilder()
-                    .credential(this.fullyQualifiedNamespace, this.eventHubName, credentialBuilder.build())
+                    .connectionString(this.connectionString)
                     .buildProducerClient();
             return this.producerClient;
         }

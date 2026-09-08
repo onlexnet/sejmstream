@@ -93,6 +93,17 @@ variable "eventhub_name" {
   }
 }
 
+variable "eventhub_authorization_rule_name" {
+  description = "Event Hub authorization rule name used for collect-orchestrator connection-string authentication."
+  type        = string
+  default     = "collect-orchestrator"
+
+  validation {
+    condition     = can(regex("^[A-Za-z0-9](?:[A-Za-z0-9._-]{0,48}[A-Za-z0-9])?$", var.eventhub_authorization_rule_name))
+    error_message = "eventhub_authorization_rule_name must be 1-50 chars and use alphanumeric, dot, underscore, or hyphen; if longer than 1 char it must start/end with alphanumeric."
+  }
+}
+
 variable "interpellation_publish_queue_name" {
   description = "Main Azure Storage Queue name for interpellation publish jobs."
   type        = string

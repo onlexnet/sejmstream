@@ -194,7 +194,7 @@ resource "azurerm_eventhub_namespace" "collect" {
   name                = local.eventhub_namespace_name
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  sku                 = "Standard"
+  sku                 = "Basic"
   capacity            = 1
   minimum_tls_version = "1.2"
   tags                = local.common_tags
@@ -206,6 +206,16 @@ resource "azurerm_eventhub" "collect" {
   resource_group_name = azurerm_resource_group.main.name
   partition_count     = 1
   message_retention   = 1
+}
+
+resource "azurerm_eventhub_authorization_rule" "collect_orchestrator" {
+  name                = var.eventhub_authorization_rule_name
+  namespace_name      = azurerm_eventhub_namespace.collect.name
+  eventhub_name       = azurerm_eventhub.collect.name
+  resource_group_name = azurerm_resource_group.main.name
+  listen              = true
+  send                = true
+  manage              = false
 }
 
 resource "azurerm_function_app_flex_consumption" "main" {
@@ -264,7 +274,7 @@ resource "azurerm_function_app_flex_consumption" "main" {
       INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER      = tostring(var.interpellation_publish_backoff_multiplier)
       INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS = tostring(var.interpellation_publish_max_retry_delay_seconds)
       COLLECT_ORCHESTRATOR_EVENT_HUB_NAME            = azurerm_eventhub.collect.name
-      COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__fullyQualifiedNamespace = "${azurerm_eventhub_namespace.collect.name}.servicebus.windows.net"
+      COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION      = azurerm_eventhub_authorization_rule.collect_orchestrator.primary_connection_string
     }
   )
 
@@ -302,18 +312,6 @@ resource "azurerm_role_assignment" "function_storage_table_data_contributor" {
 resource "azurerm_role_assignment" "function_durable_task_data_contributor" {
   scope                = azapi_resource.durable_task_scheduler_task_hub.id
   role_definition_name = "Durable Task Data Contributor"
-  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
-}
-
-resource "azurerm_role_assignment" "function_event_hubs_data_sender" {
-  scope                = azurerm_eventhub.collect.id
-  role_definition_name = "Azure Event Hubs Data Sender"
-  principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
-}
-
-resource "azurerm_role_assignment" "function_event_hubs_data_receiver" {
-  scope                = azurerm_eventhub.collect.id
-  role_definition_name = "Azure Event Hubs Data Receiver"
   principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 

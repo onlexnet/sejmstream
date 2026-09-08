@@ -81,17 +81,15 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
    - main queue (`azurerm_storage_queue.interpellation_publish`)
    - dead-letter queue (`azurerm_storage_queue.interpellation_publish_dead_letter`)
 - Azure Event Hubs resources for collect-orchestrator outbound events:
-   - namespace (`azurerm_eventhub_namespace.collect`)
+   - namespace (`azurerm_eventhub_namespace.collect`, SKU `Basic`)
    - hub (`azurerm_eventhub.collect`)
+   - authorization rule (`azurerm_eventhub_authorization_rule.collect_orchestrator`)
 - Storage data-plane role assignments for that identity:
    - `Storage Blob Data Contributor`
    - `Storage Queue Data Contributor`
    - `Storage Table Data Contributor`
 - Durable Task Scheduler RBAC assignment for Function App identity:
    - `Durable Task Data Contributor` (task hub scope)
-- Event Hub RBAC assignment for Function App identity:
-   - `Azure Event Hubs Data Sender` (event hub scope)
-   - `Azure Event Hubs Data Receiver` (event hub scope)
 - Storage blob data-plane role assignment for the deployment principal (`data.azurerm_client_config.current.object_id`) used by the GitHub OIDC deploy job
 - Key Vault secret read access for the Function App managed identity via `azurerm_key_vault_access_policy.function_app`
 - Application Insights telemetry enabled by default for the Function App runtime
@@ -115,7 +113,7 @@ For interpellation queue processing, the Function App app settings are also set 
 For collect-orchestrator Event Hub publishing, the Function App app settings include:
 
 - `COLLECT_ORCHESTRATOR_EVENT_HUB_NAME`
-- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION__fullyQualifiedNamespace`
+- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION`
 
 ### Queue RBAC assessment
 
@@ -193,6 +191,7 @@ The interpellation publish queue resources and retry behavior can be customized 
 - `interpellation_publish_max_retry_delay_seconds` (default `900`)
 - `eventhub_namespace_name` (default `null`, auto-generated when omitted)
 - `eventhub_name` (default `sejm-collect-events`)
+- `eventhub_authorization_rule_name` (default `collect-orchestrator`)
 
 Do not print or share sensitive outputs in logs or documentation.
 

@@ -17,6 +17,7 @@ telegram_allowed_chat_id   = "<telegram-chat-id>"  # required, numeric id of all
 # When eventhub_namespace_name is null, Terraform generates a namespace name with a random suffix.
 eventhub_namespace_name = null
 eventhub_name           = "sejm-collect-events"
+eventhub_authorization_rule_name = "collect-orchestrator"
 
 # GitHub App authentication (recommended; no PAT required)
 github_owner              = "onlexnet"
