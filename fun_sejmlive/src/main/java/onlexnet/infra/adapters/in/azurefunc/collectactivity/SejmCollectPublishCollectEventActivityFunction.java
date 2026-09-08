@@ -40,7 +40,7 @@ public final class SejmCollectPublishCollectEventActivityFunction {
                     requiredDateNumber(validatedRequest.getCollectionDate(), "collectionDate"),
                     requiredCounts(validatedRequest.getCountsByType(), "countsByType"));
             this.eventPublisher.publish(event);
-            Log.info(execCtx, "Published collect orchestration event to Event Hub for instance="
+                Log.info(execCtx, "Published collect orchestration event to Storage Queue for instance="
                     + event.orchestrationInstanceId());
             return "published";
         } catch (Exception exception) {

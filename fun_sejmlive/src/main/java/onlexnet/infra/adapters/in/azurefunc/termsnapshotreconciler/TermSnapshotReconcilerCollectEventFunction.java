@@ -9,9 +9,8 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.azure.functions.ExecutionContext;
-import com.microsoft.azure.functions.annotation.Cardinality;
-import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
+import com.microsoft.azure.functions.annotation.QueueTrigger;
 import com.microsoft.durabletask.EntityInstanceId;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableClientInput;
@@ -24,7 +23,7 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1DTO;
 
 /**
- * Event Hub trigger that materializes and forwards collect v1 events to the term snapshot durable entity.
+ * Storage Queue trigger that materializes and forwards collect v1 events to the term snapshot durable entity.
  */
 @Component
 @Slf4j
@@ -37,11 +36,10 @@ public final class TermSnapshotReconcilerCollectEventFunction {
 
     @FunctionName(SejmCollectFunctions.TERM_SNAPSHOT_COLLECT_EVENT_FUNCTION_NAME)
     public void runFromCollectEvent(
-            @EventHubTrigger(
-                    name = "eventPayload",
-                    eventHubName = "%COLLECT_ORCHESTRATOR_EVENT_HUB_NAME%",
-                    connection = "COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION",
-                    cardinality = Cardinality.ONE)
+            @QueueTrigger(
+                name = "eventPayload",
+                queueName = "%COLLECT_ORCHESTRATOR_QUEUE_NAME%",
+                connection = "DomainStorage")
             String eventPayload,
             @DurableClientInput(name = "durableContext") DurableClientContext clientCtx,
             ExecutionContext execCtx) {
@@ -62,7 +60,7 @@ public final class TermSnapshotReconcilerCollectEventFunction {
                     snapshotEvent,
                     null);
             Log.info(execCtx,
-                    "Term snapshot reconciliation event accepted from Event Hub for term="
+                    "Term snapshot reconciliation event accepted from Storage Queue for term="
                             + termNum
                             + ", instanceId="
                             + collectEvent.getOrchestrationInstanceId());
@@ -74,7 +72,7 @@ public final class TermSnapshotReconcilerCollectEventFunction {
 
     private @Nullable CollectOrchestratorEventV1DTO deserializeCollectEvent(@Nullable String payload, ExecutionContext execCtx) {
         if (payload == null || payload.isBlank()) {
-            execCtx.getLogger().warning("Ignoring blank collect orchestrator event payload from Event Hub");
+            execCtx.getLogger().warning("Ignoring blank collect orchestrator event payload from Storage Queue");
             return null;
         }
 

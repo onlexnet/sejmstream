@@ -48,7 +48,6 @@ locals {
   function_service_plan_name    = "${local.resource_prefix}-func-plan-flex"
   function_storage_account_name = "${local.name_prefix}${local.environment}fn${local.global_suffix}"
   domain_storage_account_name   = "${local.name_prefix}${local.environment}dom${local.global_suffix}"
-  eventhub_namespace_name       = coalesce(var.eventhub_namespace_name, "${local.name_prefix}-${local.environment}-ehns-${local.global_suffix}")
   function_app_name             = "${local.resource_prefix}-func-flex-${local.global_suffix}"
   durable_task_scheduler_name   = "${local.resource_prefix}-dts-${local.global_suffix}"
 }
@@ -190,32 +189,9 @@ resource "azurerm_storage_queue" "interpellation_publish_dead_letter" {
   storage_account_id = azurerm_storage_account.domain_storage.id
 }
 
-resource "azurerm_eventhub_namespace" "collect" {
-  name                = local.eventhub_namespace_name
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  sku                 = "Basic"
-  capacity            = 1
-  minimum_tls_version = "1.2"
-  tags                = local.common_tags
-}
-
-resource "azurerm_eventhub" "collect" {
-  name                = var.eventhub_name
-  namespace_name      = azurerm_eventhub_namespace.collect.name
-  resource_group_name = azurerm_resource_group.main.name
-  partition_count     = 1
-  message_retention   = 1
-}
-
-resource "azurerm_eventhub_authorization_rule" "collect_orchestrator" {
-  name                = var.eventhub_authorization_rule_name
-  namespace_name      = azurerm_eventhub_namespace.collect.name
-  eventhub_name       = azurerm_eventhub.collect.name
-  resource_group_name = azurerm_resource_group.main.name
-  listen              = true
-  send                = true
-  manage              = false
+resource "azurerm_storage_queue" "collect_orchestrator" {
+  name               = var.collect_orchestrator_queue_name
+  storage_account_id = azurerm_storage_account.domain_storage.id
 }
 
 resource "azurerm_function_app_flex_consumption" "main" {
@@ -273,8 +249,7 @@ resource "azurerm_function_app_flex_consumption" "main" {
       INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS     = tostring(var.interpellation_publish_retry_delay_seconds)
       INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER      = tostring(var.interpellation_publish_backoff_multiplier)
       INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS = tostring(var.interpellation_publish_max_retry_delay_seconds)
-      COLLECT_ORCHESTRATOR_EVENT_HUB_NAME            = azurerm_eventhub.collect.name
-      COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION      = azurerm_eventhub_authorization_rule.collect_orchestrator.primary_connection_string
+      COLLECT_ORCHESTRATOR_QUEUE_NAME                = azurerm_storage_queue.collect_orchestrator.name
     }
   )
 

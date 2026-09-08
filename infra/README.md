@@ -80,10 +80,8 @@ Local `terraform plan` and `terraform apply` still work, but the actual executio
 - Azure Storage Queue resources for interpellation publish flow:
    - main queue (`azurerm_storage_queue.interpellation_publish`)
    - dead-letter queue (`azurerm_storage_queue.interpellation_publish_dead_letter`)
-- Azure Event Hubs resources for collect-orchestrator outbound events:
-   - namespace (`azurerm_eventhub_namespace.collect`, SKU `Basic`)
-   - hub (`azurerm_eventhub.collect`)
-   - authorization rule (`azurerm_eventhub_authorization_rule.collect_orchestrator`)
+- Azure Storage Queue resource for collect-orchestrator outbound events:
+   - queue (`azurerm_storage_queue.collect_orchestrator`)
 - Storage data-plane role assignments for that identity:
    - `Storage Blob Data Contributor`
    - `Storage Queue Data Contributor`
@@ -110,10 +108,9 @@ For interpellation queue processing, the Function App app settings are also set 
 - `INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER`
 - `INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS`
 
-For collect-orchestrator Event Hub publishing, the Function App app settings include:
+For collect-orchestrator queue publishing, the Function App app settings include:
 
-- `COLLECT_ORCHESTRATOR_EVENT_HUB_NAME`
-- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION`
+- `COLLECT_ORCHESTRATOR_QUEUE_NAME`
 
 ### Queue RBAC assessment
 
@@ -163,9 +160,8 @@ Use these outputs to discover the deployed Function infrastructure without expos
 - `interpellation_publish_queue_url`
 - `interpellation_publish_dead_letter_queue_name`
 - `interpellation_publish_dead_letter_queue_url`
-- `eventhub_namespace_name`
-- `eventhub_namespace_fully_qualified_name`
-- `eventhub_name`
+- `collect_orchestrator_queue_name`
+- `collect_orchestrator_queue_url`
 
 Example:
 
@@ -175,11 +171,11 @@ terraform output -raw function_app_default_hostname
 terraform output -raw function_storage_account_name
 terraform output -raw interpellation_publish_queue_name
 terraform output -raw interpellation_publish_dead_letter_queue_name
-terraform output -raw eventhub_namespace_fully_qualified_name
-terraform output -raw eventhub_name
+terraform output -raw collect_orchestrator_queue_name
+terraform output -raw collect_orchestrator_queue_url
 ```
 
-## Queue/retry/Event Hub Terraform variables
+## Queue/retry Terraform variables
 
 The interpellation publish queue resources and retry behavior can be customized with these variables (safe defaults included):
 
@@ -189,9 +185,7 @@ The interpellation publish queue resources and retry behavior can be customized 
 - `interpellation_publish_retry_delay_seconds` (default `60`)
 - `interpellation_publish_backoff_multiplier` (default `2.0`)
 - `interpellation_publish_max_retry_delay_seconds` (default `900`)
-- `eventhub_namespace_name` (default `null`, auto-generated when omitted)
-- `eventhub_name` (default `sejm-collect-events`)
-- `eventhub_authorization_rule_name` (default `collect-orchestrator`)
+- `collect_orchestrator_queue_name` (default `sejm-collect-events`)
 
 Do not print or share sensitive outputs in logs or documentation.
 

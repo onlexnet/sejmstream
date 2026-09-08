@@ -9,7 +9,7 @@ participant "SejmApiClient" as api
 participant "SejmDailyDigestPersistence" as db
 participant "InterpellationPublishQueuePort" as queue
 participant "CollectEventPublishActivity" as publish_activity
-participant "Azure Event Hub" as event_hub
+participant "Azure Storage Queue" as collect_queue
 participant "TermSnapshotReconcilerCollectEventFunction" as snapshot_event_fn
 participant "TermSnapshotReconcilerEntity" as snapshot_entity
 
@@ -84,11 +84,11 @@ deactivate ops
 
 orch -> publish_activity: callActivityWithRetry("Intern_PublishCollectEvent")
 activate publish_activity
-publish_activity -> event_hub: publish collect orchestration event
+publish_activity -> collect_queue: publish collect orchestration event
 publish_activity --> orch: "published"
 deactivate publish_activity
 
-event_hub -> snapshot_event_fn: trigger collect-orchestrator-event-v1
+collect_queue -> snapshot_event_fn: trigger collect-orchestrator-event-v1
 activate snapshot_event_fn
 snapshot_event_fn -> db: findByDateAndType(collectionDate,
   INTERPELLATION / WRITTEN_QUESTION / PRINT / BILL)

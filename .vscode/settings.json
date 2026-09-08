@@ -1,3 +1,8 @@
 {
-    "java.compile.nullAnalysis.mode": "disabled"
+    "java.compile.nullAnalysis.mode": "disabled",
+    "chat.mcp.serverSampling": {
+        "sejmstream/.vscode/mcp.json: com.microsoft/azure": {
+            "allowedDuringChat": true
+        }
+    }
 }

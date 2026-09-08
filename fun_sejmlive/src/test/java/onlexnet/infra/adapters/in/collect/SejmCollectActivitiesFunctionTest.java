@@ -184,7 +184,7 @@ class SejmCollectActivitiesFunctionTest {
     }
 
     @Test
-    void givenPublishRequest_whenPublishActivityRuns_thenDelegatesToEventHubPublisher() {
+        void givenPublishRequest_whenPublishActivityRuns_thenDelegatesToQueuePublisher() {
         var eventPublisher = mock(CollectOrchestratorEventPublisher.class);
         var activity = new SejmCollectPublishCollectEventActivityFunction(
                 eventPublisher,
@@ -210,7 +210,7 @@ class SejmCollectActivitiesFunctionTest {
     @Test
     void givenPublisherFailure_whenPublishActivityRuns_thenThrowsIllegalStateException() {
         var eventPublisher = mock(CollectOrchestratorEventPublisher.class);
-        doThrow(new RuntimeException("event hub down")).when(eventPublisher).publish(any());
+                doThrow(new RuntimeException("storage queue down")).when(eventPublisher).publish(any());
         var activity = new SejmCollectPublishCollectEventActivityFunction(
                 eventPublisher,
                 SejmCollectFunctionTestSupport.newJsonValidator());
@@ -226,7 +226,7 @@ class SejmCollectActivitiesFunctionTest {
                 .hasMessageContaining("Failed to publish collect orchestration event")
                 .hasCauseInstanceOf(RuntimeException.class)
                 .cause()
-                .hasMessageContaining("event hub down");
+                .hasMessageContaining("storage queue down");
     }
 
         private static String sha256Hex(String value) {

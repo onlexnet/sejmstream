@@ -31,8 +31,8 @@ Main boundaries:
 - `Fun_CollectOrchestrator` - durable orchestrator.
 - `Fun_CollectCoordinatorEntity` - durable entity to serialize collect requests.
 - `Fun_TermSnapshotReconcilerEntity` - durable entity to keep latest term snapshot and dispatch per-event handlers after diffing.
-- `Fun_TermSnapshotReconcilerFromCollectEvent` - Event Hub trigger that consumes collect v1 events, materializes persisted snapshot data, and signals the term snapshot entity.
-- Orchestrator publishes collect completion events to Event Hub; term snapshot reconciliation is triggered from that stream.
+- `Fun_TermSnapshotReconcilerFromCollectEvent` - `QueueTrigger` on `%COLLECT_ORCHESTRATOR_QUEUE_NAME%`, connection `DomainStorage`; consumes collect v1 events, materializes persisted snapshot data, and signals the term snapshot entity.
+- Orchestrator publishes collect completion events to Storage Queue; term snapshot reconciliation is triggered from that queue.
 - Coordinator entity exposes admin recovery operation `forceStartNext` (durable entity op) to resume queue processing when state is stuck and no orchestrator is running.
 - Activities:
    - `Intern_CollectVotings`
@@ -71,8 +71,7 @@ Required at runtime:
 - `FB_TOKEN`
 - `TELEGRAM_BOT_TOKEN`
 - `TELEGRAM_ALLOWED_CHAT_ID`
-- `COLLECT_ORCHESTRATOR_EVENT_HUB_NAME`
-- `COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION`
+- `COLLECT_ORCHESTRATOR_QUEUE_NAME`
 
 Common optional settings:
 
@@ -94,7 +93,7 @@ Notes:
 - Queue payloads are sent as raw JSON; this requires `host.json` queue setting `messageEncoding: "none"`.
 - `DomainStorage` is intentionally separate from `AzureWebJobsStorage`.
 - Collect durable payloads are defined schema-first under `src/main/resources/schemajson/collect-flow/`, generated during `generate-sources`, and validated against their schemas after receive and before send.
-- Collect orchestrator outbound Event Hub payloads use versioned contract metadata (`collectEventContractVersion=v1` and `collectEventSchemaId`) on EventData properties.
+- Collect orchestrator outbound queue payloads use the same collect v1 schema-validated JSON contract in message body.
 
 ## Local development
 

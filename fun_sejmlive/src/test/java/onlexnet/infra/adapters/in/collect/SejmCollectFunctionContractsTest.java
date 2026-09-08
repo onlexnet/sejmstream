@@ -17,10 +17,9 @@ import com.microsoft.azure.functions.ExecutionContext;
 import com.microsoft.azure.functions.HttpMethod;
 import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.annotation.AuthorizationLevel;
-import com.microsoft.azure.functions.annotation.Cardinality;
-import com.microsoft.azure.functions.annotation.EventHubTrigger;
 import com.microsoft.azure.functions.annotation.FunctionName;
 import com.microsoft.azure.functions.annotation.HttpTrigger;
+import com.microsoft.azure.functions.annotation.QueueTrigger;
 import com.microsoft.azure.functions.annotation.TimerTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableActivityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableClientContext;
@@ -178,7 +177,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
         }
 
     @Test
-    void givenTermSnapshotCollectEventFunction_whenCheckingTriggerContract_thenEventHubAndDurableClientBindingsAreConfigured()
+        void givenTermSnapshotCollectEventFunction_whenCheckingTriggerContract_thenQueueAndDurableClientBindingsAreConfigured()
             throws NoSuchMethodException {
         var method = TermSnapshotReconcilerCollectEventFunction.class.getDeclaredMethod(
                 "runFromCollectEvent",
@@ -187,16 +186,15 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
                 ExecutionContext.class);
 
         var functionName = method.getAnnotation(FunctionName.class);
-        var eventHubTrigger = method.getParameters()[0].getAnnotation(EventHubTrigger.class);
+                var queueTrigger = method.getParameters()[0].getAnnotation(QueueTrigger.class);
         var durableClientInput = method.getParameters()[1].getAnnotation(DurableClientInput.class);
 
         assertThat(functionName).isNotNull();
         assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.TERM_SNAPSHOT_COLLECT_EVENT_FUNCTION_NAME);
-        assertThat(eventHubTrigger).isNotNull();
-        assertThat(eventHubTrigger.name()).isEqualTo("eventPayload");
-        assertThat(eventHubTrigger.eventHubName()).isEqualTo("%COLLECT_ORCHESTRATOR_EVENT_HUB_NAME%");
-        assertThat(eventHubTrigger.connection()).isEqualTo("COLLECT_ORCHESTRATOR_EVENT_HUB_CONNECTION");
-        assertThat(eventHubTrigger.cardinality()).isEqualTo(Cardinality.ONE);
+                assertThat(queueTrigger).isNotNull();
+                assertThat(queueTrigger.name()).isEqualTo("eventPayload");
+                assertThat(queueTrigger.queueName()).isEqualTo("%COLLECT_ORCHESTRATOR_QUEUE_NAME%");
+                assertThat(queueTrigger.connection()).isEqualTo("DomainStorage");
         assertThat(durableClientInput).isNotNull();
         assertThat(durableClientInput.name()).isEqualTo("durableContext");
     }
