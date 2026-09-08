@@ -32,7 +32,7 @@ public final class FacebookPublishingFunctionSupport {
     public void publishDailyDigest(String triggerInfo, ExecutionContext execCtx) {
         var outcome = this.publishDailyDigestUseCase
                 .publish(new PublishDailyDigestCommand(LocalDate.now()));
-        this.logOutcome(outcome, triggerInfo, execCtx);
+        logOutcome(outcome, triggerInfo, execCtx);
         if (outcome instanceof PublishDailyDigestOutcome.Failed failed) {
             throw failed.exception();
         }
@@ -47,7 +47,7 @@ public final class FacebookPublishingFunctionSupport {
         try {
             var outcome = this.publishDailyDigestUseCase
                     .publish(new PublishDailyDigestCommand(LocalDate.now()));
-            this.logOutcome(outcome, "http", execCtx);
+            logOutcome(outcome, "http", execCtx);
             return switch (outcome) {
                 case PublishDailyDigestOutcome.Published _ -> request.createResponseBuilder(HttpStatus.OK)
                         .body(Map.of(
@@ -67,12 +67,12 @@ public final class FacebookPublishingFunctionSupport {
                         .build();
                 case PublishDailyDigestOutcome.Failed failed -> request
                         .createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body("Failed to publish daily digest: " + this.safeErrorMessage(failed.exception()))
+                        .body("Failed to publish daily digest: " + safeErrorMessage(failed.exception()))
                         .build();
             };
         } catch (RuntimeException exception) {
             return request.createResponseBuilder(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Failed to publish daily digest: " + this.safeErrorMessage(exception))
+                    .body("Failed to publish daily digest: " + safeErrorMessage(exception))
                     .build();
         }
     }
@@ -91,7 +91,7 @@ public final class FacebookPublishingFunctionSupport {
                     "Brak aktywnosci sejmowej dla dnia " + skipped.date() + ", pomijanie publikacji.");
             case PublishDailyDigestOutcome.Failed failed -> execCtx.getLogger().severe(
                     "Nieudana publikacja podsumowania Sejmu. Trigger: " + triggerInfo
-                            + ", blad: " + this.safeErrorMessage(failed.exception()));
+                            + ", blad: " + safeErrorMessage(failed.exception()));
         }
     }
 

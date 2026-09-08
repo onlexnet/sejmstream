@@ -21,7 +21,7 @@ public final class TelegramAdminActionParser {
             return AdminAction.Noop.INSTANCE;
         }
 
-        var token = this.normalizeCommand(text);
+        var token = normalizeCommand(text);
         return switch (token) {
             case "/help", "/start" -> AdminAction.Help.INSTANCE;
             case "/data" -> AdminAction.Data.INSTANCE;

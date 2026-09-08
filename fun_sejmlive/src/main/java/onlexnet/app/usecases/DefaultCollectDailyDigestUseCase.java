@@ -25,7 +25,7 @@ public class DefaultCollectDailyDigestUseCase implements CollectDailyDigestUseCa
     @Override
     public CollectDailyDigestOutcome collect(CollectDailyDigestCommand command) {
         var date = command.date();
-        var termNum = this.resolveCurrentTermNumber();
+        var termNum = resolveCurrentTermNumber();
         if (termNum.isEmpty()) {
             return new CollectDailyDigestOutcome.TermMissing(date);
         }

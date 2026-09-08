@@ -75,7 +75,7 @@ public final class TelegramBotFunctions {
             var payload = request.getBody().orElse("");
             if (!payload.isBlank()) {
                 var update = this.objectMapper.readValue(payload, TelegramUpdate.class);
-                this.handleUpdate(update, durableClientContext);
+                handleUpdate(update, durableClientContext);
             }
         } catch (RuntimeException runtimeException) {
             context.getLogger().warning("Telegram webhook handling failed: " + runtimeException.getMessage());
@@ -95,19 +95,19 @@ public final class TelegramBotFunctions {
 
         var chatId = update.message().chat().id();
         var actor = new AdminActor.ExternalActor(Long.toString(chatId));
-        var commandToken = this.commandToken(update.message().text());
+        var commandToken = commandToken(update.message().text());
         if (COLLECT_RECOVER_COMMAND.equals(commandToken)) {
-            this.handleCollectRecover(chatId, actor, durableClientContext);
+            handleCollectRecover(chatId, actor, durableClientContext);
             return;
         }
 
         AdminAction action = this.adminActionParser.parse(update.message().text());
         var request = new AdminCommandRequest(
-                this.requestId(update),
+                requestId(update),
                 Instant.now(),
                 actor,
                 action,
-                this.metadata(update));
+                metadata(update));
 
         var outcome = this.adminUseCase.handleAdminAction(request);
         for (var message : this.outcomePresenter.present(outcome)) {

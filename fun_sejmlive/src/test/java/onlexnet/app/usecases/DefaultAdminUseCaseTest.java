@@ -33,10 +33,10 @@ class DefaultAdminUseCaseTest {
 
     @Test
     void givenAuthorizedHelpAction_whenHandled_thenReturnsHelpOutcomeCode() {
-        var accessPolicy = this.allowAllAccessPolicy();
-        var useCase = this.createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
+        var accessPolicy = allowAllAccessPolicy();
+        var useCase = createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
 
-        var result = useCase.handleAdminAction(this.request(AdminAction.Help.INSTANCE, "1001"));
+        var result = useCase.handleAdminAction(request(AdminAction.Help.INSTANCE, "1001"));
 
         assertThat(result)
             .isInstanceOfSatisfying(AdminOutcome.HelpOverview.class, reply -> {
@@ -48,9 +48,9 @@ class DefaultAdminUseCaseTest {
     void givenUnauthorizedActor_whenHandled_thenGenericUnauthorizedOutcomeIsReturned() {
         var accessPolicy = mock(AdminAccessPolicy.class);
         when(accessPolicy.isAllowed(any(AdminActor.class), any(AdminAction.class))).thenReturn(false);
-        var useCase = this.createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
+        var useCase = createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
 
-        var result = useCase.handleAdminAction(this.request(AdminAction.Help.INSTANCE, "2002"));
+        var result = useCase.handleAdminAction(request(AdminAction.Help.INSTANCE, "2002"));
 
         assertThat(result)
             .isInstanceOfSatisfying(AdminOutcome.Unauthorized.class, reply -> {
@@ -62,7 +62,7 @@ class DefaultAdminUseCaseTest {
     void givenDataAction_whenHandled_thenReturnsCurrentTermSummaryArguments() {
         var sejmApiClient = mock(SejmApiClient.class);
         var collectDailyDigestUseCase = mock(CollectDailyDigestUseCase.class);
-        var accessPolicy = this.allowAllAccessPolicy();
+        var accessPolicy = allowAllAccessPolicy();
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
                 new SejmTerm(false, LocalDate.of(2019, 1, 1), 9,
@@ -78,7 +78,7 @@ class DefaultAdminUseCaseTest {
                 mock(PublishDailyDigestUseCase.class),
                 accessPolicy);
 
-        var result = useCase.handleAdminAction(this.request(AdminAction.Data.INSTANCE, "1001"));
+        var result = useCase.handleAdminAction(request(AdminAction.Data.INSTANCE, "1001"));
 
         assertThat(result)
             .isInstanceOfSatisfying(AdminOutcome.DataSummary.class, reply -> {
@@ -91,7 +91,7 @@ class DefaultAdminUseCaseTest {
     void givenCollectAction_whenHandled_thenReturnsCollectionSummaryArguments() {
         var sejmApiClient = mock(SejmApiClient.class);
         var collectDailyDigestUseCase = mock(CollectDailyDigestUseCase.class);
-        var accessPolicy = this.allowAllAccessPolicy();
+        var accessPolicy = allowAllAccessPolicy();
         when(collectDailyDigestUseCase.collect(any(CollectDailyDigestCommand.class)))
             .thenReturn(new CollectDailyDigestOutcome.Collected(LocalDate.now(), 10, Map.of(
                 CollectDailyDigestOutcome.TYPE_VOTING, 3,
@@ -107,7 +107,7 @@ class DefaultAdminUseCaseTest {
             mock(PublishDailyDigestUseCase.class),
                 accessPolicy);
 
-        var result = useCase.handleAdminAction(this.request(AdminAction.Collect.INSTANCE, "1001"));
+        var result = useCase.handleAdminAction(request(AdminAction.Collect.INSTANCE, "1001"));
 
         assertThat(result)
             .isInstanceOfSatisfying(AdminOutcome.CollectSuccess.class, reply -> {
@@ -121,7 +121,7 @@ class DefaultAdminUseCaseTest {
         var sejmApiClient = mock(SejmApiClient.class);
         var collectDailyDigestUseCase = mock(CollectDailyDigestUseCase.class);
         var publishUseCase = mock(PublishDailyDigestUseCase.class);
-        var accessPolicy = this.allowAllAccessPolicy();
+        var accessPolicy = allowAllAccessPolicy();
 
         when(publishUseCase.publish(any(PublishDailyDigestCommand.class)))
             .thenReturn(new PublishDailyDigestOutcome.Published(LocalDate.now(), "digest message"));
@@ -132,7 +132,7 @@ class DefaultAdminUseCaseTest {
                 publishUseCase,
                 accessPolicy);
 
-        var result = useCase.handleAdminAction(this.request(AdminAction.Publish.INSTANCE, "1001"));
+        var result = useCase.handleAdminAction(request(AdminAction.Publish.INSTANCE, "1001"));
 
         verify(publishUseCase).publish(any(PublishDailyDigestCommand.class));
         assertThat(result)
@@ -142,9 +142,9 @@ class DefaultAdminUseCaseTest {
     @Test
     void givenNoopAction_whenHandled_thenNoReplyIsReturned() {
         var accessPolicy = mock(AdminAccessPolicy.class);
-        var useCase = this.createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
+        var useCase = createUseCase(mock(PublishDailyDigestUseCase.class), accessPolicy);
 
-        var result = useCase.handleAdminAction(this.request(AdminAction.Noop.INSTANCE, "1001"));
+        var result = useCase.handleAdminAction(request(AdminAction.Noop.INSTANCE, "1001"));
 
         assertThat(result)
             .isInstanceOf(AdminOutcome.NoopIgnored.class);
@@ -152,9 +152,9 @@ class DefaultAdminUseCaseTest {
 
     @Test
     void givenUnknownAction_whenHandled_thenUnknownActionOutcomeIsReturned() {
-        var useCase = this.createUseCase(mock(PublishDailyDigestUseCase.class), this.allowAllAccessPolicy());
+        var useCase = createUseCase(mock(PublishDailyDigestUseCase.class), allowAllAccessPolicy());
 
-        var result = useCase.handleAdminAction(this.request(new AdminAction.Unknown("/mystery"), "1001"));
+        var result = useCase.handleAdminAction(request(new AdminAction.Unknown("/mystery"), "1001"));
 
         assertThat(result)
                 .isInstanceOfSatisfying(AdminOutcome.UnknownAction.class, reply -> {

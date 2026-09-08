@@ -45,14 +45,14 @@ public class InterpellationPublishQueueFunctions {
             
         InterpellationPublishQueueMessage payload;
         try {
-            payload = this.deserialize(queueMessage);
+            payload = deserialize(queueMessage);
         } catch (IllegalArgumentException exception) {
-            this.handleMalformedMessage(queueMessage, exception, execCtx);
+            handleMalformedMessage(queueMessage, exception, execCtx);
             return;
         }
 
         var outcome = this.useCase.process(new ProcessInterpellationPublishCommand(payload));
-        this.logOutcome(outcome, execCtx);
+        logOutcome(outcome, execCtx);
     }
 
     private InterpellationPublishQueueMessage deserialize(String queueMessage) {
@@ -69,8 +69,8 @@ public class InterpellationPublishQueueFunctions {
             String rawPayload,
             RuntimeException exception,
             ExecutionContext execCtx) {
-        var errorMessage = this.safeErrorMessage(exception);
-        var malformedMessage = this.buildMalformedDeadLetterMessage(rawPayload, errorMessage);
+        var errorMessage = safeErrorMessage(exception);
+        var malformedMessage = buildMalformedDeadLetterMessage(rawPayload, errorMessage);
         this.queuePort.enqueueDeadLetter(malformedMessage);
         this.publishStatePort.markDeadLetter(malformedMessage, errorMessage);
         execCtx.getLogger().severe(
@@ -81,7 +81,7 @@ public class InterpellationPublishQueueFunctions {
     private InterpellationPublishQueueMessage buildMalformedDeadLetterMessage(
             String rawPayload,
             String errorMessage) {
-        var payloadChecksum = this.crc32(rawPayload);
+        var payloadChecksum = crc32(rawPayload);
         var termNum = 900_000_000 + (int) ((payloadChecksum >>> 16) & 0x7FFF);
         var interpellationNum = 900_000_000 + (int) (payloadChecksum & 0x7FFF);
         var truncatedPayload = rawPayload.length() > 400

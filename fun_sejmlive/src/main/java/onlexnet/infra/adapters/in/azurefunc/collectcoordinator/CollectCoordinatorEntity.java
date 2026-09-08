@@ -43,11 +43,11 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
 
     @Override
     public @Nullable Object run(TaskEntityOperation operation) {
-        this.context = TaskEntityLifecycleContext.initialized(operation.getContext());
+        context = TaskEntityLifecycleContext.initialized(operation.getContext());
 
         var stateType = getStateType();
         var persistedState = operation.getState().getState(stateType);
-        this.state = persistedState == null ? initializeState(operation) : persistedState;
+        state = persistedState == null ? initializeState(operation) : persistedState;
 
         // if (DELETE_OPERATION_NAME.equalsIgnoreCase(operation.getName())) {
         //     operation.getState().deleteState();
@@ -93,7 +93,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 
     private void handleCollectCompleted(CollectCoordinatorCollectCompletedCommandDTO command) {
-        var validatedCompletion = this.jsonValidator.validateReceived(
+        var validatedCompletion = jsonValidator.validateReceived(
                 JsonValidator.COLLECT_COMPLETION,
                 command.getCompletion());
         var decision = DECIDER.decide(
@@ -103,7 +103,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 
     private void handleCollectFailed(CollectCoordinatorCollectFailedCommandDTO command) {
-        var validatedFailure = this.jsonValidator.validateReceived(
+        var validatedFailure = jsonValidator.validateReceived(
                 JsonValidator.COLLECT_FAILURE,
                 command.getFailure());
         var decision = DECIDER.decide(
@@ -145,7 +145,7 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
         var orchestrationInput = new CollectOrchestrationInputDTO();
         orchestrationInput.setCoordinatorEntityId(requireContext().getId().toString());
         orchestrationInput.setSource(source);
-        this.jsonValidator.validateToSend(
+        jsonValidator.validateToSend(
                 JsonValidator.COLLECT_ORCHESTRATION_INPUT,
                 orchestrationInput);
         requireContext().startNewOrchestration(
@@ -155,14 +155,14 @@ public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorC
     }
 
     private Some requireState() {
-        if (this.state instanceof Some initializedState) {
+        if (state instanceof Some initializedState) {
             return initializedState;
         }
         throw new IllegalStateException("state must be initialized in run() before contract dispatch");
     }
 
     private TaskEntityContext requireContext() {
-        return this.context.requireInitialized("context must be initialized in run() before contract dispatch");
+        return context.requireInitialized("context must be initialized in run() before contract dispatch");
     }
 }
 

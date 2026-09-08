@@ -131,7 +131,7 @@ public class SejmCollectService implements SejmCollectOperations {
                         String.valueOf(item.num()),
                         item.title(),
                         toJson(item));
-                this.enqueueInterpellationPublish(termNum, date, item);
+                enqueueInterpellationPublish(termNum, date, item);
             }
 
             LOGGER.fine("Collected " + count + " interpellation(s) for term " + termNum);

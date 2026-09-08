@@ -54,9 +54,9 @@ public class DefaultAdminUseCase implements AdminUseCase {
         return switch (request.action()) {
             case AdminAction.Noop _ -> new AdminOutcome.NoopIgnored();
             case AdminAction.Help _ -> new AdminOutcome.HelpOverview();
-            case AdminAction.Data _ -> this.handleData();
-            case AdminAction.Collect _ -> this.handleCollect();
-            case AdminAction.Publish _ -> this.handlePublish();
+            case AdminAction.Data _ -> handleData();
+            case AdminAction.Collect _ -> handleCollect();
+            case AdminAction.Publish _ -> handlePublish();
             case AdminAction.Version _ -> new AdminOutcome.VersionInfo(this.buildVersion);
             case AdminAction.Unknown unknown -> new AdminOutcome.UnknownAction(unknown.command());
         };
@@ -90,15 +90,15 @@ public class DefaultAdminUseCase implements AdminUseCase {
         return switch (outcome) {
             case CollectDailyDigestOutcome.TermMissing _ -> new AdminOutcome.CollectTermMissing();
             case CollectDailyDigestOutcome.Collected collected -> {
-                var votings = this.countFor(collected, CollectDailyDigestOutcome.TYPE_VOTING);
-                var committeeSittings = this.countFor(collected,
+                var votings = countFor(collected, CollectDailyDigestOutcome.TYPE_VOTING);
+                var committeeSittings = countFor(collected,
                     CollectDailyDigestOutcome.TYPE_COMMITTEE_SITTING);
-                var prints = this.countFor(collected, CollectDailyDigestOutcome.TYPE_PRINT);
-                var interpellations = this.countFor(collected,
+                var prints = countFor(collected, CollectDailyDigestOutcome.TYPE_PRINT);
+                var interpellations = countFor(collected,
                     CollectDailyDigestOutcome.TYPE_INTERPELLATION);
-                var writtenQuestions = this.countFor(collected,
+                var writtenQuestions = countFor(collected,
                     CollectDailyDigestOutcome.TYPE_WRITTEN_QUESTION);
-                var bills = this.countFor(collected, CollectDailyDigestOutcome.TYPE_BILL);
+                var bills = countFor(collected, CollectDailyDigestOutcome.TYPE_BILL);
                 var total = votings + committeeSittings + prints + interpellations + writtenQuestions + bills;
 
                 yield new AdminOutcome.CollectSuccess(
@@ -114,7 +114,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
             }
             case CollectDailyDigestOutcome.Failed failed -> {
                 LOGGER.warn("Admin collect action failed", failed.exception());
-                yield new AdminOutcome.CollectFailureDTO(this.safeErrorMessage(failed.exception()));
+                yield new AdminOutcome.CollectFailureDTO(safeErrorMessage(failed.exception()));
             }
         };
     }
@@ -130,7 +130,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
             case PublishDailyDigestOutcome.SkippedNoDigest skipped -> new AdminOutcome.PublishNoData(skipped.date());
             case PublishDailyDigestOutcome.Failed failed -> {
                 LOGGER.warn("Admin publish action failed", failed.exception());
-                yield new AdminOutcome.PublishFailure(this.safeErrorMessage(failed.exception()));
+                yield new AdminOutcome.PublishFailure(safeErrorMessage(failed.exception()));
             }
         };
     }

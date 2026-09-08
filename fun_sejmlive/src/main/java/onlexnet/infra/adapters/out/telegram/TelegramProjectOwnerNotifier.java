@@ -19,7 +19,7 @@ public final class TelegramProjectOwnerNotifier implements ProjectOwnerNotifier 
             TelegramNotifier telegramNotifier,
             @Value("${TELEGRAM_ALLOWED_CHAT_ID}") String ownerChatId) {
         this.telegramNotifier = telegramNotifier;
-        this.ownerChatId = this.parseOwnerChatId(ownerChatId);
+        this.ownerChatId = parseOwnerChatId(ownerChatId);
     }
 
     @Override

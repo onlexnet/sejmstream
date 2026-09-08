@@ -53,9 +53,9 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
 
     @Override
     public void enqueue(InterpellationPublishQueueMessage message, Duration visibilityDelay) {
-        this.ensureQueuesInitialized();
+        ensureQueuesInitialized();
         // Producer sends raw JSON text. The Functions host queue trigger must use host.json queues.messageEncoding="none".
-        var payload = this.serialize(message);
+        var payload = serialize(message);
         if (visibilityDelay == null || visibilityDelay.isZero() || visibilityDelay.isNegative()) {
             this.publishQueueClient.sendMessage(payload);
             return;
@@ -65,9 +65,9 @@ public class AzureStorageInterpellationPublishQueue implements InterpellationPub
 
     @Override
     public void enqueueDeadLetter(InterpellationPublishQueueMessage message) {
-        this.ensureQueuesInitialized();
+        ensureQueuesInitialized();
         // Keep dead-letter payload in the same raw JSON format as the primary queue.
-        var payload = this.serialize(message);
+        var payload = serialize(message);
         this.deadLetterQueueClient.sendMessage(payload);
     }
 

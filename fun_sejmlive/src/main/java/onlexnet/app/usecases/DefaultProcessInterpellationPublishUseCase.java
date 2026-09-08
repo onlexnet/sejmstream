@@ -39,26 +39,26 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
 
     @Override
     public ProcessInterpellationPublishOutcome process(ProcessInterpellationPublishCommand command) {
-        var message = this.messageFrom(command);
+        var message = messageFrom(command);
         if (!this.publishStatePort.tryClaimForPublish(message)) {
-            return this.skippedAlreadyPublishedOutcome(message);
+            return skippedAlreadyPublishedOutcome(message);
         }
 
-        var attachmentSummary = this.firstAttachmentSummary(message);
-        var facebookMessage = this.formatFacebookPost(message, attachmentSummary);
+        var attachmentSummary = firstAttachmentSummary(message);
+        var facebookMessage = formatFacebookPost(message, attachmentSummary);
         try {
             var postId = this.facebookPublisher.publish(facebookMessage);
-            this.publishDescriptionCommentIfPresent(postId, message.webDescription());
-            this.publishAttachmentCommentIfPresent(postId, attachmentSummary);
+            publishDescriptionCommentIfPresent(postId, message.webDescription());
+            publishAttachmentCommentIfPresent(postId, attachmentSummary);
         } catch (RuntimeException exception) {
-            return this.handlePublishFailure(message, exception);
+            return handlePublishFailure(message, exception);
         }
 
         try {
             this.publishStatePort.markPublished(message, facebookMessage);
-            return this.publishedOutcome(message);
+            return publishedOutcome(message);
         } catch (RuntimeException exception) {
-            return this.handlePostPublishPersistenceFailure(message, facebookMessage, exception);
+            return handlePostPublishPersistenceFailure(message, facebookMessage, exception);
         }
     }
 
@@ -70,9 +70,9 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
             InterpellationPublishQueueMessage message,
             String facebookPostMessage,
             RuntimeException exception) {
-        var error = this.safeErrorMessage(exception);
-        this.markPublishConfirmationPendingBestEffort(message, facebookPostMessage, error);
-        return this.publishConfirmationPendingOutcome(message, error);
+        var error = safeErrorMessage(exception);
+        markPublishConfirmationPendingBestEffort(message, facebookPostMessage, error);
+        return publishConfirmationPendingOutcome(message, error);
     }
 
     private void markPublishConfirmationPendingBestEffort(
@@ -93,19 +93,19 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
     private ProcessInterpellationPublishOutcome handlePublishFailure(
             InterpellationPublishQueueMessage message,
             RuntimeException exception) {
-        var error = this.safeErrorMessage(exception);
-        if (this.hasReachedMaxAttempts(message)) {
+        var error = safeErrorMessage(exception);
+        if (hasReachedMaxAttempts(message)) {
             var deadLetterMessage = message.withLastError(error);
             this.queuePort.enqueueDeadLetter(deadLetterMessage);
             this.publishStatePort.markDeadLetter(deadLetterMessage, error);
-            return this.deadLetteredOutcome(message);
+            return deadLetteredOutcome(message);
         }
 
         var retryMessage = message.withAttempt(message.attempt() + 1).withLastError(error);
         var retryDelay = this.retryPolicy.retryDelayForAttempt(message.attempt());
         this.queuePort.enqueue(retryMessage, retryDelay);
         this.publishStatePort.markRetryScheduled(retryMessage, error);
-        return this.retryScheduledOutcome(message, retryMessage);
+        return retryScheduledOutcome(message, retryMessage);
     }
 
     private boolean hasReachedMaxAttempts(InterpellationPublishQueueMessage message) {
@@ -116,9 +116,9 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
         var builder = new StringJoiner("\n");
         builder.add("Interpelacja nr " + message.interpellationNum() + " (kadencja " + message.termNum() + ")");
         builder.add(message.title());
-        builder.add("Adresaci: " + this.formatRecipients(message));
-        this.appendSentDateIfPresent(builder, message);
-        this.appendAttachmentSummaryIfPresent(builder, attachmentSummary);
+        builder.add("Adresaci: " + formatRecipients(message));
+        appendSentDateIfPresent(builder, message);
+        appendAttachmentSummaryIfPresent(builder, attachmentSummary);
         return builder.toString();
     }
 
@@ -173,7 +173,7 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
             return null;
         }
         for (var attachment : attachments) {
-            var summary = this.fetchAttachmentSummary(message, attachment);
+            var summary = fetchAttachmentSummary(message, attachment);
             if (summary != null && !summary.isBlank()) {
                 return summary;
             }
@@ -201,9 +201,9 @@ public class DefaultProcessInterpellationPublishUseCase implements ProcessInterp
         try {
             var fetched = client.fetchAttachmentText(message.termNum(), attachment.replyKey(), fileName);
             return switch (fetched) {
-                case SejmApiClient.AttachmentFetchResult.PdfText pdfText -> this.summarizeAttachmentText(pdfText.text());
+                case SejmApiClient.AttachmentFetchResult.PdfText pdfText -> summarizeAttachmentText(pdfText.text());
                 case SejmApiClient.AttachmentFetchResult.Unsupported unsupported -> {
-                    this.notifyOwnerAboutUnsupportedAttachmentCase(message, unsupported);
+                    notifyOwnerAboutUnsupportedAttachmentCase(message, unsupported);
                     yield null;
                 }
                 case SejmApiClient.AttachmentFetchResult.Unavailable _ -> null;

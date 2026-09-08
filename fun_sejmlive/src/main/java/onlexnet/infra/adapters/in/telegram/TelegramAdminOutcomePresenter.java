@@ -21,19 +21,19 @@ public final class TelegramAdminOutcomePresenter {
     public List<String> present(AdminOutcome outcome) {
         return switch (outcome) {
             case AdminOutcome.NoReply _ -> List.of();
-            case AdminOutcome.ImmediateReply immediate -> this.chunk(this.renderImmediate(immediate));
-            case AdminOutcome.DeferredReply deferred -> this.chunk(this.renderDeferred(deferred));
+            case AdminOutcome.ImmediateReply immediate -> chunk(renderImmediate(immediate));
+            case AdminOutcome.DeferredReply deferred -> chunk(renderDeferred(deferred));
         };
     }
 
     private String renderImmediate(AdminOutcome.ImmediateReply outcome) {
         return switch (outcome) {
             case AdminOutcome.Unauthorized _ -> "Brak uprawnień do wykonania poleceń administracyjnych.";
-            case AdminOutcome.HelpOverview _ -> this.helpText();
+            case AdminOutcome.HelpOverview _ -> helpText();
             case AdminOutcome.DataEmpty _ -> "Brak danych o kadencjach Sejmu.";
-            case AdminOutcome.DataSummary dataSummary -> this.renderDataSummary(dataSummary);
+            case AdminOutcome.DataSummary dataSummary -> renderDataSummary(dataSummary);
             case AdminOutcome.CollectTermMissing _ -> "Nie udało się ustalić aktualnej kadencji Sejmu.";
-            case AdminOutcome.CollectSuccess collectSuccess -> this.renderCollectSummary(collectSuccess);
+            case AdminOutcome.CollectSuccess collectSuccess -> renderCollectSummary(collectSuccess);
             case AdminOutcome.CollectFailureDTO collectFailure -> "Polecenie /collect nie powiodło się: " + collectFailure.reason();
             case AdminOutcome.PublishAlreadyDone publishAlreadyDone -> "Digest dla dnia "
                     + publishAlreadyDone.date()
@@ -47,7 +47,7 @@ public final class TelegramAdminOutcomePresenter {
             case AdminOutcome.PublishFailure publishFailure -> "Publikacja nie powiodła się: " + publishFailure.reason();
             case AdminOutcome.VersionInfo versionInfo -> "Wersja: " + versionInfo.buildVersion();
             case AdminOutcome.UnknownAction unknownAction -> "Nieznana komenda: " + unknownAction.command() + "\n\n"
-                    + this.helpText();
+                    + helpText();
         };
     }
 
