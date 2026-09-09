@@ -84,7 +84,9 @@ For the collect pipeline, runtime coordination now uses two separate durable ent
 	- This contract is runtime-breaking for older senders that still use legacy operation names.
 - `SejmTermSnapshot` stores latest per-term snapshot state and dispatches recognized
 	events (new/updated interpellations, new questions/prints/bills, term switch)
-	after comparing current snapshot with previous state.
+	after comparing current snapshot with previous state. When at least one recognized
+	change is detected, it also sends one compact Telegram summary to the configured
+	project owner chat.
 
 ## Dynamic C4 Runtime View
 

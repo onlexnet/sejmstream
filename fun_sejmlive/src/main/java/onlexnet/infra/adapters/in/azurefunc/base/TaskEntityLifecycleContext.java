@@ -5,9 +5,7 @@ import com.microsoft.durabletask.TaskEntityContext;
 /**
  * Lifecycle wrapper for durable entity context initialized during task execution.
  */
-public sealed interface TaskEntityLifecycleContext
-    permits TaskEntityLifecycleContext.Initialized,
-        TaskEntityLifecycleContext.Uninitialized {
+public sealed interface TaskEntityLifecycleContext {
 
     static TaskEntityLifecycleContext uninitialized() {
         return Uninitialized.INSTANCE;

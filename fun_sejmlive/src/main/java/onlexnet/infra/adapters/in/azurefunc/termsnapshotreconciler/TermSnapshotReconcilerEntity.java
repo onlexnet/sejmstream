@@ -16,6 +16,7 @@ import com.microsoft.durabletask.TaskEntityOperation;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import onlexnet.app.ports.out.ProjectOwnerNotifier;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 
@@ -23,6 +24,8 @@ import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 @Slf4j
 @RequiredArgsConstructor
 public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotReconcilerContractV1 {
+
+    private final ProjectOwnerNotifier projectOwnerNotifier;
 
     private TermSnapshotReconcilerEntityState state = UninitializedTermSnapshotReconcilerState.INSTANCE;
     private TaskEntityLifecycleContext context = TaskEntityLifecycleContext.uninitialized();
@@ -49,8 +52,10 @@ public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotRec
         return null;
     }
 
-    public static DurableEntityOperationBinding<TermSnapshotReconcilerContractV1, ?> resolveContractOperation(String requestedMethod) {
-        return TermSnapshotReconcilerContractOperations.resolveOperation(TermSnapshotReconcilerEntity.class, requestedMethod);
+    public static DurableEntityOperationBinding<TermSnapshotReconcilerContractV1, ?> resolveContractOperation(
+            String requestedMethod) {
+        return TermSnapshotReconcilerContractOperations.resolveOperation(TermSnapshotReconcilerEntity.class,
+                requestedMethod);
     }
 
     @Override
@@ -60,6 +65,9 @@ public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotRec
     }
 
     protected void dispatchRecognizedEvents(TermSnapshotDiff diff) {
+        if (hasRecognizedChanges(diff)) {
+            notifyOwnerAboutRecognizedChanges(diff);
+        }
         if (!diff.newInterpellations().isEmpty()) {
             onNewInterpellationsDetected(toNewInterpellationsDetectedEvent(diff));
         }
@@ -77,13 +85,40 @@ public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotRec
         }
     }
 
+    private void notifyOwnerAboutRecognizedChanges(TermSnapshotDiff diff) {
+        try {
+            projectOwnerNotifier.notifyOwner(toOwnerSummaryMessage(diff));
+        } catch (RuntimeException exception) {
+            log.warn("Failed to send term snapshot change summary for term {}", diff.termNum(), exception);
+        }
+    }
+
+    private static boolean hasRecognizedChanges(TermSnapshotDiff diff) {
+        return !diff.newInterpellations().isEmpty()
+                || !diff.updatedInterpellations().isEmpty()
+                || !diff.newWrittenQuestions().isEmpty()
+                || !diff.newPrints().isEmpty()
+                || !diff.newBills().isEmpty();
+    }
+
+    private static String toOwnerSummaryMessage(TermSnapshotDiff diff) {
+        return "Term snapshot updates detected"
+                + "\nTerm: " + diff.termNum()
+                + "\nNew interpellations: " + diff.newInterpellations().size()
+                + "\nUpdated interpellations: " + diff.updatedInterpellations().size()
+                + "\nNew written questions: " + diff.newWrittenQuestions().size()
+                + "\nNew prints: " + diff.newPrints().size()
+                + "\nNew bills: " + diff.newBills().size();
+    }
+
     protected void onNewInterpellationsDetected(NewInterpellationsDetectedEvent event) {
         log.info("Detected new interpellations for term {}: {}", event.termNum(), event.interpellationNums().size());
         log.debug("New interpellation keys for term {}: {}", event.termNum(), event.interpellationNums());
     }
 
     protected void onInterpellationsUpdated(InterpellationsUpdatedEvent event) {
-        log.info("Detected updated interpellations for term {}: {}", event.termNum(), event.interpellationNums().size());
+        log.info("Detected updated interpellations for term {}: {}", event.termNum(),
+                event.interpellationNums().size());
         log.debug("Updated interpellation keys for term {}: {}", event.termNum(), event.interpellationNums());
     }
 
@@ -215,16 +250,17 @@ public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotRec
         var currentBills = new TreeSet<>(event.billKeys());
 
         var diff = new TermSnapshotDiff(
-            termNum,
-                addedKeys(new TreeSet<>(previousInterpellations.keySet()), new TreeSet<>(currentInterpellations.keySet())),
+                termNum,
+                addedKeys(new TreeSet<>(previousInterpellations.keySet()),
+                        new TreeSet<>(currentInterpellations.keySet())),
                 updatedInterpellationKeys(previousInterpellations, currentInterpellations),
                 addedKeys(previousQuestions, currentQuestions),
                 addedKeys(previousPrints, currentPrints),
                 addedKeys(previousBills, currentBills));
 
         var snapshot = new TermSnapshotPayload(
-            termNum,
-            event.collectionDate(),
+                termNum,
+                event.collectionDate(),
                 Map.copyOf(currentInterpellations),
                 List.copyOf(currentQuestions),
                 List.copyOf(currentPrints),
@@ -236,7 +272,8 @@ public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotRec
     }
 }
 
-sealed interface TermSnapshotReconcilerEntityState permits TermSnapshotReconcilerState, UninitializedTermSnapshotReconcilerState {
+sealed interface TermSnapshotReconcilerEntityState
+        permits TermSnapshotReconcilerState, UninitializedTermSnapshotReconcilerState {
 }
 
 enum UninitializedTermSnapshotReconcilerState implements TermSnapshotReconcilerEntityState {

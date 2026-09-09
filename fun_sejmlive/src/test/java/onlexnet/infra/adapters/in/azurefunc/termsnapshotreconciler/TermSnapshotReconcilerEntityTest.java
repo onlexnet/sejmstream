@@ -2,7 +2,10 @@ package onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -14,6 +17,8 @@ import org.junit.jupiter.api.Test;
 import com.microsoft.durabletask.EntityInstanceId;
 import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
+
+import onlexnet.app.ports.out.ProjectOwnerNotifier;
 
 class TermSnapshotReconcilerEntityTest {
 
@@ -86,7 +91,8 @@ class TermSnapshotReconcilerEntityTest {
 
     @Test
     void givenDiffWithAllEvents_whenDispatching_thenInvokesSeparatedHandlers() {
-        var probe = new DispatchProbeEntity();
+        var ownerNotifier = mock(ProjectOwnerNotifier.class);
+        var probe = new DispatchProbeEntity(ownerNotifier);
         var diff = new TermSnapshotReconcilerEntity.TermSnapshotDiff(
                 10,
                 List.of("79"),
@@ -102,6 +108,29 @@ class TermSnapshotReconcilerEntityTest {
         assertThat(probe.newWrittenQuestionsEvents).isEqualTo(1);
         assertThat(probe.newPrintsEvents).isEqualTo(1);
         assertThat(probe.newBillsEvents).isEqualTo(1);
+        verify(ownerNotifier).notifyOwner(contains("Term: 10"));
+        verify(ownerNotifier).notifyOwner(contains("New interpellations: 1"));
+        verify(ownerNotifier).notifyOwner(contains("Updated interpellations: 1"));
+        verify(ownerNotifier).notifyOwner(contains("New written questions: 1"));
+        verify(ownerNotifier).notifyOwner(contains("New prints: 1"));
+        verify(ownerNotifier).notifyOwner(contains("New bills: 1"));
+    }
+
+    @Test
+    void givenDiffWithoutChanges_whenDispatching_thenDoesNotNotifyOwner() {
+        var ownerNotifier = mock(ProjectOwnerNotifier.class);
+        var entity = new TermSnapshotReconcilerEntity(ownerNotifier);
+        var diff = new TermSnapshotReconcilerEntity.TermSnapshotDiff(
+                10,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of());
+
+        entity.dispatchRecognizedEvents(diff);
+
+        verify(ownerNotifier, never()).notifyOwner(anyString());
     }
 
     private static final class DispatchProbeEntity extends TermSnapshotReconcilerEntity {
@@ -111,29 +140,33 @@ class TermSnapshotReconcilerEntityTest {
         private int newPrintsEvents;
         private int newBillsEvents;
 
+        private DispatchProbeEntity(ProjectOwnerNotifier ownerNotifier) {
+            super(ownerNotifier);
+        }
+
         @Override
         protected void onNewInterpellationsDetected(NewInterpellationsDetectedEvent event) {
-            this.newInterpellationsEvents++;
+            newInterpellationsEvents++;
         }
 
         @Override
         protected void onInterpellationsUpdated(InterpellationsUpdatedEvent event) {
-            this.updatedInterpellationsEvents++;
+            updatedInterpellationsEvents++;
         }
 
         @Override
         protected void onNewWrittenQuestionsDetected(NewWrittenQuestionsDetectedEvent event) {
-            this.newWrittenQuestionsEvents++;
+            newWrittenQuestionsEvents++;
         }
 
         @Override
         protected void onNewPrintsDetected(NewPrintsDetectedEvent event) {
-            this.newPrintsEvents++;
+            newPrintsEvents++;
         }
 
         @Override
         protected void onNewBillsDetected(NewBillsDetectedEvent event) {
-            this.newBillsEvents++;
+            newBillsEvents++;
         }
     }
 }
