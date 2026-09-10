@@ -13,12 +13,13 @@ import lombok.RequiredArgsConstructor;
 import onlexnet.app.usecases.CollectCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.Log;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityGateway;
 
 @Component
 @RequiredArgsConstructor
 public final class SejmCollectCoordinatorEntityFunction {
 
-    private final ObjectProvider<CollectCoordinatorEntity> entityProvider;
+    private final ObjectProvider<TaskEntityGateway> taskEntityGatewayProvider;
 
     @FunctionName(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME)
     public String runCollectCoordinatorEntity(
@@ -26,7 +27,7 @@ public final class SejmCollectCoordinatorEntityFunction {
         ExecutionContext execCtx) {
 
         Log.info(execCtx, "Processing collect coordinator entity batch");
-        return EntityRunner.loadAndRun(entityBatchRequest, () -> entityProvider.getObject());
+        return EntityRunner.loadAndRun(entityBatchRequest, () -> taskEntityGatewayProvider.getObject());
     }
 
 }

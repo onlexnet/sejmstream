@@ -12,6 +12,7 @@ import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 import lombok.RequiredArgsConstructor;
 import onlexnet.infra.adapters.in.azurefunc.Log;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityGateway;
 
 /**
  * Azure Functions durable entity entrypoint for term snapshots.
@@ -24,7 +25,7 @@ import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 @RequiredArgsConstructor
 public final class TermSnapshotReconcilerEntityFunction {
 
-    private final ObjectProvider<TermSnapshotReconcilerEntity> providerOfTermSnapshotReconcilerEntity;
+    private final ObjectProvider<TaskEntityGateway> taskEntityGatewayProvider;
 
     @FunctionName(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_FUNCTION_NAME)
     public String runTermSnapshotReconcilerEntity(
@@ -33,7 +34,7 @@ public final class TermSnapshotReconcilerEntityFunction {
             ExecutionContext execCtx) {
 
         Log.info(execCtx, "Processing term snapshot entity batch");
-        return EntityRunner.loadAndRun(entityBatchRequest, () -> providerOfTermSnapshotReconcilerEntity.getObject());
+        return EntityRunner.loadAndRun(entityBatchRequest, () -> taskEntityGatewayProvider.getObject());
     }
 }
 

@@ -17,13 +17,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
-import onlexnet.infra.adapters.in.azurefunc.base.EntityBase;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TermSnapshotReconcilerEntity extends EntityBase implements TermSnapshotReconcilerContractV1 {
+public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContractV1 {
 
     private final ProjectOwnerNotifier projectOwnerNotifier;
 
@@ -38,8 +37,7 @@ public class TermSnapshotReconcilerEntity extends EntityBase implements TermSnap
         return new TermSnapshotReconcilerState();
     }
 
-    @Override
-    public @Nullable Object run(TaskEntityOperation operation) {
+    public @Nullable Object runOperation(TaskEntityOperation operation) {
         this.context = TaskEntityLifecycleContext.initialized(operation.getContext());
 
         var stateType = getStateType();

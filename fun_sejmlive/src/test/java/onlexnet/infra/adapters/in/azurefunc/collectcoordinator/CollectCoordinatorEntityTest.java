@@ -165,7 +165,7 @@ class CollectCoordinatorEntityTest {
         var optionsCaptor = ArgumentCaptor.forClass(NewOrchestrationInstanceOptions.class);
         var before = Instant.now();
 
-        entity.run(operation);
+        entity.runOperation(operation);
 
         var after = Instant.now();
         verify(context).startNewOrchestration(

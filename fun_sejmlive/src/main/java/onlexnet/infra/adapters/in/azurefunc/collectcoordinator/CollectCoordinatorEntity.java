@@ -14,7 +14,6 @@ import onlexnet.app.usecases.CollectCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.base.EntityBase;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
@@ -25,7 +24,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestration
 
 @Component
 @RequiredArgsConstructor
-public class CollectCoordinatorEntity extends EntityBase implements CollectCoordinatorContractV1 {
+public class CollectCoordinatorEntity implements CollectCoordinatorContractV1 {
 
     private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
     // private static final String DELETE_OPERATION_NAME = "delete";
@@ -41,8 +40,7 @@ public class CollectCoordinatorEntity extends EntityBase implements CollectCoord
         return new Some();
     }
 
-    @Override
-    public @Nullable Object run(TaskEntityOperation operation) {
+    public @Nullable Object runOperation(TaskEntityOperation operation) {
         context = TaskEntityLifecycleContext.initialized(operation.getContext());
 
         var stateType = getStateType();
