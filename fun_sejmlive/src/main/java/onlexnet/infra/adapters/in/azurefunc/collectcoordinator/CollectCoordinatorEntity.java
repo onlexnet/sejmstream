@@ -6,7 +6,6 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
-import com.microsoft.durabletask.TaskEntity;
 import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
 
@@ -15,6 +14,7 @@ import onlexnet.app.usecases.CollectCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.base.EntityBase;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
@@ -25,7 +25,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestration
 
 @Component
 @RequiredArgsConstructor
-public class CollectCoordinatorEntity implements TaskEntity, CollectCoordinatorContractV1 {
+public class CollectCoordinatorEntity extends EntityBase implements CollectCoordinatorContractV1 {
 
     private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
     // private static final String DELETE_OPERATION_NAME = "delete";

@@ -10,7 +10,6 @@ import java.util.TreeSet;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
-import com.microsoft.durabletask.TaskEntity;
 import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
 
@@ -18,12 +17,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
+import onlexnet.infra.adapters.in.azurefunc.base.EntityBase;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TermSnapshotReconcilerEntity implements TaskEntity, TermSnapshotReconcilerContractV1 {
+public class TermSnapshotReconcilerEntity extends EntityBase implements TermSnapshotReconcilerContractV1 {
 
     private final ProjectOwnerNotifier projectOwnerNotifier;
 
