@@ -2,6 +2,7 @@ package onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,6 +27,8 @@ import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 @Slf4j
 @RequiredArgsConstructor
 public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContractV1, EntityComponent {
+
+    private static final int TELEGRAM_MESSAGE_LIMIT = 3900;
 
     private final ProjectOwnerNotifier projectOwnerNotifier;
 
@@ -73,15 +76,15 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
     @Override
     public void termSnapshotCollected(TermSnapshotCollectedEvent event) {
         var outcome = requireState().handleTermSnapshotCollected(requireContextTermNum(), event);
-        dispatchRecognizedEvents(outcome.diff());
+        dispatchRecognizedEvents(outcome.diff(), event);
     }
 
-    protected void dispatchRecognizedEvents(TermSnapshotDiff diff) {
+    protected void dispatchRecognizedEvents(TermSnapshotDiff diff, TermSnapshotCollectedEvent event) {
         if (hasRecognizedChanges(diff)) {
             notifyOwnerAboutRecognizedChanges(diff);
         }
         if (!diff.newInterpellations().isEmpty()) {
-            onNewInterpellationsDetected(toNewInterpellationsDetectedEvent(diff));
+            onNewInterpellationsDetected(toNewInterpellationsDetectedEvent(diff, event));
         }
         if (!diff.updatedInterpellations().isEmpty()) {
             onInterpellationsUpdated(toInterpellationsUpdatedEvent(diff));
@@ -126,6 +129,64 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
     protected void onNewInterpellationsDetected(NewInterpellationsDetectedEvent event) {
         log.info("Detected new interpellations for term {}: {}", event.termNum(), event.interpellationNums().size());
         log.debug("New interpellation keys for term {}: {}", event.termNum(), event.interpellationNums());
+        notifyOwnerAboutNewInterpellations(event);
+    }
+
+    private void notifyOwnerAboutNewInterpellations(NewInterpellationsDetectedEvent event) {
+        try {
+            for (var chunk : chunkMessage(toOwnerNewInterpellationsMessage(event))) {
+                projectOwnerNotifier.notifyOwner(chunk);
+            }
+        } catch (RuntimeException exception) {
+            log.warn("Failed to send new interpellations notification for term {}", event.termNum(), exception);
+        }
+    }
+
+    private static String toOwnerNewInterpellationsMessage(NewInterpellationsDetectedEvent event) {
+        var message = new StringBuilder();
+        message.append("Nowe interpelacje wykryte")
+                .append("\nKadencja: ").append(event.termNum())
+                .append("\nLiczba: ").append(event.interpellationNums().size());
+
+        for (var interpellationNum : event.interpellationNums()) {
+            var presentation = event.interpellationPresentation().get(interpellationNum);
+            var title = presentation == null || presentation.title() == null || presentation.title().isBlank()
+                    ? "brak tytułu"
+                    : presentation.title();
+            var webDescriptionUrl = presentation == null
+                    || presentation.webDescriptionUrl() == null
+                    || presentation.webDescriptionUrl().isBlank()
+                            ? "(brak linku)"
+                            : presentation.webDescriptionUrl();
+
+            message.append("\n- ").append(interpellationNum).append(": ").append(title)
+                    .append("\n  ").append(webDescriptionUrl);
+        }
+        return message.toString();
+    }
+
+    private static List<String> chunkMessage(String message) {
+        if (message.length() <= TELEGRAM_MESSAGE_LIMIT) {
+            return List.of(message);
+        }
+
+        var chunks = new ArrayList<String>();
+        var start = 0;
+        while (start < message.length()) {
+            var end = Math.min(start + TELEGRAM_MESSAGE_LIMIT, message.length());
+            if (end < message.length()) {
+                var lastBreak = message.lastIndexOf('\n', end);
+                if (lastBreak > start + 32) {
+                    end = lastBreak;
+                }
+            }
+            chunks.add(message.substring(start, end).trim());
+            start = end;
+            while (start < message.length() && message.charAt(start) == '\n') {
+                start++;
+            }
+        }
+        return List.copyOf(chunks);
     }
 
     protected void onInterpellationsUpdated(InterpellationsUpdatedEvent event) {
@@ -149,8 +210,14 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
         log.debug("New bill keys for term {}: {}", event.termNum(), event.billNums());
     }
 
-    protected NewInterpellationsDetectedEvent toNewInterpellationsDetectedEvent(TermSnapshotDiff diff) {
-        return new NewInterpellationsDetectedEvent(diff.termNum(), diff.newInterpellations());
+    protected NewInterpellationsDetectedEvent toNewInterpellationsDetectedEvent(
+            TermSnapshotDiff diff,
+            TermSnapshotCollectedEvent event) {
+        var presentationByNum = new LinkedHashMap<String, TermSnapshotCollectedEvent.InterpellationPresentation>();
+        for (var interpellationNum : diff.newInterpellations()) {
+            presentationByNum.put(interpellationNum, event.interpellationPresentation().get(interpellationNum));
+        }
+        return new NewInterpellationsDetectedEvent(diff.termNum(), diff.newInterpellations(), Map.copyOf(presentationByNum));
     }
 
     protected InterpellationsUpdatedEvent toInterpellationsUpdatedEvent(TermSnapshotDiff diff) {
@@ -224,7 +291,10 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
     record ReconciliationOutcome(TermSnapshotDiff diff) {
     }
 
-    record NewInterpellationsDetectedEvent(int termNum, List<String> interpellationNums) {
+        record NewInterpellationsDetectedEvent(
+            int termNum,
+            List<String> interpellationNums,
+            Map<String, TermSnapshotCollectedEvent.InterpellationPresentation> interpellationPresentation) {
     }
 
     record InterpellationsUpdatedEvent(int termNum, List<String> interpellationNums) {

@@ -44,6 +44,7 @@ class TermSnapshotReconcilerCollectEventFunctionTest {
                 "timer",
                 "collect-instance-1",
                 Map.of("77", "hash-1"),
+                Map.of("77", new TermSnapshotCollectedEvent.InterpellationPresentation("Interpelacja 77", "https://sejm.example/77")),
                 List.of("301"),
                 List.of("401"),
                 List.of("501"));

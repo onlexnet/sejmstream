@@ -35,8 +35,14 @@ class TermSnapshotCollectedEventMaterializerTest {
                 .countsByType(Map.of("INTERPELLATION", 2));
 
         List<Map<String, Object>> interpellationRows = List.of(
-                new TreeMap<>(Map.of("item_key", "78", "item_json", "{\"num\":78,\"title\":\"B\"}")),
-                new TreeMap<>(Map.of("item_key", "77", "item_json", "{\"num\":77,\"title\":\"A\"}")));
+                new TreeMap<>(Map.of(
+                        "item_key", "78",
+                        "item_title", "B",
+                        "item_json", "{\"num\":78,\"title\":\"B\",\"links\":{\"webDescription\":\"https://sejm.example/78\"}}")),
+                new TreeMap<>(Map.of(
+                        "item_key", "77",
+                        "item_title", "A",
+                        "item_json", "{\"num\":77,\"title\":\"A\",\"links\":{\"webDescription\":\"https://sejm.example/77\"}}")));
         List<Map<String, Object>> questionRows = List.of(
                 new TreeMap<>(Map.of("item_key", "302")),
                 new TreeMap<>(Map.of("item_key", "301")));
@@ -60,8 +66,15 @@ class TermSnapshotCollectedEventMaterializerTest {
         assertThat(snapshotEvent.source()).isEqualTo("timer");
         assertThat(snapshotEvent.orchestrationInstanceId()).isEqualTo("collect-instance-1");
         assertThat(snapshotEvent.interpellationFingerprints())
-                .containsEntry("77", sha256Hex("{\"num\":77,\"title\":\"A\"}"))
-                .containsEntry("78", sha256Hex("{\"num\":78,\"title\":\"B\"}"));
+                .containsEntry("77", sha256Hex("{\"num\":77,\"title\":\"A\",\"links\":{\"webDescription\":\"https://sejm.example/77\"}}"))
+                .containsEntry("78", sha256Hex("{\"num\":78,\"title\":\"B\",\"links\":{\"webDescription\":\"https://sejm.example/78\"}}"));
+        assertThat(snapshotEvent.interpellationPresentation())
+                .containsEntry(
+                        "77",
+                        new TermSnapshotCollectedEvent.InterpellationPresentation("A", "https://sejm.example/77"))
+                .containsEntry(
+                        "78",
+                        new TermSnapshotCollectedEvent.InterpellationPresentation("B", "https://sejm.example/78"));
         assertThat(snapshotEvent.writtenQuestionKeys()).containsExactly("301", "302");
         assertThat(snapshotEvent.printKeys()).containsExactly("401", "402");
         assertThat(snapshotEvent.billKeys()).containsExactly("501", "502");

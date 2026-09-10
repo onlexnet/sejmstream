@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import com.microsoft.durabletask.EntityInstanceId;
 import com.microsoft.durabletask.TaskEntityContext;
@@ -49,6 +51,7 @@ class TermSnapshotReconcilerEntityTest {
                 "timer",
                 "instance-1",
                 Map.of("77", "hash-1"),
+                Map.of("77", new TermSnapshotCollectedEvent.InterpellationPresentation("Interpelacja 77", "https://sejm.example/77")),
                 List.of("301"),
                 List.of("401"),
                 List.of("501"));
@@ -76,6 +79,10 @@ class TermSnapshotReconcilerEntityTest {
                 "timer",
                 "instance-1",
                 Map.of("77", "hash-new", "78", "hash-same", "79", "hash-79"),
+                Map.of(
+                        "77", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 77", "https://sejm.example/77"),
+                        "78", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 78", "https://sejm.example/78"),
+                        "79", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 79", "https://sejm.example/79")),
                 List.of("301", "302"),
                 List.of("401", "402"),
                 List.of("501", "502"));
@@ -101,7 +108,17 @@ class TermSnapshotReconcilerEntityTest {
                 List.of("402"),
                 List.of("502"));
 
-        probe.dispatchRecognizedEvents(diff);
+        probe.dispatchRecognizedEvents(diff, new TermSnapshotCollectedEvent(
+            20260907,
+            "timer",
+            "instance-10",
+            Map.of("79", "hash-79", "77", "hash-77"),
+            Map.of(
+                "79", new TermSnapshotCollectedEvent.InterpellationPresentation("Nowa interpelacja", "https://sejm.example/79"),
+                "77", new TermSnapshotCollectedEvent.InterpellationPresentation("Zmieniona interpelacja", "https://sejm.example/77")),
+            List.of("302"),
+            List.of("402"),
+            List.of("502")));
 
         assertThat(probe.newInterpellationsEvents).isEqualTo(1);
         assertThat(probe.updatedInterpellationsEvents).isEqualTo(1);
@@ -128,9 +145,77 @@ class TermSnapshotReconcilerEntityTest {
                 List.of(),
                 List.of());
 
-        entity.dispatchRecognizedEvents(diff);
+        entity.dispatchRecognizedEvents(diff, new TermSnapshotCollectedEvent(
+            20260907,
+            "timer",
+            "instance-11",
+            Map.of(),
+            Map.of(),
+            List.of(),
+            List.of(),
+            List.of()));
 
         verify(ownerNotifier, never()).notifyOwner(anyString());
+    }
+
+    @Test
+    void givenNewInterpellationsWithPresentation_whenHandling_thenSendsDetailedOwnerMessageWithLinks() {
+        var ownerNotifier = mock(ProjectOwnerNotifier.class);
+        var entity = new TermSnapshotReconcilerEntity(ownerNotifier);
+
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+                10,
+                List.of("79", "80"),
+                Map.of(
+                        "79", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 79", "https://sejm.example/79"),
+                        "80", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 80", "https://sejm.example/80"))));
+
+        verify(ownerNotifier).notifyOwner(contains("Nowe interpelacje wykryte"));
+        verify(ownerNotifier).notifyOwner(contains("Kadencja: 10"));
+        verify(ownerNotifier).notifyOwner(contains("- 79: Tytul 79"));
+        verify(ownerNotifier).notifyOwner(contains("https://sejm.example/79"));
+        verify(ownerNotifier).notifyOwner(contains("- 80: Tytul 80"));
+    }
+
+    @Test
+    void givenMissingPresentationData_whenHandlingNewInterpellations_thenUsesFallbackValues() {
+        var ownerNotifier = mock(ProjectOwnerNotifier.class);
+        var entity = new TermSnapshotReconcilerEntity(ownerNotifier);
+
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+                10,
+                List.of("79"),
+                Map.of("79", new TermSnapshotCollectedEvent.InterpellationPresentation("", null))));
+
+        verify(ownerNotifier).notifyOwner(contains("brak tytułu"));
+        verify(ownerNotifier).notifyOwner(contains("(brak linku)"));
+    }
+
+    @Test
+    void givenLargeNewInterpellationList_whenHandling_thenSplitsDetailedNotificationIntoChunks() {
+        var ownerNotifier = mock(ProjectOwnerNotifier.class);
+        var entity = new TermSnapshotReconcilerEntity(ownerNotifier);
+
+        var numbers = new java.util.ArrayList<String>();
+        var presentation = new java.util.HashMap<String, TermSnapshotCollectedEvent.InterpellationPresentation>();
+        for (int i = 1; i <= 250; i++) {
+            var num = Integer.toString(i);
+            numbers.add(num);
+            presentation.put(num, new TermSnapshotCollectedEvent.InterpellationPresentation(
+                    "Interpelacja numer " + i + " z długim opisem testowym",
+                    "https://sejm.example/interpelacja/" + i));
+        }
+
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+                10,
+                List.copyOf(numbers),
+                Map.copyOf(presentation)));
+
+        var captor = ArgumentCaptor.forClass(String.class);
+        verify(ownerNotifier, atLeast(2)).notifyOwner(captor.capture());
+        assertThat(captor.getAllValues()).anyMatch(message -> message.contains("- 1: Interpelacja numer 1"));
+        assertThat(captor.getAllValues()).anyMatch(message -> message.contains("- 250: Interpelacja numer 250"));
+        assertThat(captor.getAllValues()).allMatch(message -> message.length() <= 3900);
     }
 
     private static final class DispatchProbeEntity extends TermSnapshotReconcilerEntity {
