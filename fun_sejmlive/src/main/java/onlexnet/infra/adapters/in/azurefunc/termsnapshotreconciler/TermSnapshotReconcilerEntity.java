@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeSet;
+import java.util.Locale;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -17,12 +18,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.base.DurableEntityComponent;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContractV1 {
+public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContractV1, DurableEntityComponent {
 
     private final ProjectOwnerNotifier projectOwnerNotifier;
 
@@ -37,6 +40,17 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
         return new TermSnapshotReconcilerState();
     }
 
+    @Override
+    public String entityName() {
+        return SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME.toLowerCase(Locale.ROOT);
+    }
+
+    @Override
+    public DurableEntityOperationBinding<TermSnapshotReconcilerContractV1, ?> resolveOperation(String requestedMethod) {
+        return resolveContractOperation(requestedMethod);
+    }
+
+    @Override
     public @Nullable Object runOperation(TaskEntityOperation operation) {
         this.context = TaskEntityLifecycleContext.initialized(operation.getContext());
 

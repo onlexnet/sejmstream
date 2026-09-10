@@ -6,16 +6,16 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
+import java.util.Locale;
+
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.ObjectProvider;
 
 import com.microsoft.durabletask.EntityInstanceId;
 import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
 
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorEntity;
-import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntity;
 
 class TaskEntityGatewayTest {
 
@@ -23,20 +23,25 @@ class TaskEntityGatewayTest {
     void givenCoordinatorEntityNameAndDispatchOperation_whenRunning_thenDelegatesToCoordinatorEntity() {
         var operation = mock(TaskEntityOperation.class);
         var context = mock(TaskEntityContext.class);
-        var coordinatorEntity = mock(CollectCoordinatorEntity.class);
-        var termSnapshotEntity = mock(TermSnapshotReconcilerEntity.class);
-        var coordinatorProvider = mockProvider(coordinatorEntity);
-        var termSnapshotProvider = mockProvider(termSnapshotEntity);
-        var gateway = new TaskEntityGateway(coordinatorProvider, termSnapshotProvider);
+        var coordinatorEntity = mock(DurableEntityComponent.class);
+        var termSnapshotEntity = mock(DurableEntityComponent.class);
+
+        when(coordinatorEntity.entityName()).thenReturn(
+                SejmCollectFunctions.COORDINATOR_ENTITY_NAME.toLowerCase(Locale.ROOT));
+        when(termSnapshotEntity.entityName()).thenReturn(
+                SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME.toLowerCase(Locale.ROOT));
+        var gateway = new TaskEntityGateway(List.of(coordinatorEntity, termSnapshotEntity));
 
         when(operation.getContext()).thenReturn(context);
         when(context.getId()).thenReturn(new EntityInstanceId(
                 SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
                 SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
         when(operation.getName()).thenReturn("dispatch");
+        when(coordinatorEntity.runOperation(operation)).thenReturn(null);
 
         gateway.run(operation);
 
+        verify(coordinatorEntity).resolveOperation("dispatch");
         verify(coordinatorEntity).runOperation(operation);
         verify(termSnapshotEntity, never()).runOperation(operation);
     }
@@ -45,20 +50,25 @@ class TaskEntityGatewayTest {
     void givenTermSnapshotEntityNameAndOperation_whenRunning_thenDelegatesToTermSnapshotEntity() {
         var operation = mock(TaskEntityOperation.class);
         var context = mock(TaskEntityContext.class);
-        var coordinatorEntity = mock(CollectCoordinatorEntity.class);
-        var termSnapshotEntity = mock(TermSnapshotReconcilerEntity.class);
-        var coordinatorProvider = mockProvider(coordinatorEntity);
-        var termSnapshotProvider = mockProvider(termSnapshotEntity);
-        var gateway = new TaskEntityGateway(coordinatorProvider, termSnapshotProvider);
+        var coordinatorEntity = mock(DurableEntityComponent.class);
+        var termSnapshotEntity = mock(DurableEntityComponent.class);
+
+        when(coordinatorEntity.entityName()).thenReturn(
+                SejmCollectFunctions.COORDINATOR_ENTITY_NAME.toLowerCase(Locale.ROOT));
+        when(termSnapshotEntity.entityName()).thenReturn(
+                SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME.toLowerCase(Locale.ROOT));
+        var gateway = new TaskEntityGateway(List.of(coordinatorEntity, termSnapshotEntity));
 
         when(operation.getContext()).thenReturn(context);
         when(context.getId()).thenReturn(new EntityInstanceId(
                 SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME,
                 "10"));
         when(operation.getName()).thenReturn("termSnapshotCollected");
+        when(termSnapshotEntity.runOperation(operation)).thenReturn(null);
 
         gateway.run(operation);
 
+        verify(termSnapshotEntity).resolveOperation("termSnapshotCollected");
         verify(termSnapshotEntity).runOperation(operation);
         verify(coordinatorEntity, never()).runOperation(operation);
     }
@@ -67,9 +77,14 @@ class TaskEntityGatewayTest {
     void givenUnknownEntityName_whenRunning_thenThrowsDescriptiveError() {
         var operation = mock(TaskEntityOperation.class);
         var context = mock(TaskEntityContext.class);
-        var coordinatorProvider = mockProvider(mock(CollectCoordinatorEntity.class));
-        var termSnapshotProvider = mockProvider(mock(TermSnapshotReconcilerEntity.class));
-        var gateway = new TaskEntityGateway(coordinatorProvider, termSnapshotProvider);
+        var coordinatorEntity = mock(DurableEntityComponent.class);
+        var termSnapshotEntity = mock(DurableEntityComponent.class);
+
+        when(coordinatorEntity.entityName()).thenReturn(
+                SejmCollectFunctions.COORDINATOR_ENTITY_NAME.toLowerCase(Locale.ROOT));
+        when(termSnapshotEntity.entityName()).thenReturn(
+                SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME.toLowerCase(Locale.ROOT));
+        var gateway = new TaskEntityGateway(List.of(coordinatorEntity, termSnapshotEntity));
 
         when(operation.getContext()).thenReturn(context);
         when(context.getId()).thenReturn(new EntityInstanceId("UnknownEntity", "singleton"));
@@ -83,17 +98,23 @@ class TaskEntityGatewayTest {
     void givenUnsupportedOperationForKnownEntity_whenRunning_thenFailsBeforeDelegation() {
         var operation = mock(TaskEntityOperation.class);
         var context = mock(TaskEntityContext.class);
-        var coordinatorEntity = mock(CollectCoordinatorEntity.class);
-        var termSnapshotEntity = mock(TermSnapshotReconcilerEntity.class);
-        var coordinatorProvider = mockProvider(coordinatorEntity);
-        var termSnapshotProvider = mockProvider(termSnapshotEntity);
-        var gateway = new TaskEntityGateway(coordinatorProvider, termSnapshotProvider);
+        var coordinatorEntity = mock(DurableEntityComponent.class);
+        var termSnapshotEntity = mock(DurableEntityComponent.class);
+
+        when(coordinatorEntity.entityName()).thenReturn(
+                SejmCollectFunctions.COORDINATOR_ENTITY_NAME.toLowerCase(Locale.ROOT));
+        when(termSnapshotEntity.entityName()).thenReturn(
+                SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME.toLowerCase(Locale.ROOT));
+        var gateway = new TaskEntityGateway(List.of(coordinatorEntity, termSnapshotEntity));
 
         when(operation.getContext()).thenReturn(context);
         when(context.getId()).thenReturn(new EntityInstanceId(
                 SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
                 SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
         when(operation.getName()).thenReturn("termSnapshotCollected");
+        when(coordinatorEntity.resolveOperation("termSnapshotCollected"))
+                .thenThrow(new UnsupportedOperationException(
+                        "Entity 'CollectCoordinatorEntity' does not support operation 'termSnapshotCollected'."));
 
         assertThatThrownBy(() -> gateway.run(operation))
                 .isInstanceOf(UnsupportedOperationException.class)
@@ -102,12 +123,5 @@ class TaskEntityGatewayTest {
 
         verify(coordinatorEntity, never()).runOperation(operation);
         verify(termSnapshotEntity, never()).runOperation(operation);
-    }
-
-    private static <T> ObjectProvider<T> mockProvider(T value) {
-        @SuppressWarnings("unchecked")
-        var provider = (ObjectProvider<T>) mock(ObjectProvider.class);
-        when(provider.getObject()).thenReturn(value);
-        return provider;
     }
 }

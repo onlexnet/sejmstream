@@ -4,6 +4,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Locale;
 
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
 import com.microsoft.durabletask.TaskEntityContext;
@@ -14,6 +15,7 @@ import onlexnet.app.usecases.CollectCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
+import onlexnet.infra.adapters.in.azurefunc.base.DurableEntityComponent;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
@@ -24,7 +26,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestration
 
 @Component
 @RequiredArgsConstructor
-public class CollectCoordinatorEntity implements CollectCoordinatorContractV1 {
+public class CollectCoordinatorEntity implements CollectCoordinatorContractV1, DurableEntityComponent {
 
     private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
     // private static final String DELETE_OPERATION_NAME = "delete";
@@ -40,6 +42,17 @@ public class CollectCoordinatorEntity implements CollectCoordinatorContractV1 {
         return new Some();
     }
 
+    @Override
+    public String entityName() {
+        return SejmCollectFunctions.COORDINATOR_ENTITY_NAME.toLowerCase(Locale.ROOT);
+    }
+
+    @Override
+    public DurableEntityOperationBinding<CollectCoordinatorContractV1, ?> resolveOperation(String requestedMethod) {
+        return resolveContractOperation(requestedMethod);
+    }
+
+    @Override
     public @Nullable Object runOperation(TaskEntityOperation operation) {
         context = TaskEntityLifecycleContext.initialized(operation.getContext());
 
