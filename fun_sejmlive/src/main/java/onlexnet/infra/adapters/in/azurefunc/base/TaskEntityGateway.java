@@ -18,12 +18,12 @@ import onlexnet.shared.Guards;
 @Component
 public final class TaskEntityGateway implements TaskEntity {
 
-    private final Map<String, DurableEntityComponent> componentsByEntityName;
+    private final Map<String, EntityComponent> componentsByEntityName;
 
-    public TaskEntityGateway(List<DurableEntityComponent> entityComponents) {
+    public TaskEntityGateway(List<EntityComponent> entityComponents) {
         componentsByEntityName = entityComponents.stream()
                 .collect(Collectors.toUnmodifiableMap(
-                        DurableEntityComponent::entityName,
+                        EntityComponent::entityName,
                         component -> component,
                         (existing, duplicate) -> {
                             throw new IllegalStateException(

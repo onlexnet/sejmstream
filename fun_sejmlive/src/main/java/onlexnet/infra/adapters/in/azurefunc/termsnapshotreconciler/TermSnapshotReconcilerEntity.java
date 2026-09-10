@@ -19,13 +19,13 @@ import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.base.DurableEntityComponent;
+import onlexnet.infra.adapters.in.azurefunc.base.EntityComponent;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContractV1, DurableEntityComponent {
+public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContractV1, EntityComponent {
 
     private final ProjectOwnerNotifier projectOwnerNotifier;
 

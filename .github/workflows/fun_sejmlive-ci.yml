@@ -54,7 +54,7 @@ jobs:
 
       - name: Upload Surefire reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: fun_sejmlive-surefire-reports
           path: fun_sejmlive/target/surefire-reports/**
@@ -70,7 +70,7 @@ jobs:
 
       - name: Upload Azure Functions package output
         if: success()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: fun_sejmlive-azure-functions-package
           path: fun_sejmlive-package/**

@@ -117,7 +117,7 @@ class SejmCollectActivitiesFunctionTest {
         verify(collectService, times(1)).collectBills(eq(10), billsDateCaptor.capture());
         assertThat(votingsDateCaptor.getValue()).isBetween(beforeVotings, afterVotings);
         assertThat(billsDateCaptor.getValue()).isBetween(beforeBills, afterBills);
-        verify(sejmApiClient, times(1)).fetchTerms();
+        verify(sejmApiClient, times(2)).fetchTerms();
     }
 
     @Test

@@ -10,7 +10,7 @@ import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 /**
  * Entity component metadata and execution contract used by TaskEntityGateway routing.
  */
-public interface DurableEntityComponent {
+public interface EntityComponent {
 
     String entityName();
 

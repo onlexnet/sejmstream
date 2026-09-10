@@ -35,18 +35,6 @@ public final class SejmCollectActivitySupport {
     private final SejmApiClient sejmApiClient;
     private final SejmDailyDigestPersistence dailyDigestPersistence;
     private final JsonValidator jsonValidator;
-    private CachedTerm cachedTermNum = CachedTerm.NONE;
-
-    private sealed interface CachedTerm permits CachedTerm.None, CachedTerm.Resolved {
-        enum None implements CachedTerm {
-            NONE
-        }
-
-        record Resolved(int num) implements CachedTerm {
-        }
-
-        CachedTerm NONE = None.NONE;
-    }
 
     SejmCollectOperations collectService() {
         return this.collectService;
@@ -58,9 +46,6 @@ public final class SejmCollectActivitySupport {
     }
 
     int getCurrentTermNum() {
-        if (this.cachedTermNum instanceof CachedTerm.Resolved resolved) {
-            return resolved.num();
-        }
         var terms = Guards.requireNonEmpty(
                 this.sejmApiClient.fetchTerms(),
                 () -> new IllegalStateException("No Sejm terms found"));
@@ -69,7 +54,6 @@ public final class SejmCollectActivitySupport {
                 .mapToInt(SejmApiClient.SejmTerm::num)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("No current Sejm term found among " + terms.size() + " terms"));
-        this.cachedTermNum = new CachedTerm.Resolved(termNum);
         log.debug("Current Sejm term: {}", termNum);
         return termNum;
     }

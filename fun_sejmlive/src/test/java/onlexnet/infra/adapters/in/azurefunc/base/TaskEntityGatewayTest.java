@@ -46,15 +46,15 @@ class TaskEntityGatewayTest extends PostgresIntegrationTestSupport {
 
     @Autowired
     @Qualifier("localDurableEntityComponent")
-    private DurableEntityComponent localDurableEntityComponent;
+    private EntityComponent localDurableEntityComponent;
 
     @Autowired
     @Qualifier("brokenDurableEntityComponent")
-    private DurableEntityComponent brokenDurableEntityComponent;
+    private EntityComponent brokenDurableEntityComponent;
 
     @Test
     void shouldDetectLocalDurableEntityComponentBean() {
-        assertThat(applicationContext.getBeansOfType(DurableEntityComponent.class).values())
+        assertThat(applicationContext.getBeansOfType(EntityComponent.class).values())
                 .contains(localDurableEntityComponent, brokenDurableEntityComponent);
     }
 
@@ -129,17 +129,17 @@ class TaskEntityGatewayTest extends PostgresIntegrationTestSupport {
     static class LocalTestConfiguration {
 
         @Bean("localDurableEntityComponent")
-        DurableEntityComponent localDurableEntityComponent() {
+        EntityComponent localDurableEntityComponent() {
             return new LocalDurableEntityComponent();
         }
 
         @Bean("brokenDurableEntityComponent")
-        DurableEntityComponent brokenDurableEntityComponent() {
+        EntityComponent brokenDurableEntityComponent() {
             return new BrokenDurableEntityComponent();
         }
     }
 
-    private static final class LocalDurableEntityComponent implements DurableEntityComponent, LocalEntityContract {
+    private static final class LocalDurableEntityComponent implements EntityComponent, LocalEntityContract {
 
         private static final DurableEntityOperationBinding<LocalEntityContract, String> PING_OPERATION =
                 DurableEntityOperationBinding.of("ping", String.class, LocalEntityContract::ping);
@@ -169,7 +169,7 @@ class TaskEntityGatewayTest extends PostgresIntegrationTestSupport {
         }
     }
 
-    private static final class BrokenDurableEntityComponent implements DurableEntityComponent, BrokenEntityContract {
+    private static final class BrokenDurableEntityComponent implements EntityComponent, BrokenEntityContract {
 
         private static final DurableEntityOperationBinding<BrokenEntityContract, String> BREAK_OPERATION =
                 DurableEntityOperationBinding.of("break", String.class, BrokenEntityContract::breakNow);
