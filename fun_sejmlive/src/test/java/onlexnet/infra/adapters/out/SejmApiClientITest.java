@@ -53,11 +53,15 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
                 .orElse(terms.getFirst().num());
 
         var referenceDate = LocalDate.now().minusDays(7);
+        var printWindowEndDate = LocalDate.now();
+        var printWindowStartDate = printWindowEndDate.minusDays(6);
         var referenceDateTime = LocalDateTime.now().minusDays(7);
 
         assertListCallReachable("fetchVotingsForDate", () -> this.sejmApiClient.fetchVotingsForDate(activeTermNum, referenceDate));
         assertListCallReachable("fetchCommitteeSittingsForDate", () -> this.sejmApiClient.fetchCommitteeSittingsForDate(activeTermNum, referenceDate));
-        assertListCallReachable("fetchPrintsModifiedSince", () -> this.sejmApiClient.fetchPrintsModifiedSince(activeTermNum, referenceDate));
+        assertListCallReachable(
+            "fetchPrintsModifiedBetween",
+            () -> this.sejmApiClient.fetchPrintsModifiedBetween(activeTermNum, printWindowStartDate, printWindowEndDate));
         assertListCallReachable(
             "fetchInterpellationsModifiedSince",
             () -> this.sejmApiClient.fetchInterpellationsModifiedSince(activeTermNum, referenceDateTime));

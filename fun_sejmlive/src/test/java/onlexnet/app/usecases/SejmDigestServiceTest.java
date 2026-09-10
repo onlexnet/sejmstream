@@ -213,6 +213,11 @@ class SejmDigestServiceTest {
         }
 
         @Override
+        public java.util.Optional<LocalDate> findLatestCollectionDateForType(String dataType) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
         public int insertPublishLog(LocalDate date, @Nullable String message,
                 boolean success, @Nullable String errorMsg) {
             throw new UnsupportedOperationException("Not used by this test");

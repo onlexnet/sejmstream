@@ -36,13 +36,15 @@ class DefaultSejmApiClientTest {
     }
 
     @Test
-    void givenRealApi_whenFetchPrintsModifiedSince_thenDeserializesWithoutException() {
+    void givenRealApi_whenFetchPrintsModifiedBetween_thenDeserializesWithoutException() {
         // Calls real Sejm API — requires network access
         var client = new DefaultSejmApiClient();
+        var endDate = LocalDate.now();
+        var startDate = endDate.minusDays(6);
 
         var result = requireSejmApiCallOrSkip(
-            "fetchPrintsModifiedSince",
-            () -> client.fetchPrintsModifiedSince(10, LocalDate.now().minusDays(7)));
+            "fetchPrintsModifiedBetween",
+            () -> client.fetchPrintsModifiedBetween(10, startDate, endDate));
 
         assertThat(result).isNotNull();
     }

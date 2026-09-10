@@ -256,7 +256,8 @@ class SejmCollectServiceTest {
                 "Projekt ustawy",
                 LocalDateTime.of(2026, 6, 13, 10, 0),
                 "2026-06-13");
-        when(sejmApiClient.fetchPrintsModifiedSince(10, TEST_DATE)).thenReturn(List.of(item));
+        var overlapStartDate = TEST_DATE;
+        when(sejmApiClient.fetchPrintsModifiedBetween(10, overlapStartDate, TEST_DATE)).thenReturn(List.of(item));
 
         var count = service.collectPrints(10, TEST_DATE);
 
@@ -265,7 +266,33 @@ class SejmCollectServiceTest {
         assertThat(repository.calls.get(0).dataType()).isEqualTo("PRINT");
         assertThat(repository.calls.get(0).itemKey()).isEqualTo(item.number());
         assertThat(repository.calls.get(0).title()).isEqualTo(item.title());
-        verify(sejmApiClient).fetchPrintsModifiedSince(10, TEST_DATE);
+        verify(sejmApiClient).fetchPrintsModifiedBetween(10, overlapStartDate, TEST_DATE);
+    }
+
+    @Test
+    void givenLatestPrintSnapshotDate_whenCollectPrints_thenReadsFromSnapshotDate() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        var overlapStartDate = TEST_DATE.minusDays(3);
+        repository.latestCollectionDateByType.put("PRINT", overlapStartDate);
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            new RecordingQueuePort(),
+            repository,
+            objectMapper);
+        var item = new PrintItem(
+                "123-B",
+                "Projekt graniczny",
+                LocalDateTime.of(2026, 6, 10, 9, 0),
+                "2026-06-10");
+        when(sejmApiClient.fetchPrintsModifiedBetween(10, overlapStartDate, TEST_DATE)).thenReturn(List.of(item));
+
+        var count = service.collectPrints(10, TEST_DATE);
+
+        assertThat(count).isEqualTo(1);
+        verify(sejmApiClient).fetchPrintsModifiedBetween(10, overlapStartDate, TEST_DATE);
     }
 
     @Test
@@ -339,7 +366,7 @@ class SejmCollectServiceTest {
             new RecordingQueuePort(),
             repository,
             objectMapper);
-        when(sejmApiClient.fetchPrintsModifiedSince(10, TEST_DATE))
+        when(sejmApiClient.fetchPrintsModifiedBetween(10, TEST_DATE, TEST_DATE))
                 .thenReturn(List.of(new PrintItem(
                         "123",
                         "Projekt",
@@ -420,6 +447,7 @@ class SejmCollectServiceTest {
 
         private final List<UpsertCall> calls = new ArrayList<>();
         private final Map<String, String> statuses = new HashMap<>();
+            private final Map<String, LocalDate> latestCollectionDateByType = new HashMap<>();
         private RuntimeException failWith;
 
         @Override
@@ -441,6 +469,11 @@ class SejmCollectServiceTest {
         public List<java.util.Map<String, Object>> findByDateAndType(LocalDate date,
                 String dataType) {
             throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
+        public java.util.Optional<LocalDate> findLatestCollectionDateForType(String dataType) {
+            return java.util.Optional.ofNullable(this.latestCollectionDateByType.get(dataType));
         }
 
         @Override

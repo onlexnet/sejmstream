@@ -3,6 +3,7 @@ package onlexnet.app.ports.out;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.jspecify.annotations.Nullable;
 
@@ -27,6 +28,11 @@ public interface SejmDailyDigestPersistence {
      * Returns collected digest rows for a date filtered by data type.
      */
     List<Map<String, Object>> findByDateAndType(LocalDate date, String dataType);
+
+    /**
+     * Returns the latest snapshot collection date for the specified data type.
+     */
+    Optional<LocalDate> findLatestCollectionDateForType(String dataType);
 
     /**
      * Writes a publishing attempt log entry.

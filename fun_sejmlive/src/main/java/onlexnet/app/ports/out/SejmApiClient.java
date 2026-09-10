@@ -189,7 +189,7 @@ public interface SejmApiClient {
 
     List<CommitteeSittingItem> fetchCommitteeSittingsForDate(int termNum, LocalDate date);
 
-    List<PrintItem> fetchPrintsModifiedSince(int termNum, LocalDate since);
+    List<PrintItem> fetchPrintsModifiedBetween(int termNum, LocalDate from, LocalDate to);
 
     List<InterpellationItem> fetchInterpellationsModifiedSince(int termNum, LocalDateTime since);
 

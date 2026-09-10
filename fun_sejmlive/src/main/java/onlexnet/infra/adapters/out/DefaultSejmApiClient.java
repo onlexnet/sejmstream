@@ -122,7 +122,7 @@ class DefaultSejmApiClient implements SejmApiClient {
     }
 
     @Override
-    public List<PrintItem> fetchPrintsModifiedSince(int termNum, LocalDate since) {
+    public List<PrintItem> fetchPrintsModifiedBetween(int termNum, LocalDate from, LocalDate to) {
         var prints = callSejmApi(
                 "PrintsApi.sejmTermtermPrintsGet",
                 () -> this.printsApi.sejmTermtermPrintsGet(termNum, null, "-lastModified"));
@@ -131,7 +131,9 @@ class DefaultSejmApiClient implements SejmApiClient {
                 .filter(print -> print.getChangeDate() != null)
                 .filter(print -> {
                     var changeDate = print.getChangeDate().toLocalDate();
-                    return changeDate.isEqual(since) || changeDate.isAfter(since);
+                    var onOrAfterStart = changeDate.isEqual(from) || changeDate.isAfter(from);
+                    var onOrBeforeEnd = changeDate.isEqual(to) || changeDate.isBefore(to);
+                    return onOrAfterStart && onOrBeforeEnd;
                 })
                 .map(this::mapPrint)
                 .toList();

@@ -72,6 +72,20 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
+    public java.util.Optional<LocalDate> findLatestCollectionDateForType(String dataType) {
+        var sql = """
+                SELECT MAX(collection_date)
+                FROM sejm_daily_digest_item
+                WHERE data_type = ?
+                """;
+        var latestDate = this.jdbcTemplate.queryForObject(sql, Date.class, dataType);
+        if (latestDate == null) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(latestDate.toLocalDate());
+    }
+
+    @Override
         public int insertPublishLog(LocalDate date, @Nullable String message,
             boolean success, @Nullable String errorMsg) {
         var sql = """

@@ -86,7 +86,7 @@ public class SejmCollectService implements SejmCollectOperations {
     }
 
     /**
-     * Collects print items modified since the given date.
+     * Collects print items modified from latest collected PRINT snapshot date up to collection date.
      *
      * @param termNum Sejm term number
      * @param date    collection date
@@ -94,8 +94,11 @@ public class SejmCollectService implements SejmCollectOperations {
      */
     public int collectPrints(int termNum, LocalDate date) {
         try {
+            var overlapStartDate = this.repository.findLatestCollectionDateForType("PRINT")
+                    .filter(lastSnapshotDate -> !lastSnapshotDate.isAfter(date))
+                    .orElse(date);
             return collectItems(termNum, date, null, "PRINT", "print(s)", "prints",
-                    () -> sejmApiClient.fetchPrintsModifiedSince(termNum, date), PrintItem::number,
+                    () -> sejmApiClient.fetchPrintsModifiedBetween(termNum, overlapStartDate, date), PrintItem::number,
                     PrintItem::title);
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Error collecting prints for term " + termNum, e);
