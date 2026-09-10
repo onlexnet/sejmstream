@@ -67,6 +67,10 @@ cd fun_sejmlive
 mvn clean package
 ```
 
+Sejm OpenAPI schema refresh behavior:
+- On developer machines (when `CI` is not set), Maven `generate-sources` refreshes `src/main/resources/openapi/sejm-openapi.yaml` from `https://api.sejm.gov.pl/sejm/openapi/`.
+- In CI (when `CI=true`), schema download is disabled and the build uses the committed `src/main/resources/openapi/sejm-openapi.yaml` file.
+
 ### Run Tests Only
 ```bash
 mvn test
