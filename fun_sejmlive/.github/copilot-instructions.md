@@ -116,6 +116,20 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - For durable entities and similar lifecycle-driven components, do not use nullable lifecycle fields for state/context.
   Model lifecycle explicitly with typed `Uninitialized`/`Initialized` variants.
 
+### Durable Entity Gateway Guardrails
+- Keep one central Azure-native `TaskEntity` implementation for runtime entry (`TaskEntityGateway` style).
+- Keep durable entity business components decoupled from Azure-native `TaskEntity`; expose routing/operation metadata via a dedicated component contract.
+- Follow Open/Closed Principle in entity routing: avoid hardcoded class checks/switches in gateway; discover entity components from Spring context.
+- Register entity components by their runtime entity name and ensure uniqueness at startup.
+- Use exact-match routing for runtime `entityName`; do not add case-insensitive fallbacks in gateway logic.
+- Keep operation validation explicit in gateway by calling component-provided operation resolver before delegating execution.
+
+### Integration Test Guardrails
+- For gateway/routing behavior, prefer `@AppTest` with local test beans over broad Mockito-only wiring tests.
+- In such tests, include both a positive bean-discovery/routing scenario and a negative broken-bean scenario.
+- Start test method names with `should...`.
+- For external API integration tests, avoid date-sensitive dynamic discovery when deterministic identifiers are known; prefer stable, known-good inputs.
+
 ### Java contract rules
 - For Java DTOs, records, sealed hierarchies, and API contracts, follow the JSON round-trip rules in [.github/instructions/java.instructions.md](instructions/java.instructions.md).
 - Treat serialization compatibility as part of the public contract whenever data is persisted, queued, or exchanged over HTTP.
