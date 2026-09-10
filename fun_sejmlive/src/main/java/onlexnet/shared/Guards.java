@@ -72,4 +72,31 @@ public final class Guards {
         }
         return value;
     }
+
+    /**
+     * Verifies a state condition and throws IllegalStateException when it is false.
+     *
+     * @param condition state predicate to validate
+     * @param messageSupplier lazy message supplier used when condition is false
+     */
+    public static void checkState(boolean condition, Supplier<String> messageSupplier) {
+        if (!condition) {
+            throw new IllegalStateException(messageSupplier.get());
+        }
+    }
+
+    /**
+     * Returns value when non-null; otherwise throws IllegalStateException with supplied message.
+     *
+     * @param value nullable value
+     * @param messageSupplier lazy message supplier used when value is null
+     * @param <T> value type
+     * @return non-null value
+     */
+    public static <T> T requireState(@Nullable T value, Supplier<String> messageSupplier) {
+        if (value == null) {
+            throw new IllegalStateException(messageSupplier.get());
+        }
+        return value;
+    }
 }

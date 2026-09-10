@@ -104,4 +104,30 @@ class GuardsTest {
     void requireNonEmpty_string_givenNullSupplierAndNonEmptyValue_returnsValue() {
         assertThat(Guards.requireNonEmpty("x", (java.util.function.Supplier<RuntimeException>) null)).isEqualTo("x");
     }
+
+    @Test
+    void checkState_givenTrue_doesNotThrow() {
+        Guards.checkState(true, () -> "should not throw");
+    }
+
+    @Test
+    void checkState_givenFalse_throwsIllegalStateExceptionWithSuppliedMessage() {
+        assertThatThrownBy(() -> Guards.checkState(false, () -> "state-invalid"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("state-invalid");
+    }
+
+    @Test
+    void requireState_givenNonNull_returnsValue() {
+        var value = "ok";
+        assertThat(Guards.requireState(value, () -> "missing")).isSameAs(value);
+    }
+
+    @Test
+    void requireState_givenNull_throwsIllegalStateExceptionWithSuppliedMessage() {
+        String value = null;
+        assertThatThrownBy(() -> Guards.requireState(value, () -> "missing"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("missing");
+    }
 }

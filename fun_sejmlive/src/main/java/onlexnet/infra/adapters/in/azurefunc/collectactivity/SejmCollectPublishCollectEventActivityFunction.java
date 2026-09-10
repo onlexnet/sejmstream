@@ -16,6 +16,7 @@ import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.Log;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
+import onlexnet.shared.Guards;
 import onlexnet.shared.JsonDateNumbers;
 
 @Component
@@ -52,31 +53,28 @@ public final class SejmCollectPublishCollectEventActivityFunction {
     }
 
     private static String requiredText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalStateException("Collect event request field " + fieldName + " must not be blank");
-        }
-        return value;
+        return Guards.requireNonEmpty(
+                value,
+                () -> new IllegalStateException("Collect event request field " + fieldName + " must not be blank"));
     }
 
     private static int requiredInt(Integer value, String fieldName) {
-        if (value == null) {
-            throw new IllegalStateException("Collect event request field " + fieldName + " must not be null");
-        }
-        return value;
+        return Guards.requireState(
+                value,
+                () -> "Collect event request field " + fieldName + " must not be null");
     }
 
     private static int requiredDateNumber(Integer value, String fieldName) {
-        if (value == null) {
-            throw new IllegalStateException("Collect event request field " + fieldName + " must not be null");
-        }
-        JsonDateNumbers.fromYyyyMmDd(value);
-        return value;
+        var requiredValue = Guards.requireState(
+                value,
+                () -> "Collect event request field " + fieldName + " must not be null");
+        JsonDateNumbers.fromYyyyMmDd(requiredValue);
+        return requiredValue;
     }
 
     private static Map<String, Integer> requiredCounts(Map<String, Integer> value, String fieldName) {
-        if (value == null) {
-            throw new IllegalStateException("Collect event request field " + fieldName + " must not be null");
-        }
-        return Map.copyOf(value);
+        return Map.copyOf(Guards.requireState(
+                value,
+                () -> "Collect event request field " + fieldName + " must not be null"));
     }
 }

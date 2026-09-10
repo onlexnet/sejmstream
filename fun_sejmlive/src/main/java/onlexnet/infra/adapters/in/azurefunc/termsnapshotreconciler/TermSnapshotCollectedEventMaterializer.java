@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1DTO;
+import onlexnet.shared.Guards;
 import onlexnet.shared.JsonDateNumbers;
 
 /**
@@ -113,17 +114,16 @@ public final class TermSnapshotCollectedEventMaterializer {
     }
 
     private static String requiredText(String value, String fieldName) {
-        if (value == null || value.isBlank()) {
-            throw new IllegalStateException("Collect event field " + fieldName + " must not be blank");
-        }
-        return value;
+        return Guards.requireNonEmpty(
+                value,
+                () -> new IllegalStateException("Collect event field " + fieldName + " must not be blank"));
     }
 
     private static int requiredDateNumber(Integer value, String fieldName) {
-        if (value == null) {
-            throw new IllegalStateException("Collect event field " + fieldName + " must not be null");
-        }
-        JsonDateNumbers.fromYyyyMmDd(value);
-        return value;
+        var requiredValue = Guards.requireState(
+                value,
+                () -> "Collect event field " + fieldName + " must not be null");
+        JsonDateNumbers.fromYyyyMmDd(requiredValue);
+        return requiredValue;
     }
 }

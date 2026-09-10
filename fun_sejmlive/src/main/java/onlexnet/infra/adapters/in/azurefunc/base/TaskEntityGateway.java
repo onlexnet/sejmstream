@@ -10,6 +10,8 @@ import org.springframework.stereotype.Component;
 import com.microsoft.durabletask.TaskEntity;
 import com.microsoft.durabletask.TaskEntityOperation;
 
+import onlexnet.shared.Guards;
+
 /**
  * Central durable entity gateway that routes runtime invocations to the proper entity component.
  */
@@ -33,10 +35,9 @@ public final class TaskEntityGateway implements TaskEntity {
     @Override
     public @Nullable Object run(TaskEntityOperation operation) {
         var entityName = operation.getContext().getId().getName();
-        var component = componentsByEntityName.get(entityName);
-        if (component == null) {
-            throw new IllegalStateException("No durable entity component registered for entity name '" + entityName + "'.");
-        }
+        var component = Guards.requireState(
+                componentsByEntityName.get(entityName),
+                () -> "No durable entity component registered for entity name '" + entityName + "'.");
         component.resolveOperation(operation.getName());
         return component.runOperation(operation);
     }
