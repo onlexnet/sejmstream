@@ -50,12 +50,25 @@ locals {
   domain_storage_account_name   = "${local.name_prefix}${local.environment}dom${local.global_suffix}"
   function_app_name             = "${local.resource_prefix}-func-flex-${local.global_suffix}"
   durable_task_scheduler_name   = "${local.resource_prefix}-dts-${local.global_suffix}"
+  language_service_name         = "${local.resource_prefix}-lang-${local.global_suffix}"
 }
 
 resource "azurerm_resource_group" "main" {
   name     = "${local.resource_prefix}-rg"
   location = local.location
   tags     = local.common_tags
+}
+
+# Azure AI Language resource used for named-entity recognition + entity linking over
+# interpellation body text (persons, organizations, locations surfaced in Telegram owner notifications).
+resource "azurerm_cognitive_account" "language" {
+  name                  = local.language_service_name
+  location              = azurerm_resource_group.main.location
+  resource_group_name   = azurerm_resource_group.main.name
+  kind                  = "TextAnalytics"
+  sku_name              = var.language_service_sku
+  custom_subdomain_name = local.language_service_name
+  tags                  = local.common_tags
 }
 
 resource "azapi_resource" "durable_task_scheduler" {
@@ -243,6 +256,8 @@ resource "azurerm_function_app_flex_consumption" "main" {
       DB_PASSWORD                                    = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.spring_datasource_password[0].versionless_id})"
       TELEGRAM_BOT_TOKEN                             = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_bot_token[0].versionless_id})"
       TELEGRAM_ALLOWED_CHAT_ID                       = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_allowed_chat_id[0].versionless_id})"
+      AZURE_LANGUAGE_ENDPOINT                        = azurerm_cognitive_account.language.endpoint
+      AZURE_LANGUAGE_KEY                             = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.language_key.versionless_id})"
       INTERPELLATION_PUBLISH_QUEUE_NAME              = azurerm_storage_queue.interpellation_publish.name
       INTERPELLATION_PUBLISH_DEAD_LETTER_QUEUE_NAME  = azurerm_storage_queue.interpellation_publish_dead_letter.name
       INTERPELLATION_PUBLISH_MAX_ATTEMPTS            = tostring(var.interpellation_publish_max_attempts)
@@ -421,6 +436,12 @@ resource "azurerm_key_vault_secret" "telegram_allowed_chat_id" {
   count        = 1
   name         = "telegram-allowed-chat-id"
   value        = var.telegram_allowed_chat_id
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+resource "azurerm_key_vault_secret" "language_key" {
+  name         = "language-service-key"
+  value        = azurerm_cognitive_account.language.primary_access_key
   key_vault_id = azurerm_key_vault.main.id
 }
 

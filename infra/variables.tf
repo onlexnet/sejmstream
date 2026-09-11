@@ -198,6 +198,17 @@ variable "telegram_allowed_chat_id" {
   }
 }
 
+variable "language_service_sku" {
+  description = "SKU for the Azure AI Language resource used for interpellation entity recognition/linking."
+  type        = string
+  default     = "S"
+
+  validation {
+    condition     = contains(["F0", "S"], var.language_service_sku)
+    error_message = "language_service_sku must be F0 or S."
+  }
+}
+
 variable "github_owner" {
   description = "GitHub organization or user owning the repository."
   type        = string
