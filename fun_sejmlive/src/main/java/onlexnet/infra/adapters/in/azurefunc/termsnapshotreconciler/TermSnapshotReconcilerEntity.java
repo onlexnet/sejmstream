@@ -340,13 +340,23 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
                 addedKeys(previousPrints, currentPrints),
                 addedKeys(previousBills, currentBills));
 
+        // Persist previous + current merged so items untouched on a given day aren't forgotten and later misdetected as "new".
+        var mergedInterpellations = new HashMap<>(previousInterpellations);
+        mergedInterpellations.putAll(currentInterpellations);
+        var mergedQuestions = new TreeSet<>(previousQuestions);
+        mergedQuestions.addAll(currentQuestions);
+        var mergedPrints = new TreeSet<>(previousPrints);
+        mergedPrints.addAll(currentPrints);
+        var mergedBills = new TreeSet<>(previousBills);
+        mergedBills.addAll(currentBills);
+
         var snapshot = new TermSnapshotPayload(
                 termNum,
                 event.collectionDate(),
-                Map.copyOf(currentInterpellations),
-                List.copyOf(currentQuestions),
-                List.copyOf(currentPrints),
-                List.copyOf(currentBills));
+                Map.copyOf(mergedInterpellations),
+                List.copyOf(mergedQuestions),
+                List.copyOf(mergedPrints),
+                List.copyOf(mergedBills));
 
         state.setLatestSnapshot(snapshot);
 

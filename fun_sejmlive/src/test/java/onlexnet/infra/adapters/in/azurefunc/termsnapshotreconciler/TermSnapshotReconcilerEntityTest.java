@@ -97,6 +97,59 @@ class TermSnapshotReconcilerEntityTest {
     }
 
     @Test
+    void givenItemUntouchedForOneDay_whenReconcilingThirdDay_thenReportsUpdateNotNew() {
+        var state = new TermSnapshotReconcilerState();
+
+        // Day 1: interpellation "79" (and written question/print/bill "301"/"401"/"501") collected as new.
+        var day1Event = new TermSnapshotCollectedEvent(
+                20260101,
+                "timer",
+                "instance-1",
+                Map.of("79", "hash-79-v1"),
+                Map.of("79", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 79", "https://sejm.example/79")),
+                List.of("301"),
+                List.of("401"),
+                List.of("501"));
+        var day1Outcome = TermSnapshotReconcilerEntity.reconcile(state, 10, day1Event);
+        assertThat(day1Outcome.diff().newInterpellations()).containsExactly("79");
+        assertThat(day1Outcome.diff().newWrittenQuestions()).containsExactly("301");
+        assertThat(day1Outcome.diff().newPrints()).containsExactly("401");
+        assertThat(day1Outcome.diff().newBills()).containsExactly("501");
+
+        // Day 2: nothing related to "79"/"301"/"401"/"501" was touched.
+        var day2Event = new TermSnapshotCollectedEvent(
+                20260102,
+                "timer",
+                "instance-2",
+                Map.of(),
+                Map.of(),
+                List.of(),
+                List.of(),
+                List.of());
+        var day2Outcome = TermSnapshotReconcilerEntity.reconcile(state, 10, day2Event);
+        assertThat(day2Outcome.diff().newInterpellations()).isEmpty();
+        assertThat(day2Outcome.diff().updatedInterpellations()).isEmpty();
+
+        // Day 3: "79" reappears with a changed fingerprint; "301"/"401"/"501" reappear unchanged.
+        var day3Event = new TermSnapshotCollectedEvent(
+                20260103,
+                "timer",
+                "instance-3",
+                Map.of("79", "hash-79-v2"),
+                Map.of("79", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 79", "https://sejm.example/79")),
+                List.of("301"),
+                List.of("401"),
+                List.of("501"));
+        var day3Outcome = TermSnapshotReconcilerEntity.reconcile(state, 10, day3Event);
+
+        assertThat(day3Outcome.diff().newInterpellations()).isEmpty();
+        assertThat(day3Outcome.diff().updatedInterpellations()).containsExactly("79");
+        assertThat(day3Outcome.diff().newWrittenQuestions()).isEmpty();
+        assertThat(day3Outcome.diff().newPrints()).isEmpty();
+        assertThat(day3Outcome.diff().newBills()).isEmpty();
+    }
+
+    @Test
     void givenDiffWithAllEvents_whenDispatching_thenInvokesSeparatedHandlers() {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
         var probe = new DispatchProbeEntity(ownerNotifier);
