@@ -20,9 +20,21 @@ import com.microsoft.durabletask.EntityInstanceId;
 import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
 
+import onlexnet.app.ports.out.EntityRecognitionPort;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
+import onlexnet.app.ports.out.RecognizedEntities;
+import onlexnet.app.ports.out.RecognizedEntity;
+import onlexnet.app.ports.out.SejmApiClient;
 
 class TermSnapshotReconcilerEntityTest {
+
+    private static TermSnapshotReconcilerEntity newEntity(ProjectOwnerNotifier ownerNotifier) {
+        return new TermSnapshotReconcilerEntity(
+                ownerNotifier,
+                mock(SejmApiClient.class),
+                mock(EntityRecognitionPort.class),
+                new InterpellationEntitySummaryPresenter());
+    }
 
     @Test
     void givenKnownOperationName_whenResolving_thenReturnsExpectedBinding() {
@@ -189,7 +201,7 @@ class TermSnapshotReconcilerEntityTest {
     @Test
     void givenDiffWithoutChanges_whenDispatching_thenDoesNotNotifyOwner() {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
-        var entity = new TermSnapshotReconcilerEntity(ownerNotifier);
+        var entity = newEntity(ownerNotifier);
         var diff = new TermSnapshotReconcilerEntity.TermSnapshotDiff(
                 10,
                 List.of(),
@@ -214,7 +226,7 @@ class TermSnapshotReconcilerEntityTest {
     @Test
     void givenNewInterpellationsWithPresentation_whenHandling_thenSendsDetailedOwnerMessageWithLinks() {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
-        var entity = new TermSnapshotReconcilerEntity(ownerNotifier);
+        var entity = newEntity(ownerNotifier);
 
         entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
                 10,
@@ -231,9 +243,35 @@ class TermSnapshotReconcilerEntityTest {
     }
 
     @Test
+    void givenRecognizedEntitiesInBody_whenHandlingNewInterpellation_thenAppendsUnifiedEntitySummary() {
+        var ownerNotifier = mock(ProjectOwnerNotifier.class);
+        var sejmApiClient = mock(SejmApiClient.class);
+        var entityRecognitionPort = mock(EntityRecognitionPort.class);
+        when(sejmApiClient.fetchInterpellationBodyText(10, 79)).thenReturn("Pan Jan Kowalski z Warszawy...");
+        when(entityRecognitionPort.recognize("Pan Jan Kowalski z Warszawy...")).thenReturn(new RecognizedEntities(
+                List.of(new RecognizedEntity("Jan Kowalski", null)),
+                List.of(new RecognizedEntity("PKN Orlen", "Orlen S.A.")),
+                List.of(new RecognizedEntity("Warszawy", "Warszawa"))));
+        var entity = new TermSnapshotReconcilerEntity(
+                ownerNotifier,
+                sejmApiClient,
+                entityRecognitionPort,
+                new InterpellationEntitySummaryPresenter());
+
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+                10,
+                List.of("79"),
+                Map.of("79", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 79", "https://sejm.example/79"))));
+
+        verify(ownerNotifier).notifyOwner(contains("Osoby: Jan Kowalski"));
+        verify(ownerNotifier).notifyOwner(contains("Firmy: Orlen S.A."));
+        verify(ownerNotifier).notifyOwner(contains("Miejscowości: Warszawa"));
+    }
+
+    @Test
     void givenMissingPresentationData_whenHandlingNewInterpellations_thenUsesFallbackValues() {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
-        var entity = new TermSnapshotReconcilerEntity(ownerNotifier);
+        var entity = newEntity(ownerNotifier);
 
         entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
                 10,
@@ -247,7 +285,7 @@ class TermSnapshotReconcilerEntityTest {
     @Test
     void givenLargeNewInterpellationList_whenHandling_thenSplitsDetailedNotificationIntoChunks() {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
-        var entity = new TermSnapshotReconcilerEntity(ownerNotifier);
+        var entity = newEntity(ownerNotifier);
 
         var numbers = new java.util.ArrayList<String>();
         var presentation = new java.util.HashMap<String, TermSnapshotCollectedEvent.InterpellationPresentation>();
@@ -279,7 +317,11 @@ class TermSnapshotReconcilerEntityTest {
         private int newBillsEvents;
 
         private DispatchProbeEntity(ProjectOwnerNotifier ownerNotifier) {
-            super(ownerNotifier);
+            super(
+                    ownerNotifier,
+                    mock(SejmApiClient.class),
+                    mock(EntityRecognitionPort.class),
+                    new InterpellationEntitySummaryPresenter());
         }
 
         @Override

@@ -181,6 +181,44 @@ class DefaultSejmApiClient implements SejmApiClient {
         return nullSafe(writtenQuestions).stream().map(this::mapWrittenQuestion).toList();
     }
 
+    @Override
+    public @Nullable String fetchInterpellationBodyText(int termNum, int interpellationNum) {
+        var uri = URI.create(this.basePath + "/sejm/term" + termNum + "/interpellations/" + interpellationNum + "/body");
+        var request = HttpRequest.newBuilder(uri).GET().build();
+        try {
+            var response = this.httpClient.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            if (response.statusCode() >= 400) {
+                return null;
+            }
+            var html = response.body();
+            if (html == null || html.isBlank()) {
+                return null;
+            }
+            return htmlToPlainText(html);
+        } catch (IOException | InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Failed to fetch interpellation body text", exception);
+        }
+    }
+
+    private static String htmlToPlainText(String html) {
+        var withoutNonContent = html.replaceAll("(?is)<(script|style)\\b[^>]*>.*?</\\1>", " ");
+        var withLineBreaks = withoutNonContent.replaceAll("(?i)<(br|/p|/div|/li)\\s*/?>", "\n");
+        var withoutTags = withLineBreaks.replaceAll("(?s)<[^>]+>", " ");
+        var decoded = decodeHtmlEntities(withoutTags);
+        return decoded.replaceAll("[ \\t]+", " ").replaceAll("\\n\\s*\\n+", "\n").trim();
+    }
+
+    private static String decodeHtmlEntities(String text) {
+        return text
+                .replace("&nbsp;", " ")
+                .replace("&amp;", "&")
+                .replace("&lt;", "<")
+                .replace("&gt;", ">")
+                .replace("&quot;", "\"")
+                .replace("&#39;", "'");
+    }
+
     /**
      * Fetches an interpellation attachment and returns a JSON payload containing either extracted text
      * (for textual formats, including PDF) or Base64-encoded binary content.

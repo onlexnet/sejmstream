@@ -86,9 +86,11 @@ public interface SejmApiClient {
     List<InterpellationItem> fetchInterpellationsModifiedSince(int termNum, LocalDateTime since);
     List<WrittenQuestionItem> fetchWrittenQuestionsModifiedSince(int termNum, LocalDateTime since);
     List<BillItem> fetchBillsReceivedSince(int termNum, LocalDate since);
+    @Nullable String fetchInterpellationBodyText(int termNum, int interpellationNum);
 }
 ```
-**Adapter**: `DefaultSejmApiClient` (OpenAPI-generated REST client wrapping `api.sejm.gov.pl`)
+**Adapter**: `DefaultSejmApiClient` (OpenAPI-generated REST client wrapping `api.sejm.gov.pl`).
+`fetchInterpellationBodyText` downloads the interpellation's HTML body and strips it to plain text for downstream entity recognition.
 
 ---
 
@@ -202,6 +204,24 @@ public interface AdminAccessPolicy {
 }
 ```
 **Adapter**: `PropertyAdminAccessPolicy` (compares `ExternalActor.externalId` against `TELEGRAM_ALLOWED_CHAT_ID` config)
+
+---
+
+### EntityRecognitionPort
+```java
+public interface EntityRecognitionPort {
+    RecognizedEntities recognize(String text);
+}
+```
+**Result**: `RecognizedEntities(List<RecognizedEntity> persons, List<RecognizedEntity> organizations, List<RecognizedEntity> locations)`,
+where `RecognizedEntity(String mentionText, @Nullable String canonicalName)` carries an Entity-Linking canonical name when available.
+
+**Adapter**: `AzureLanguageEntityRecognitionAdapter` (Azure AI Language `analyze-text` REST API — NER + Entity Linking).
+Disabled (returns `RecognizedEntities.empty()`) when `AZURE_LANGUAGE_ENDPOINT`/`AZURE_LANGUAGE_KEY` are not configured.
+
+Used by `TermSnapshotReconcilerEntity` to enrich the "new interpellations" Telegram owner notification with recognized
+persons/organizations/locations found in the interpellation body (fetched via `SejmApiClient.fetchInterpellationBodyText`),
+unified via `InterpellationEntitySummaryPresenter`.
 
 ---
 

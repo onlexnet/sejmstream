@@ -86,6 +86,15 @@ public interface SejmApiClient {
         record Missing() implements InterpellationLinks {}
     }
 
+    /**
+     * Fetches the plain-text body of an interpellation, extracted from its HTML content.
+     *
+     * @param termNum Sejm term number.
+     * @param interpellationNum interpellation number within the term.
+     * @return plain text content, or {@code null} when unavailable.
+     */
+    @Nullable String fetchInterpellationBodyText(int termNum, int interpellationNum);
+
     record InterpellationItem(
         int num,
         String title,

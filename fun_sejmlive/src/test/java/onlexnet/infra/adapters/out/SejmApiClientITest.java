@@ -124,6 +124,16 @@ class SejmApiClientITest extends PostgresIntegrationTestSupport {
         }
     }
 
+    @Test
+    void givenKnownInterpellation_whenFetchingBodyText_thenReturnsPlainTextWithoutHtmlTags() {
+        var bodyText = assertCallReachable(
+            "fetchInterpellationBodyText",
+            () -> this.sejmApiClient.fetchInterpellationBodyText(TERM_9, Integer.parseInt(INTERPELLATION_NUM)));
+
+        assertThat(bodyText).isNotBlank();
+        assertThat(bodyText).doesNotContain("<");
+    }
+
     private static ApiClient createApiClientForHtmlStringResponses() {
         var mapper = ApiClient.createDefaultMapper(ApiClient.createDefaultDateFormat());
         var restClient = ApiClient.buildRestClientBuilder(mapper)

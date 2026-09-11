@@ -17,7 +17,9 @@ import com.microsoft.durabletask.TaskEntityOperation;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import onlexnet.app.ports.out.EntityRecognitionPort;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
+import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.base.EntityComponent;
@@ -31,6 +33,9 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
     private static final int TELEGRAM_MESSAGE_LIMIT = 3900;
 
     private final ProjectOwnerNotifier projectOwnerNotifier;
+    private final SejmApiClient sejmApiClient;
+    private final EntityRecognitionPort entityRecognitionPort;
+    private final InterpellationEntitySummaryPresenter entitySummaryPresenter;
 
     private TermSnapshotReconcilerEntityState state = UninitializedTermSnapshotReconcilerState.INSTANCE;
     private TaskEntityLifecycleContext context = TaskEntityLifecycleContext.uninitialized();
@@ -142,7 +147,7 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
         }
     }
 
-    private static String toOwnerNewInterpellationsMessage(NewInterpellationsDetectedEvent event) {
+    private String toOwnerNewInterpellationsMessage(NewInterpellationsDetectedEvent event) {
         var message = new StringBuilder();
         message.append("Nowe interpelacje wykryte")
                 .append("\nKadencja: ").append(event.termNum())
@@ -161,8 +166,27 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
 
             message.append("\n- ").append(interpellationNum).append(": ").append(title)
                     .append("\n  ").append(webDescriptionUrl);
+            var recognizedEntitiesSummary = describeRecognizedEntities(event.termNum(), interpellationNum);
+            if (!recognizedEntitiesSummary.isBlank()) {
+                message.append("\n").append(recognizedEntitiesSummary);
+            }
         }
         return message.toString();
+    }
+
+    private String describeRecognizedEntities(int termNum, String interpellationNum) {
+        try {
+            var interpellationNumValue = Integer.parseInt(interpellationNum);
+            var bodyText = this.sejmApiClient.fetchInterpellationBodyText(termNum, interpellationNumValue);
+            if (bodyText == null || bodyText.isBlank()) {
+                return "";
+            }
+            var recognizedEntities = this.entityRecognitionPort.recognize(bodyText);
+            return this.entitySummaryPresenter.present(recognizedEntities);
+        } catch (RuntimeException exception) {
+            log.warn("Failed to recognize entities for term {} interpellation {}", termNum, interpellationNum, exception);
+            return "";
+        }
     }
 
     private static List<String> chunkMessage(String message) {

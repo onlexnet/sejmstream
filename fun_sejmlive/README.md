@@ -79,6 +79,7 @@ Common optional settings:
 - `APPINSIGHTS_INSTRUMENTATIONKEY` (legacy)
 - `LIQUIBASE_ENABLED` (defaults to `false` via `application.properties`)
 - `sejm.api.base-path` (defaults to `https://api.sejm.gov.pl`)
+- `AZURE_LANGUAGE_ENDPOINT` / `AZURE_LANGUAGE_KEY` (Azure AI Language resource for interpellation entity recognition/linking; when unset, entity recognition is disabled and the new-interpellations Telegram notification omits the entity summary)
 - `INTERPELLATION_PUBLISH_QUEUE_NAME` (default `sejm-interpellations-publish`)
 - `INTERPELLATION_PUBLISH_DEAD_LETTER_QUEUE_NAME` (default `sejm-interpellations-publish-deadletter`)
 - `INTERPELLATION_PUBLISH_MAX_ATTEMPTS` (default `5`)
