@@ -158,11 +158,19 @@ public interface SejmDailyDigestPersistence {
     int upsertItem(LocalDate date, String dataType, String itemKey, String title, String itemJson);
     List<Map<String, Object>> findByDate(LocalDate date);
     List<Map<String, Object>> findByDateAndType(LocalDate date, String dataType);
+    Optional<LocalDateTime> findLatestModificationWatermark(String dataType, int termNum);
+    void upsertLatestModificationWatermark(String dataType, int termNum, LocalDateTime lastModifiedAtUtc);
     int insertPublishLog(LocalDate date, @Nullable String message, boolean success, @Nullable String errorMsg);
     boolean alreadyPublishedToday(LocalDate date);
 }
 ```
 **Adapter**: `DefaultSejmDailyDigestPersistence` (JdbcTemplate, PostgreSQL with `INSERT ... ON CONFLICT DO UPDATE`)
+
+For `INTERPELLATION`, collection now uses a persistent source-modification watermark per `dataType + termNum`.
+The next `modifiedSince` timestamp is derived from:
+- latest watermark day minus one-day overlap,
+- capped to at most 90 days back from current collection date.
+Watermark updates are monotonic and stored in UTC.
 
 ---
 

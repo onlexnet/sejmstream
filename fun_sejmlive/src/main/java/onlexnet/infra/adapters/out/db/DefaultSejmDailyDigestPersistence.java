@@ -86,6 +86,40 @@ public class DefaultSejmDailyDigestPersistence
     }
 
     @Override
+    public java.util.Optional<LocalDateTime> findLatestModificationWatermark(String dataType, int termNum) {
+        var sql = """
+                SELECT last_modified_at_utc
+                FROM sejm_collect_watermark
+                WHERE data_type = ?
+                  AND term_num = ?
+                """;
+        var rows = this.jdbcTemplate.queryForList(sql, Timestamp.class, dataType, termNum);
+        if (rows.isEmpty() || rows.getFirst() == null) {
+            return java.util.Optional.empty();
+        }
+        return java.util.Optional.of(rows.getFirst().toLocalDateTime());
+    }
+
+    @Override
+    public void upsertLatestModificationWatermark(String dataType, int termNum, LocalDateTime lastModifiedAtUtc) {
+        var sql = """
+                INSERT INTO sejm_collect_watermark (
+                    data_type,
+                    term_num,
+                    last_modified_at_utc,
+                    updated_at
+                ) VALUES (?, ?, ?, NOW())
+                ON CONFLICT (data_type, term_num)
+                DO UPDATE SET
+                    last_modified_at_utc = GREATEST(
+                        sejm_collect_watermark.last_modified_at_utc,
+                        EXCLUDED.last_modified_at_utc),
+                    updated_at = NOW()
+                """;
+        this.jdbcTemplate.update(sql, dataType, termNum, Timestamp.valueOf(lastModifiedAtUtc));
+    }
+
+    @Override
         public int insertPublishLog(LocalDate date, @Nullable String message,
             boolean success, @Nullable String errorMsg) {
         var sql = """

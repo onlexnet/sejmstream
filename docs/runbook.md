@@ -261,6 +261,24 @@ Configure these alert rules in Azure Monitor using the KQL above.
 2. Check if current term number is correct
 3. Review Application Insights traces for API response details
 
+### Interpellation Watermark Stuck or Missing Recent Data
+**Symptom**: Interpellation collection runs but recently modified interpellations are missing, or
+collection appears to re-scan a much wider window than expected  
+**Background**: interpellation collection derives `modifiedSince` from a persisted watermark in
+`sejm_collect_watermark` (per `data_type` + `term_num`), not from the current date. The watermark
+advances only forward and only after a successful batch; the effective `since` is
+`watermark_day - 1 day overlap`, capped to at most 90 days before the collection date.  
+**Check**:
+1. Inspect the current watermark with the `Interpellation collection watermark per term` query above.
+2. If `last_modified_at_utc` is older than expected, confirm recent collection runs succeeded (a failed
+   batch does not advance the watermark, so repeated failures can make the window grow, bounded by the
+   90-day cap).
+3. If there is no row for the term, collection bootstraps to `collection date - 90 days` on the next run.  
+**Recovery**: to force a full re-scan for a term, delete its row so collection bootstraps again:
+```sql
+DELETE FROM sejm_collect_watermark WHERE data_type = 'INTERPELLATION' AND term_num = <term>;
+```
+
 ### Queue Poison Messages
 **Symptom**: Messages repeatedly fail and land in dead-letter queue  
 **Investigate**:
@@ -365,6 +383,12 @@ SELECT interpellation_title, attempt, last_error, updated_at
 FROM sejm_interpellation_publish_state
 WHERE status = 'DEAD_LETTER'
 ORDER BY updated_at DESC;
+
+-- Interpellation collection watermark per term
+SELECT data_type, term_num, last_modified_at_utc, updated_at
+FROM sejm_collect_watermark
+WHERE data_type = 'INTERPELLATION'
+ORDER BY term_num;
 ```
 
 ---

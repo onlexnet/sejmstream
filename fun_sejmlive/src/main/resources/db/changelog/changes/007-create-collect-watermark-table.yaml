@@ -1,0 +1,57 @@
+databaseChangeLog:
+  - changeSet:
+      id: 007-create-collect-watermark-table
+      author: copilot
+      changes:
+        - createTable:
+            tableName: sejm_collect_watermark
+            columns:
+              - column:
+                  name: id
+                  type: BIGSERIAL
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: data_type
+                  type: VARCHAR(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: term_num
+                  type: INT
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_modified_at_utc
+                  type: TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP
+                  defaultValueComputed: NOW()
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: sejm_collect_watermark
+            columnNames: data_type, term_num
+            constraintName: uk_sejm_collect_watermark_type_term
+        - createIndex:
+            tableName: sejm_collect_watermark
+            indexName: idx_sejm_collect_watermark_data_type
+            columns:
+              - column:
+                  name: data_type
+        - createIndex:
+            tableName: sejm_collect_watermark
+            indexName: idx_sejm_collect_watermark_last_modified_at_utc
+            columns:
+              - column:
+                  name: last_modified_at_utc

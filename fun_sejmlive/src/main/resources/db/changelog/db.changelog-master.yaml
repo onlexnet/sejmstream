@@ -17,3 +17,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/changes/006-add-reply-state-columns.yaml
       relativeToChangelogFile: false
+  - include:
+      file: db/changelog/changes/007-create-collect-watermark-table.yaml
+      relativeToChangelogFile: false

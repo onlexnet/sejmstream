@@ -1,6 +1,7 @@
 package onlexnet.app.ports.out;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -33,6 +34,16 @@ public interface SejmDailyDigestPersistence {
      * Returns the latest snapshot collection date for the specified data type.
      */
     Optional<LocalDate> findLatestCollectionDateForType(String dataType);
+
+    /**
+     * Returns the latest known source modification timestamp in UTC for the given data type and term.
+     */
+    Optional<LocalDateTime> findLatestModificationWatermark(String dataType, int termNum);
+
+    /**
+     * Upserts the latest known source modification timestamp in UTC for the given data type and term.
+     */
+    void upsertLatestModificationWatermark(String dataType, int termNum, LocalDateTime lastModifiedAtUtc);
 
     /**
      * Writes a publishing attempt log entry.

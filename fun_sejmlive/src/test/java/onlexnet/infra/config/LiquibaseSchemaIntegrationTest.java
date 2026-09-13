@@ -39,6 +39,7 @@ class LiquibaseSchemaIntegrationTest extends PostgresIntegrationTestSupport {
     void clearDigestTables() {
         this.jdbcTemplate.update("TRUNCATE TABLE sejm_daily_digest_item RESTART IDENTITY CASCADE");
         this.jdbcTemplate.update("TRUNCATE TABLE sejm_publish_log RESTART IDENTITY CASCADE");
+        this.jdbcTemplate.update("TRUNCATE TABLE sejm_collect_watermark RESTART IDENTITY CASCADE");
     }
 
     @Test
@@ -49,16 +50,70 @@ class LiquibaseSchemaIntegrationTest extends PostgresIntegrationTestSupport {
                 WHERE table_schema = 'public'
                                     AND table_name IN (
                                             'sejm_daily_digest_item',
+                                            'sejm_collect_watermark',
                                             'sejm_publish_log',
                                             'sejm_interpellation_publish_state')
                 ORDER BY table_name
                 """, String.class);
 
         assertThat(tableNames).containsExactly(
-                "sejm_daily_digest_item",
+                            "sejm_collect_watermark",
+            "sejm_daily_digest_item",
                                 "sejm_interpellation_publish_state",
                 "sejm_publish_log");
     }
+
+                        @Test
+                        void givenLiquibaseConfiguration_whenContextStarts_thenCollectWatermarkColumnsMatchSchema() {
+                        var columns = findColumnsFor("sejm_collect_watermark");
+
+                        assertThat(columns)
+                            .extracting(ColumnDefinition::name,
+                                ColumnDefinition::dataType,
+                                ColumnDefinition::nullable,
+                                ColumnDefinition::maxLength,
+                                ColumnDefinition::defaultValue)
+                            .containsExactly(
+                                tuple("id", "bigint", false, null, null),
+                                tuple("data_type", "character varying", false, 50, null),
+                                tuple("term_num", "integer", false, null, null),
+                                tuple("last_modified_at_utc", "timestamp without time zone", false, null, null),
+                                tuple("created_at", "timestamp without time zone", false, null, "now()"),
+                                tuple("updated_at", "timestamp without time zone", false, null, "now()"));
+                        }
+
+                        @Test
+                        void givenLiquibaseConfiguration_whenContextStarts_thenCollectWatermarkUniqueConstraintExists() {
+                        var constraintName = this.jdbcTemplate.queryForObject("""
+                            SELECT con.conname
+                            FROM pg_constraint con
+                            JOIN pg_class rel ON rel.oid = con.conrelid
+                            JOIN pg_namespace nsp ON nsp.oid = con.connamespace
+                            WHERE nsp.nspname = 'public'
+                              AND rel.relname = 'sejm_collect_watermark'
+                              AND con.contype = 'u'
+                              AND pg_get_constraintdef(con.oid) =
+                                  'UNIQUE (data_type, term_num)'
+                            """, String.class);
+
+                        assertThat(constraintName)
+                            .isEqualTo("uk_sejm_collect_watermark_type_term");
+                        }
+
+                    @Test
+                    void givenNewerAndOlderWatermarkUpdates_whenUpsertWatermark_thenKeepsNewestTimestamp() {
+                        var persistence = createPersistence();
+                        var older = LocalDateTime.of(2026, 6, 10, 8, 0);
+                        var newer = LocalDateTime.of(2026, 6, 12, 14, 30);
+
+                        persistence.upsertLatestModificationWatermark("INTERPELLATION", 10, older);
+                        persistence.upsertLatestModificationWatermark("INTERPELLATION", 10, newer);
+                        persistence.upsertLatestModificationWatermark("INTERPELLATION", 10, older);
+
+                        var stored = persistence.findLatestModificationWatermark("INTERPELLATION", 10);
+
+                        assertThat(stored).contains(newer);
+                    }
 
     @Test
     void givenLiquibaseConfiguration_whenContextStarts_thenPhaseTwoUniqueConstraintExists() {

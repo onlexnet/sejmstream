@@ -38,6 +38,9 @@ import onlexnet.app.ports.out.SejmApiClient.WrittenQuestionItem;
 class SejmCollectServiceTest {
 
     private static final LocalDate TEST_DATE = LocalDate.of(2026, 6, 13);
+    private static final int INTERPELLATION_TERM = 10;
+    private static final LocalDateTime DEFAULT_INTERPELLATION_SINCE =
+            LocalDateTime.of(TEST_DATE.minusDays(90), LocalTime.MIDNIGHT);
 
     @Test
     void givenVotingItems_whenCollectVotings_thenUpsertsExpectedKeysAndPayloads() {
@@ -119,8 +122,8 @@ class SejmCollectServiceTest {
             queuePort,
             repository,
             objectMapper);
-        var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
-        when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
+        var expectedSince = DEFAULT_INTERPELLATION_SINCE;
+        when(sejmApiClient.fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince))
                 .thenReturn(List.of(InterpellationItem.missing(
                         77,
                         "Interpelacja testowa",
@@ -130,7 +133,7 @@ class SejmCollectServiceTest {
                         List.of(),
                         List.of())));
 
-        var count = service.collectInterpellations(10, TEST_DATE);
+        var count = service.collectInterpellations(INTERPELLATION_TERM, TEST_DATE);
 
         assertThat(count).isEqualTo(1);
         assertThat(repository.calls).hasSize(1);
@@ -142,7 +145,9 @@ class SejmCollectServiceTest {
             .isEqualTo("term-10-interpellation-77");
         assertThat(queuePort.enqueued.getFirst().message().attempt()).isEqualTo(1);
         assertThat(queuePort.enqueued.getFirst().visibilityDelay()).isEqualTo(Duration.ZERO);
-        verify(sejmApiClient).fetchInterpellationsModifiedSince(10, expectedSince);
+        verify(sejmApiClient).fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince);
+        assertThat(repository.latestWatermarkByTypeAndTerm.get("INTERPELLATION:10"))
+            .isEqualTo(LocalDateTime.of(2026, 6, 13, 0, 0));
     }
 
     @Test
@@ -157,8 +162,8 @@ class SejmCollectServiceTest {
             queuePort,
             repository,
             objectMapper);
-        var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
-        when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
+        var expectedSince = DEFAULT_INTERPELLATION_SINCE;
+        when(sejmApiClient.fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince))
                 .thenReturn(List.of(InterpellationItem.missing(
                         77,
                         "Interpelacja testowa",
@@ -169,7 +174,7 @@ class SejmCollectServiceTest {
                         List.of())));
         repository.statuses.put("10:77", "QUEUED");
 
-        var count = service.collectInterpellations(10, TEST_DATE);
+        var count = service.collectInterpellations(INTERPELLATION_TERM, TEST_DATE);
 
         assertThat(count).isEqualTo(1);
         assertThat(queuePort.enqueued).isEmpty();
@@ -188,8 +193,8 @@ class SejmCollectServiceTest {
             queuePort,
             repository,
             objectMapper);
-        var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
-        when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
+        var expectedSince = DEFAULT_INTERPELLATION_SINCE;
+        when(sejmApiClient.fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince))
             .thenReturn(List.of(InterpellationItem.missing(
                 77,
                 "Interpelacja testowa",
@@ -199,7 +204,7 @@ class SejmCollectServiceTest {
                 List.of(),
                 List.of())));
 
-        assertThatThrownBy(() -> service.collectInterpellations(10, TEST_DATE))
+        assertThatThrownBy(() -> service.collectInterpellations(INTERPELLATION_TERM, TEST_DATE))
             .isInstanceOf(IllegalStateException.class)
             .hasMessage("Failed to collect interpellations")
             .hasCauseInstanceOf(IllegalStateException.class)
@@ -222,8 +227,8 @@ class SejmCollectServiceTest {
             queuePort,
             repository,
             objectMapper);
-        var expectedSince = LocalDateTime.of(TEST_DATE, LocalTime.MIDNIGHT);
-        when(sejmApiClient.fetchInterpellationsModifiedSince(10, expectedSince))
+        var expectedSince = DEFAULT_INTERPELLATION_SINCE;
+        when(sejmApiClient.fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince))
             .thenReturn(List.of(InterpellationItem.missing(
                 77,
                 "Interpelacja testowa",
@@ -233,12 +238,100 @@ class SejmCollectServiceTest {
                 List.of(),
                 List.of())));
 
-        var count = service.collectInterpellations(10, TEST_DATE);
+        var count = service.collectInterpellations(INTERPELLATION_TERM, TEST_DATE);
 
         assertThat(count).isEqualTo(1);
         assertThat(queuePort.enqueued).hasSize(1);
         assertThat(repository.statuses.get("10:77")).isEqualTo("QUEUED");
         }
+
+    @Test
+    void givenWatermarkForTerm_whenCollectInterpellations_thenUsesOverlapDayAsSinceStart() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        repository.latestWatermarkByTypeAndTerm.put(
+                "INTERPELLATION:10",
+                LocalDateTime.of(2026, 6, 12, 14, 45));
+        var queuePort = new RecordingQueuePort();
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
+        var expectedSince = LocalDateTime.of(2026, 6, 11, 0, 0);
+        when(sejmApiClient.fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince))
+            .thenReturn(List.of());
+
+        var count = service.collectInterpellations(INTERPELLATION_TERM, TEST_DATE);
+
+        assertThat(count).isZero();
+        verify(sejmApiClient).fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince);
+    }
+
+    @Test
+    void givenVeryOldWatermark_whenCollectInterpellations_thenCapsSinceToNinetyDays() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        repository.latestWatermarkByTypeAndTerm.put(
+                "INTERPELLATION:10",
+                LocalDateTime.of(2026, 1, 1, 8, 0));
+        var queuePort = new RecordingQueuePort();
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
+        var expectedSince = DEFAULT_INTERPELLATION_SINCE;
+        when(sejmApiClient.fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince))
+            .thenReturn(List.of());
+
+        var count = service.collectInterpellations(INTERPELLATION_TERM, TEST_DATE);
+
+        assertThat(count).isZero();
+        verify(sejmApiClient).fetchInterpellationsModifiedSince(INTERPELLATION_TERM, expectedSince);
+    }
+
+    @Test
+    void givenMultipleLastModifiedValues_whenCollectInterpellations_thenSavesNewestWatermark() {
+        var sejmApiClient = org.mockito.Mockito.mock(SejmApiClient.class);
+        var repository = new RecordingRepository();
+        var queuePort = new RecordingQueuePort();
+        var objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
+        var service = new SejmCollectService(
+            sejmApiClient,
+            repository,
+            queuePort,
+            repository,
+            objectMapper);
+        when(sejmApiClient.fetchInterpellationsModifiedSince(INTERPELLATION_TERM, DEFAULT_INTERPELLATION_SINCE))
+            .thenReturn(List.of(
+                InterpellationItem.missing(
+                    77,
+                    "Interpelacja 77",
+                    List.of("Ministerstwo"),
+                    "2026-06-13",
+                    "2026-06-13T07:00:00+01:00",
+                    List.of(),
+                    List.of()),
+                InterpellationItem.missing(
+                    78,
+                    "Interpelacja 78",
+                    List.of("Ministerstwo"),
+                    "2026-06-13",
+                    "2026-06-13T09:30:00Z",
+                    List.of(),
+                    List.of())));
+
+        var count = service.collectInterpellations(INTERPELLATION_TERM, TEST_DATE);
+
+        assertThat(count).isEqualTo(2);
+        assertThat(repository.latestWatermarkByTypeAndTerm.get("INTERPELLATION:10"))
+            .isEqualTo(LocalDateTime.of(2026, 6, 13, 9, 30));
+    }
 
     @Test
     void givenPrintItems_whenCollectPrints_thenCallsPrintApiAndUsesNumberAsKey() {
@@ -448,6 +541,7 @@ class SejmCollectServiceTest {
         private final List<UpsertCall> calls = new ArrayList<>();
         private final Map<String, String> statuses = new HashMap<>();
             private final Map<String, LocalDate> latestCollectionDateByType = new HashMap<>();
+        private final Map<String, LocalDateTime> latestWatermarkByTypeAndTerm = new HashMap<>();
         private RuntimeException failWith;
 
         @Override
@@ -474,6 +568,20 @@ class SejmCollectServiceTest {
         @Override
         public java.util.Optional<LocalDate> findLatestCollectionDateForType(String dataType) {
             return java.util.Optional.ofNullable(this.latestCollectionDateByType.get(dataType));
+        }
+
+        @Override
+        public java.util.Optional<LocalDateTime> findLatestModificationWatermark(String dataType, int termNum) {
+            return java.util.Optional.ofNullable(this.latestWatermarkByTypeAndTerm.get(dataType + ":" + termNum));
+        }
+
+        @Override
+        public void upsertLatestModificationWatermark(String dataType, int termNum, LocalDateTime lastModifiedAtUtc) {
+            var key = dataType + ":" + termNum;
+            var current = this.latestWatermarkByTypeAndTerm.get(key);
+            if (current == null || lastModifiedAtUtc.isAfter(current)) {
+                this.latestWatermarkByTypeAndTerm.put(key, lastModifiedAtUtc);
+            }
         }
 
         @Override

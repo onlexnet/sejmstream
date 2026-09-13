@@ -218,6 +218,16 @@ class SejmDigestServiceTest {
         }
 
         @Override
+        public java.util.Optional<LocalDateTime> findLatestModificationWatermark(String dataType, int termNum) {
+            return java.util.Optional.empty();
+        }
+
+        @Override
+        public void upsertLatestModificationWatermark(String dataType, int termNum, LocalDateTime lastModifiedAtUtc) {
+            throw new UnsupportedOperationException("Not used by this test");
+        }
+
+        @Override
         public int insertPublishLog(LocalDate date, @Nullable String message,
                 boolean success, @Nullable String errorMsg) {
             throw new UnsupportedOperationException("Not used by this test");

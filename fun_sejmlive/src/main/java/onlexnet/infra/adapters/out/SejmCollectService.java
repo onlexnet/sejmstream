@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Instant;
 import java.time.Duration;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -41,6 +44,9 @@ import onlexnet.app.ports.out.SejmDailyDigestPersistence;
 public class SejmCollectService implements SejmCollectOperations {
 
     private static final Logger LOGGER = Logger.getLogger(SejmCollectService.class.getName());
+    private static final String DATA_TYPE_INTERPELLATION = "INTERPELLATION";
+    private static final int INTERPELLATION_WATERMARK_OVERLAP_DAYS = 1;
+    private static final int INTERPELLATION_MAX_BACKFILL_DAYS = 90;
 
     private final SejmApiClient sejmApiClient;
     private final SejmDailyDigestPersistence repository;
@@ -115,7 +121,7 @@ public class SejmCollectService implements SejmCollectOperations {
      */
     public int collectInterpellations(int termNum, LocalDate date) {
         try {
-            var since = startOfDay(date);
+            var since = resolveInterpellationSince(termNum, date);
             var items = this.sejmApiClient.fetchInterpellationsModifiedSince(termNum, since);
             if (items == null) {
                 LOGGER.fine(buildNoItemsMessage(termNum, "interpellations", since, date));
@@ -123,6 +129,7 @@ public class SejmCollectService implements SejmCollectOperations {
             }
 
             var count = 0;
+            LocalDateTime latestSourceModification = null;
             for (var item : items) {
                 if (item == null) {
                     continue;
@@ -130,11 +137,19 @@ public class SejmCollectService implements SejmCollectOperations {
 
                 count += this.repository.upsertItem(
                         date,
-                        "INTERPELLATION",
+                        DATA_TYPE_INTERPELLATION,
                         String.valueOf(item.num()),
                         item.title(),
                         toJson(item));
                 enqueueInterpellationPublish(termNum, date, item);
+                latestSourceModification = pickLatest(latestSourceModification, parseSourceLastModified(item.lastModified()));
+            }
+
+            if (latestSourceModification != null) {
+                this.repository.upsertLatestModificationWatermark(
+                        DATA_TYPE_INTERPELLATION,
+                        termNum,
+                        latestSourceModification);
             }
 
             LOGGER.fine("Collected " + count + " interpellation(s) for term " + termNum);
@@ -276,6 +291,51 @@ public class SejmCollectService implements SejmCollectOperations {
      */
     private LocalDateTime startOfDay(LocalDate date) {
         return LocalDateTime.of(date, LocalTime.MIDNIGHT);
+    }
+
+    private LocalDateTime resolveInterpellationSince(int termNum, LocalDate date) {
+        var lowerBoundDate = date.minusDays(INTERPELLATION_MAX_BACKFILL_DAYS);
+        var candidateDate = this.repository
+                .findLatestModificationWatermark(DATA_TYPE_INTERPELLATION, termNum)
+                .map(LocalDateTime::toLocalDate)
+                .map(lastKnownDate -> lastKnownDate.minusDays(INTERPELLATION_WATERMARK_OVERLAP_DAYS))
+                .orElse(lowerBoundDate);
+
+        var boundedDate = candidateDate.isBefore(lowerBoundDate) ? lowerBoundDate : candidateDate;
+        var safeDate = boundedDate.isAfter(date) ? date : boundedDate;
+        return startOfDay(safeDate);
+    }
+
+    private @Nullable LocalDateTime parseSourceLastModified(@Nullable String sourceTimestamp) {
+        if (sourceTimestamp == null || sourceTimestamp.isBlank()) {
+            return null;
+        }
+        try {
+            return OffsetDateTime.parse(sourceTimestamp).withOffsetSameInstant(ZoneOffset.UTC).toLocalDateTime();
+        } catch (DateTimeParseException offsetParseException) {
+            try {
+                return LocalDateTime.parse(sourceTimestamp);
+            } catch (DateTimeParseException localDateTimeParseException) {
+                try {
+                    return LocalDate.parse(sourceTimestamp).atStartOfDay();
+                } catch (DateTimeParseException localDateParseException) {
+                    LOGGER.fine("Skipping unparseable interpellation lastModified value: " + sourceTimestamp);
+                    return null;
+                }
+            }
+        }
+    }
+
+    private static @Nullable LocalDateTime pickLatest(
+            @Nullable LocalDateTime current,
+            @Nullable LocalDateTime candidate) {
+        if (candidate == null) {
+            return current;
+        }
+        if (current == null || candidate.isAfter(current)) {
+            return candidate;
+        }
+        return current;
     }
 
     /**
