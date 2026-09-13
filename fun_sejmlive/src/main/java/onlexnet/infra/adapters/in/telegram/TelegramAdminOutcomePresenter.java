@@ -13,6 +13,9 @@ import onlexnet.app.ports.in.admin.AdminOutcome;
 @Component
 public final class TelegramAdminOutcomePresenter {
 
+    // Telegram's practical per-message cap is 4096 chars. We keep a 196-char buffer
+    // to stay under the API ceiling after escaping/formatting overhead and because
+    // the sender splits long texts before delivery.
     private static final int TELEGRAM_MESSAGE_LIMIT = 3900;
 
     /**

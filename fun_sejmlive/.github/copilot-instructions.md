@@ -69,6 +69,8 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Add JavaDoc for public APIs and complex methods
 - Use inline comments sparingly - code should be self-documenting
 - Keep README and documentation up to date
+- When defining a magic number or hard-coded threshold, add a brief comment explaining why that value exists and what contract or system boundary it protects.
+- If a literal is not self-evident, prefer a named constant and document the rationale alongside it.
 
 ### Performance & Best Practices
 - Close resources properly (use try-with-resources)

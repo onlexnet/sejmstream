@@ -30,6 +30,10 @@ import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 @RequiredArgsConstructor
 public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContractV1, EntityComponent {
 
+    // Telegram accepts messages up to 4096 chars, but we keep a safety margin for
+    // UTF-8 / markdown overhead and to avoid sending a payload that is right on the
+    // API boundary. The chunking logic below splits longer content into smaller
+    // messages before delivery.
     private static final int TELEGRAM_MESSAGE_LIMIT = 3900;
 
     private final ProjectOwnerNotifier projectOwnerNotifier;
