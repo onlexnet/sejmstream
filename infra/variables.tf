@@ -209,6 +209,36 @@ variable "language_service_sku" {
   }
 }
 
+variable "foundry_location_service_sku" {
+  description = "SKU for the Azure AI Foundry (AIServices) resource hosting the location-extraction model deployment."
+  type        = string
+  default     = "S0"
+}
+
+variable "foundry_location_model_name" {
+  description = "Name of the OpenAI-compatible model deployed in Foundry for Polish locality extraction (extraction-only, no agent)."
+  type        = string
+  default     = "gpt-4.1-nano"
+}
+
+variable "foundry_location_model_version" {
+  description = "Version of foundry_location_model_name to deploy."
+  type        = string
+  default     = "2025-04-14"
+}
+
+variable "foundry_location_deployment_name" {
+  description = "Deployment name for the location-extraction model, referenced as AZURE_FOUNDRY_LOCATION_DEPLOYMENT."
+  type        = string
+  default     = "location-extraction"
+}
+
+variable "foundry_location_deployment_capacity" {
+  description = "Provisioned throughput units (TPM/1000) for the location-extraction model deployment."
+  type        = number
+  default     = 10
+}
+
 variable "github_owner" {
   description = "GitHub organization or user owning the repository."
   type        = string

@@ -51,6 +51,7 @@ locals {
   function_app_name             = "${local.resource_prefix}-func-flex-${local.global_suffix}"
   durable_task_scheduler_name   = "${local.resource_prefix}-dts-${local.global_suffix}"
   language_service_name         = "${local.resource_prefix}-lang-${local.global_suffix}"
+  foundry_location_service_name = "${local.resource_prefix}-foundry-loc-${local.global_suffix}"
 }
 
 resource "azurerm_resource_group" "main" {
@@ -69,6 +70,35 @@ resource "azurerm_cognitive_account" "language" {
   sku_name              = var.language_service_sku
   custom_subdomain_name = local.language_service_name
   tags                  = local.common_tags
+}
+
+# Azure AI Foundry (Azure OpenAI-compatible) resource hosting the dedicated Polish-locality
+# extraction model used by LocationExtractionPort / FoundryLocationExtractionAdapter. This is a
+# model deployment for extraction only, not an agent.
+resource "azurerm_cognitive_account" "foundry_location" {
+  name                  = local.foundry_location_service_name
+  location              = azurerm_resource_group.main.location
+  resource_group_name   = azurerm_resource_group.main.name
+  kind                  = "AIServices"
+  sku_name              = var.foundry_location_service_sku
+  custom_subdomain_name = local.foundry_location_service_name
+  tags                  = local.common_tags
+}
+
+resource "azurerm_cognitive_deployment" "location_extraction" {
+  name                 = var.foundry_location_deployment_name
+  cognitive_account_id = azurerm_cognitive_account.foundry_location.id
+
+  model {
+    format  = "OpenAI"
+    name    = var.foundry_location_model_name
+    version = var.foundry_location_model_version
+  }
+
+  sku {
+    name     = "Standard"
+    capacity = var.foundry_location_deployment_capacity
+  }
 }
 
 resource "azapi_resource" "durable_task_scheduler" {
@@ -258,6 +288,9 @@ resource "azurerm_function_app_flex_consumption" "main" {
       TELEGRAM_ALLOWED_CHAT_ID                       = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.telegram_allowed_chat_id[0].versionless_id})"
       AZURE_LANGUAGE_ENDPOINT                        = azurerm_cognitive_account.language.endpoint
       AZURE_LANGUAGE_KEY                             = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.language_key.versionless_id})"
+      AZURE_FOUNDRY_LOCATION_ENDPOINT                = azurerm_cognitive_account.foundry_location.endpoint
+      AZURE_FOUNDRY_LOCATION_KEY                     = "@Microsoft.KeyVault(SecretUri=${azurerm_key_vault_secret.foundry_location_key.versionless_id})"
+      AZURE_FOUNDRY_LOCATION_DEPLOYMENT              = azurerm_cognitive_deployment.location_extraction.name
       INTERPELLATION_PUBLISH_QUEUE_NAME              = azurerm_storage_queue.interpellation_publish.name
       INTERPELLATION_PUBLISH_DEAD_LETTER_QUEUE_NAME  = azurerm_storage_queue.interpellation_publish_dead_letter.name
       INTERPELLATION_PUBLISH_MAX_ATTEMPTS            = tostring(var.interpellation_publish_max_attempts)
@@ -442,6 +475,12 @@ resource "azurerm_key_vault_secret" "telegram_allowed_chat_id" {
 resource "azurerm_key_vault_secret" "language_key" {
   name         = "language-service-key"
   value        = azurerm_cognitive_account.language.primary_access_key
+  key_vault_id = azurerm_key_vault.main.id
+}
+
+resource "azurerm_key_vault_secret" "foundry_location_key" {
+  name         = "foundry-location-service-key"
+  value        = azurerm_cognitive_account.foundry_location.primary_access_key
   key_vault_id = azurerm_key_vault.main.id
 }
 
