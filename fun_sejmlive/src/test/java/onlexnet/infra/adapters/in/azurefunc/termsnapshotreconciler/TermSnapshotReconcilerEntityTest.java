@@ -21,6 +21,8 @@ import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
 
 import onlexnet.app.ports.out.EntityRecognitionPort;
+import onlexnet.app.ports.out.LocationCandidate;
+import onlexnet.app.ports.out.LocationExtractionPort;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
 import onlexnet.app.ports.out.RecognizedEntities;
 import onlexnet.app.ports.out.RecognizedEntity;
@@ -33,6 +35,7 @@ class TermSnapshotReconcilerEntityTest {
                 ownerNotifier,
                 mock(SejmApiClient.class),
                 mock(EntityRecognitionPort.class),
+                mock(LocationExtractionPort.class),
                 new InterpellationEntitySummaryPresenter());
     }
 
@@ -256,6 +259,7 @@ class TermSnapshotReconcilerEntityTest {
                 ownerNotifier,
                 sejmApiClient,
                 entityRecognitionPort,
+                mock(LocationExtractionPort.class),
                 new InterpellationEntitySummaryPresenter());
 
         entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
@@ -266,6 +270,31 @@ class TermSnapshotReconcilerEntityTest {
         verify(ownerNotifier).notifyOwner(contains("Osoby: Jan Kowalski"));
         verify(ownerNotifier).notifyOwner(contains("Firmy: Orlen S.A."));
         verify(ownerNotifier).notifyOwner(contains("Miejscowości: Warszawa"));
+    }
+
+    @Test
+    void givenLocationExtractionResults_whenHandlingNewInterpellation_thenPrefersThemOverGeneralNerLocations() {
+        var ownerNotifier = mock(ProjectOwnerNotifier.class);
+        var sejmApiClient = mock(SejmApiClient.class);
+        var entityRecognitionPort = mock(EntityRecognitionPort.class);
+        var locationExtractionPort = mock(LocationExtractionPort.class);
+        when(sejmApiClient.fetchInterpellationBodyText(10, 79)).thenReturn("Interpelacja dotyczy Białegostoku.");
+        when(entityRecognitionPort.recognize("Interpelacja dotyczy Białegostoku.")).thenReturn(RecognizedEntities.empty());
+        when(locationExtractionPort.extractLocations("Interpelacja dotyczy Białegostoku.")).thenReturn(List.of(
+                new LocationCandidate("Białegostoku", "Białystok", "podlaskie", null, null, null, 0.95)));
+        var entity = new TermSnapshotReconcilerEntity(
+                ownerNotifier,
+                sejmApiClient,
+                entityRecognitionPort,
+                locationExtractionPort,
+                new InterpellationEntitySummaryPresenter());
+
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+                10,
+                List.of("79"),
+                Map.of("79", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 79", "https://sejm.example/79"))));
+
+        verify(ownerNotifier).notifyOwner(contains("Miejscowości: Białystok (podlaskie)"));
     }
 
     @Test
@@ -321,6 +350,7 @@ class TermSnapshotReconcilerEntityTest {
                     ownerNotifier,
                     mock(SejmApiClient.class),
                     mock(EntityRecognitionPort.class),
+                    mock(LocationExtractionPort.class),
                     new InterpellationEntitySummaryPresenter());
         }
 

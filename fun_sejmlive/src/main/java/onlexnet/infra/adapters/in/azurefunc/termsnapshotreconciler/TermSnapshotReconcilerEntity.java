@@ -18,6 +18,7 @@ import com.microsoft.durabletask.TaskEntityOperation;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.ports.out.EntityRecognitionPort;
+import onlexnet.app.ports.out.LocationExtractionPort;
 import onlexnet.app.ports.out.ProjectOwnerNotifier;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
@@ -39,6 +40,7 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
     private final ProjectOwnerNotifier projectOwnerNotifier;
     private final SejmApiClient sejmApiClient;
     private final EntityRecognitionPort entityRecognitionPort;
+    private final LocationExtractionPort locationExtractionPort;
     private final InterpellationEntitySummaryPresenter entitySummaryPresenter;
 
     private TermSnapshotReconcilerEntityState state = UninitializedTermSnapshotReconcilerState.INSTANCE;
@@ -186,7 +188,8 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
                 return "";
             }
             var recognizedEntities = this.entityRecognitionPort.recognize(bodyText);
-            return this.entitySummaryPresenter.present(recognizedEntities);
+            var locations = this.locationExtractionPort.extractLocations(bodyText);
+            return this.entitySummaryPresenter.present(recognizedEntities, locations);
         } catch (RuntimeException exception) {
             log.warn("Failed to recognize entities for term {} interpellation {}", termNum, interpellationNum, exception);
             return "";

@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import onlexnet.app.ports.out.LocationCandidate;
 import onlexnet.app.ports.out.RecognizedEntities;
 import onlexnet.app.ports.out.RecognizedEntity;
 
@@ -74,5 +75,40 @@ class InterpellationEntitySummaryPresenterTest {
         var result = this.presenter.present(entities);
 
         assertThat(result).isBlank();
+    }
+
+    @Test
+    void givenLocationCandidates_whenPresenting_thenRendersCanonicalNameWithProvince() {
+        var entities = new RecognizedEntities(List.of(), List.of(),
+                List.of(new RecognizedEntity("Białegostoku", "Białystok")));
+        var locations = List.of(
+                new LocationCandidate("Białegostoku", "Białystok", "podlaskie", null, null, null, 0.95),
+                new LocationCandidate("Gdańsku", "Gdańsk", null, null, null, null, 0.9));
+
+        var result = this.presenter.present(entities, locations);
+
+        assertThat(result).isEqualTo("  Miejscowości: Białystok (podlaskie), Gdańsk");
+    }
+
+    @Test
+    void givenDuplicateLocationCandidatesForSameCanonicalName_whenPresenting_thenDeduplicates() {
+        var entities = RecognizedEntities.empty();
+        var locations = List.of(
+                new LocationCandidate("Białegostoku", "Białystok", "podlaskie", null, null, null, 0.95),
+                new LocationCandidate("Białystok", "Białystok", "podlaskie", null, null, null, 0.9));
+
+        var result = this.presenter.present(entities, locations);
+
+        assertThat(result).isEqualTo("  Miejscowości: Białystok (podlaskie)");
+    }
+
+    @Test
+    void givenNoLocationCandidates_whenPresenting_thenFallsBackToRecognizedEntityLocations() {
+        var entities = new RecognizedEntities(List.of(), List.of(),
+                List.of(new RecognizedEntity("Warszawy", "Warszawa")));
+
+        var result = this.presenter.present(entities, List.of());
+
+        assertThat(result).isEqualTo("  Miejscowości: Warszawa");
     }
 }

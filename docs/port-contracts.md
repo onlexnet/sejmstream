@@ -233,6 +233,31 @@ unified via `InterpellationEntitySummaryPresenter`.
 
 ---
 
+### LocationExtractionPort
+```java
+public interface LocationExtractionPort {
+    List<LocationCandidate> extractLocations(String text);
+}
+```
+**Result**: `LocationCandidate(String rawMention, String canonicalName, @Nullable String province, @Nullable String county,
+@Nullable Double latitude, @Nullable Double longitude, double confidence)`.
+
+**Adapter**: `FoundryLocationExtractionAdapter` (Azure AI Foundry / Azure OpenAI-compatible chat completions REST API),
+instructed with a dedicated Polish-locality extraction prompt (see `.github/prompts/plan-location-extraction3.prompt.md`)
+that normalizes inflected place names (e.g. "w Białymstoku" -> "Białystok") and returns only places in Poland.
+Candidates below a minimum confidence threshold are dropped for precision. Disabled (returns an empty list) when
+`AZURE_FOUNDRY_LOCATION_ENDPOINT`/`AZURE_FOUNDRY_LOCATION_KEY`/`AZURE_FOUNDRY_LOCATION_DEPLOYMENT` are not configured.
+
+This is a dedicated, geography-specific complement to `EntityRecognitionPort`'s general `Location` category: it is
+normalization-aware (canonical names, province) rather than raw NER. `InterpellationEntitySummaryPresenter` renders
+`LocationCandidate` results for "Miejscowości" when available, falling back to `EntityRecognitionPort`'s `Location`
+mentions otherwise (e.g. when the Foundry adapter is disabled or returns no candidates), so `TermSnapshotReconcilerEntity`
+degrades gracefully rather than losing location information from the Telegram summary.
+
+See ADR [008-foundry-location-extraction.md](adr/008-foundry-location-extraction.md).
+
+---
+
 ## Port Contract Rules
 
 1. **Ports are interfaces** — always declared in `onlexnet.app.ports.{in|out}`
