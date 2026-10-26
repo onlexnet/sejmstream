@@ -13,6 +13,10 @@ applyTo: '**/*.java'
 
 ## Best practices
 
+- **Least visibility**: Use the narrowest visibility that satisfies the contract for classes, interfaces, records, enums,
+  annotation types, constructors, methods, and fields. Prefer package-private top-level types and `private` nested types
+  and implementation members; do not default to `public`. Use `protected` or `public` only when required by an intentional
+  cross-package API, inheritance contract, or framework requirement. Preserve visibility required by existing contracts.
 - **Records**: For classes primarily intended to store data (e.g., DTOs, immutable data structures), **Java Records should be used instead of traditional classes**.
 - **Pattern Matching**: Utilize pattern matching for `instanceof` and `switch` expressions to simplify conditional logic and type casting.
 - **Type Inference**: Use `var` for local variable declarations to improve readability, but only when the type is explicitly clear from the right-hand side of the expression.

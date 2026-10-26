@@ -102,6 +102,11 @@ This is a Spring Boot application that interacts with the Sejm API and Face API 
 - Use Spring profiles for different environments (dev, prod)
 
 ### Azure Functions Structure (Project Convention)
+- Name durable business components `<Role>Actor` and Azure entrypoints `<Role>EntityFunction`;
+  retain `<Role>ContractV<n>`, `TaskEntityGateway`, and `EntityComponent` terminology.
+- Declare canonical lowercase role names explicitly in shared constants; never derive persisted
+  actor identities from Java names or contract versions. Use `singleton` for coordination and
+  positive canonical decimal term keys for reconciliation (see repository ADR-009).
 - Keep Azure Function triggers split by responsibility:
   - one entrypoint class per trigger/orchestrator/activity.
   - shared behavior in a dedicated support class (for example `...FunctionSupport`).

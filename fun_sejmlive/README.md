@@ -8,7 +8,7 @@ Azure Functions (Java + Spring Boot) application that collects daily Sejm activi
 - Stores digest items and publish state in PostgreSQL (Liquibase-managed schema).
 - Publishes daily digest to Facebook (timer + manual HTTP trigger).
 - Processes INTERPELLATION publish jobs from Azure Storage Queue with retry and dead-letter handling.
-- Maintains a dedicated durable term snapshot entity that compares current and previous term state and raises recognized change events.
+- Maintains a durable term snapshot actor that compares current and previous term state and raises recognized change events.
 - Exposes Telegram webhook for admin commands (`/help`, `/data`, `/collect`, `/collect_recover`, `/publish`, `/version`).
 
 ## Architecture
@@ -21,6 +21,13 @@ Main boundaries:
 - `onlexnet.infra.adapters.in` - Azure Function input adapters.
 - `onlexnet.infra.adapters.out` - Sejm API, storage queue, DB, Telegram/Facebook output adapters.
 - `onlexnet.infra.starters` - Spring Boot startup and Azure Functions DI integration.
+
+Durable business components use `<Role>Actor`; Azure adapters retain `<Role>EntityFunction`.
+`CollectCoordinatorActor` uses `collectcoordinator` / `singleton`, while
+`TermSnapshotReconcilerActor` uses `termsnapshotreconciler` / positive decimal term number.
+Runtime names are explicit shared constants, not derived from Java names or contract versions.
+Each term actor initializes an absent baseline and reuses its saved baseline for later snapshots.
+See [ADR-009](../docs/adr/009-durable-actor-naming.md).
 
 ## Function entrypoints
 

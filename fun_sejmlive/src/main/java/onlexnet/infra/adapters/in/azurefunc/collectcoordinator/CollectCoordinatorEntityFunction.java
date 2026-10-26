@@ -17,7 +17,7 @@ import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityGateway;
 
 @Component
 @RequiredArgsConstructor
-public final class SejmCollectCoordinatorEntityFunction {
+public final class CollectCoordinatorEntityFunction {
 
     private final ObjectProvider<TaskEntityGateway> taskEntityGatewayProvider;
 

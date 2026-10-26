@@ -295,15 +295,15 @@ az storage message peek --queue-name sejm-interpellations-publish-deadletter \
 
 ### Durable Functions Stuck
 **Symptom**: Orchestrator instance never completes  
-**Check**:
-```bash
-# List running instances
-func durable get-instances --connection-string-setting AzureWebJobsStorage
-```
-**Fix**: Terminate stuck instance:
-```bash
-func durable terminate --id <instance-id> --reason "Manual termination"
-```
+**Check**: Use the Durable Task Scheduler dashboard/management monitoring for the
+configured `DURABLE_TASK_SCHEDULER_CONNECTION_STRING` and `TASKHUB_NAME` (ADR-007).
+Inspect instance status/history, pending activities/signals, and worker failures
+in Application Insights. `AzureWebJobsStorage` is host storage, not the durable
+backend; Azure Storage-provider `func durable` commands do not inspect the
+configured scheduler.
+
+**Recovery**: diagnose the blocked activity, scheduled retry, or worker failure
+before operator-authorized intervention through the configured scheduler.
 
 ---
 
@@ -399,7 +399,8 @@ ORDER BY term_num;
 | Resource | Name Pattern | Purpose |
 |----------|-------------|---------|
 | Function App | `sejmstr-{env}-func-*` | Application runtime |
-| Function Storage Account | `sejmstr{env}fn*` | Function host/runtime only: deployment package, Durable Functions state (`AzureWebJobsStorage`) |
+| Function Storage Account | `sejmstr{env}fn*` | Function host/runtime and deployment package (`AzureWebJobsStorage`), not durable state |
+| Durable Task Scheduler / task hub | Configured scheduler + `TASKHUB_NAME` | Durable orchestration and actor state (`DURABLE_TASK_SCHEDULER_CONNECTION_STRING`) |
 | Domain Storage Account | `sejmstr{env}dom*` | Domain logic queues: interpellation publish + dead-letter (`DomainStorage`) |
 | Key Vault | `sejmstr{env}kv*` | Secrets management |
 | App Insights | `sejmstr-{env}-appi-*` | Monitoring |

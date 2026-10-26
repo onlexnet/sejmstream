@@ -269,7 +269,7 @@ class TelegramBotFunctionsTest {
         assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
         var payloadCaptor = ArgumentCaptor.forClass(Object.class);
         verify(entityClient).signalEntity(
-            eq(new EntityInstanceId("CollectCoordinator", "singleton")),
+            eq(new EntityInstanceId("collectcoordinator", "singleton")),
             eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
             payloadCaptor.capture());
         assertThat(payloadCaptor.getValue()).isInstanceOf(CollectCoordinatorForceStartNextCommandDTO.class);
@@ -294,7 +294,7 @@ class TelegramBotFunctionsTest {
                 doThrow(new RuntimeException("force operation unavailable"))
                         .when(entityClient)
                         .signalEntity(
-                                eq(new EntityInstanceId("CollectCoordinator", "singleton")),
+                                eq(new EntityInstanceId("collectcoordinator", "singleton")),
                         eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
                         any(CollectCoordinatorForceStartNextCommandDTO.class));
 
@@ -328,7 +328,7 @@ class TelegramBotFunctionsTest {
                 assertThat(response.getStatus()).isEqualTo(HttpStatus.OK);
                 var payloadCaptor = ArgumentCaptor.forClass(Object.class);
                 verify(entityClient, times(2)).signalEntity(
-                    eq(new EntityInstanceId("CollectCoordinator", "singleton")),
+                    eq(new EntityInstanceId("collectcoordinator", "singleton")),
                     eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
                     payloadCaptor.capture());
                 assertThat(payloadCaptor.getAllValues().get(0)).isInstanceOf(CollectCoordinatorForceStartNextCommandDTO.class);

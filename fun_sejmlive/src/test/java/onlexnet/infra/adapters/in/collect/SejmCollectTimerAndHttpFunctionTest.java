@@ -19,7 +19,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRe
 
 class SejmCollectTimerAndHttpFunctionTest {
 
-    private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
+    private static final String COORDINATOR_ENTITY_NAME = "collectcoordinator";
     private static final String COORDINATOR_ENTITY_KEY = "singleton";
 
     @Test

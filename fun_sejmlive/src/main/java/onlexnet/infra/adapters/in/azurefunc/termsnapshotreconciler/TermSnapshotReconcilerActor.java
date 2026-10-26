@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeSet;
-import java.util.Locale;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -29,7 +28,7 @@ import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityLifecycleContext;
 @Component
 @Slf4j
 @RequiredArgsConstructor
-public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContractV1, EntityComponent {
+public class TermSnapshotReconcilerActor implements TermSnapshotReconcilerContractV1, EntityComponent {
 
     // Telegram accepts messages up to 4096 chars, but we keep a safety margin for
     // UTF-8 / markdown overhead and to avoid sending a payload that is right on the
@@ -56,7 +55,7 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
 
     @Override
     public String entityName() {
-        return SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME.toLowerCase(Locale.ROOT);
+        return SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME;
     }
 
     @Override
@@ -80,7 +79,7 @@ public class TermSnapshotReconcilerEntity implements TermSnapshotReconcilerContr
 
     public static DurableEntityOperationBinding<TermSnapshotReconcilerContractV1, ?> resolveContractOperation(
             String requestedMethod) {
-        return TermSnapshotReconcilerContractOperations.resolveOperation(TermSnapshotReconcilerEntity.class,
+        return TermSnapshotReconcilerContractOperations.resolveOperation(TermSnapshotReconcilerActor.class,
                 requestedMethod);
     }
 

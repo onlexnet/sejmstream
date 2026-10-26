@@ -26,6 +26,7 @@ import com.microsoft.durabletask.azurefunctions.DurableClientContext;
 import com.microsoft.durabletask.azurefunctions.DurableClientInput;
 import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 import com.microsoft.durabletask.azurefunctions.DurableOrchestrationTrigger;
+import com.microsoft.durabletask.EntityInstanceId;
 import com.restfb.FacebookClient;
 
 import onlexnet.app.ports.out.SejmApiClient;
@@ -43,10 +44,11 @@ import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.SejmCollectOrche
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectTimerFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractV1;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorEntity;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.SejmCollectCoordinatorEntityFunction;
+import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorActor;
+import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerCollectEventFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntityFunction;
+import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerActor;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectEventPublishRequestDTO;
 import onlexnet.infra.adapters.out.SejmCollectService;
@@ -56,8 +58,8 @@ import onlexnet.testsupport.PostgresIntegrationTestSupport;
 @AppTest
 class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
 
-    private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
-        private static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
+    private static final String COORDINATOR_ENTITY_NAME = "collectcoordinator";
+    private static final String TERM_SNAPSHOT_ENTITY_NAME = "termsnapshotreconciler";
 
     private static final List<String> COLLECT_COORDINATOR_OPERATIONS = CollectCoordinatorContractOperations.BUSINESS_OPERATIONS
             .stream()
@@ -77,7 +79,23 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     private SejmApiClient sejmApiClient;
 
         @Autowired
-        private CollectCoordinatorEntity collectCoordinatorEntity;
+        private CollectCoordinatorActor collectCoordinatorActor;
+
+    @Test
+    void shouldMatchActorRegistrationsAndSdkIdentitiesWithTriggerTypes() {
+        var coordinator = applicationContext.getBean(CollectCoordinatorActor.class);
+        var reconciler = applicationContext.getBean(TermSnapshotReconcilerActor.class);
+        var coordinatorId = new EntityInstanceId(SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
+                SejmCollectFunctions.COORDINATOR_ENTITY_KEY);
+        var snapshotId = new EntityInstanceId(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME, "10");
+
+        assertThat(coordinator.entityName()).isEqualTo(COORDINATOR_ENTITY_NAME).isEqualTo(coordinatorId.getName());
+        assertThat(reconciler.entityName()).isEqualTo(TERM_SNAPSHOT_ENTITY_NAME).isEqualTo(snapshotId.getName());
+        assertThat(coordinatorId).isEqualTo(new EntityInstanceId("CollectCoordinator", "singleton"));
+        assertThat(coordinatorId.getKey()).isEqualTo("singleton");
+        assertThat(snapshotId.getKey()).isEqualTo("10");
+        assertThat(snapshotId).isNotEqualTo(new EntityInstanceId("SejmTermSnapshot", "10"));
+    }
 
     @Test
     void givenSpringBootContext_whenResolvingCollectFunctions_thenRequiredDependenciesAreInjected() {
@@ -143,7 +161,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     @Test
     void givenCoordinatorEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
             throws NoSuchMethodException {
-        var method = SejmCollectCoordinatorEntityFunction.class.getDeclaredMethod(
+        var method = CollectCoordinatorEntityFunction.class.getDeclaredMethod(
                 "runCollectCoordinatorEntity",
                 String.class,
                 ExecutionContext.class);
@@ -152,7 +170,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
         var trigger = method.getParameters()[0].getAnnotation(DurableEntityTrigger.class);
 
         assertThat(functionName).isNotNull();
-        assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME);
+        assertThat(functionName.value()).isEqualTo("Fun_CollectCoordinatorEntity");
         assertThat(trigger).isNotNull();
         assertThat(trigger.name()).isEqualTo("entityRequest");
         assertThat(trigger.entityName()).isEqualTo(COORDINATOR_ENTITY_NAME);
@@ -170,7 +188,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
                 var trigger = method.getParameters()[0].getAnnotation(DurableEntityTrigger.class);
 
                 assertThat(functionName).isNotNull();
-                assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_FUNCTION_NAME);
+                assertThat(functionName.value()).isEqualTo("Fun_TermSnapshotReconcilerEntity");
                 assertThat(trigger).isNotNull();
                 assertThat(trigger.name()).isEqualTo("entityRequest");
                 assertThat(trigger.entityName()).isEqualTo(TERM_SNAPSHOT_ENTITY_NAME);
@@ -237,7 +255,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
 
         for (var op : COLLECT_COORDINATOR_OPERATIONS) {
             assertThat(publicMethods)
-                    .as("enum %s must match a public method on CollectCoordinatorEntity", op)
+                    .as("enum %s must match a public method on CollectCoordinatorActor", op)
                     .contains(op.toLowerCase());
         }
     }
@@ -245,10 +263,10 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     @Test
     void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
         var objectMapper = new ObjectMapper();
-                var getStateType = CollectCoordinatorEntity.class.getDeclaredMethod("getStateType");
+                var getStateType = CollectCoordinatorActor.class.getDeclaredMethod("getStateType");
                 getStateType.setAccessible(true);
                 @SuppressWarnings("unchecked")
-                var stateClass = (Class<Object>) getStateType.invoke(this.collectCoordinatorEntity);
+                var stateClass = (Class<Object>) getStateType.invoke(this.collectCoordinatorActor);
         var constructor = stateClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         var state = constructor.newInstance();

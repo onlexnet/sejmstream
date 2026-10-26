@@ -39,7 +39,7 @@ import onlexnet.shared.JsonDateNumbers;
 
 class SejmCollectOrchestratorFunctionTest {
 
-    private static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
+    private static final String COORDINATOR_ENTITY_NAME = "collectcoordinator";
     private static final String COORDINATOR_ENTITY_KEY = "singleton";
 
         private static CollectOrchestrationInputDTO validInput() {

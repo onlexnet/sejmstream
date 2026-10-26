@@ -76,17 +76,25 @@ This application follows Hexagonal Architecture (Ports and Adapters).
 4. Output ports are fulfilled by output adapters.
 5. The input adapter maps the result back to channel-specific response behavior.
 
-For the collect pipeline, runtime coordination now uses two separate durable entities:
-- `CollectCoordinator` serializes collect-run requests.
+For the collect pipeline, runtime coordination uses two durable business actors:
+- `CollectCoordinatorActor` (`collectcoordinator` / `singleton`) serializes collect-run requests.
 	- Business signaling contract is a single operation: `dispatch`.
 	- `dispatch` payload is `CollectCoordinatorDispatchCommand` (`oneOf` with discriminator `type`):
 		`requestCollect`, `collectCompleted`, `collectFailed`, `forceStartNext`.
 	- This contract is runtime-breaking for older senders that still use legacy operation names.
-- `SejmTermSnapshot` stores latest per-term snapshot state and dispatches recognized
+- `TermSnapshotReconcilerActor` (`termsnapshotreconciler` / positive decimal term key)
+	stores latest per-term snapshot state and dispatches recognized
 	events (new/updated interpellations, new questions/prints/bills, term switch)
 	after comparing current snapshot with previous state. When at least one recognized
 	change is detected, it also sends one compact Telegram summary to the configured
 	project owner chat.
+
+Azure `<Role>EntityFunction` entrypoints delegate through the shared `TaskEntityGateway`;
+`EntityComponent` remains the infrastructure routing contract. Runtime type names are explicit
+shared constants, with exact registration. Java names and contract versions do not
+derive persisted identity. Each term actor initializes an absent baseline and reuses its
+saved baseline for subsequent snapshots.
+See [ADR-009](../docs/adr/009-durable-actor-naming.md).
 
 ## Dynamic C4 Runtime View
 

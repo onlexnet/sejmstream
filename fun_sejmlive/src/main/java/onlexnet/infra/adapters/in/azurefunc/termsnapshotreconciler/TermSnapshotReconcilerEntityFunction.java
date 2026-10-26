@@ -55,7 +55,7 @@ final class TermSnapshotReconcilerState implements TermSnapshotReconcilerEntityS
         this.latestSnapshot = latestSnapshot;
     }
 
-    public TermSnapshotReconcilerEntity.ReconciliationOutcome handleTermSnapshotCollected(int termNum, TermSnapshotCollectedEvent event) {
-        return TermSnapshotReconcilerEntity.reconcile(this, termNum, event);
+    public TermSnapshotReconcilerActor.ReconciliationOutcome handleTermSnapshotCollected(int termNum, TermSnapshotCollectedEvent event) {
+        return TermSnapshotReconcilerActor.reconcile(this, termNum, event);
     }
 }

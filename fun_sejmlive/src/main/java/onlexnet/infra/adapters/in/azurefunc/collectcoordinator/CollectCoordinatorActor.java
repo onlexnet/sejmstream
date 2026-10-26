@@ -4,7 +4,6 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
-import java.util.Locale;
 
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
 import com.microsoft.durabletask.TaskEntityContext;
@@ -26,7 +25,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestration
 
 @Component
 @RequiredArgsConstructor
-public class CollectCoordinatorEntity implements CollectCoordinatorContractV1, EntityComponent {
+public class CollectCoordinatorActor implements CollectCoordinatorContractV1, EntityComponent {
 
     private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
     // private static final String DELETE_OPERATION_NAME = "delete";
@@ -44,7 +43,7 @@ public class CollectCoordinatorEntity implements CollectCoordinatorContractV1, E
 
     @Override
     public String entityName() {
-        return SejmCollectFunctions.COORDINATOR_ENTITY_NAME.toLowerCase(Locale.ROOT);
+        return SejmCollectFunctions.COORDINATOR_ENTITY_NAME;
     }
 
     @Override
@@ -73,7 +72,7 @@ public class CollectCoordinatorEntity implements CollectCoordinatorContractV1, E
     }
 
     public static DurableEntityOperationBinding<CollectCoordinatorContractV1, ?> resolveContractOperation(String requestedMethod) {
-        return CollectCoordinatorContractOperations.resolveOperation(CollectCoordinatorEntity.class, requestedMethod);
+        return CollectCoordinatorContractOperations.resolveOperation(CollectCoordinatorActor.class, requestedMethod);
     }
 
     @Override

@@ -17,7 +17,7 @@ public final class SejmCollectFunctions {
     /** Durable entity function name coordinating collect runs. */
     public static final String COORDINATOR_ENTITY_FUNCTION_NAME = "Fun_CollectCoordinatorEntity";
     /** Durable entity logical name used by the runtime. */
-    public static final String COORDINATOR_ENTITY_NAME = "CollectCoordinator";
+    public static final String COORDINATOR_ENTITY_NAME = "collectcoordinator";
     /** Durable entity singleton key for collect coordination. */
     public static final String COORDINATOR_ENTITY_KEY = "singleton";
     /** Durable entity function name for term snapshot state and diffing. */
@@ -25,7 +25,7 @@ public final class SejmCollectFunctions {
     /** Queue trigger function name for term snapshot reconciliation events. */
     public static final String TERM_SNAPSHOT_COLLECT_EVENT_FUNCTION_NAME = "Fun_TermSnapshotReconcilerFromCollectEvent";
     /** Durable entity logical name used by the runtime for term snapshots. */
-    public static final String TERM_SNAPSHOT_ENTITY_NAME = "SejmTermSnapshot";
+    public static final String TERM_SNAPSHOT_ENTITY_NAME = "termsnapshotreconciler";
     /** Durable entity key for term snapshot state is dynamic: String.valueOf(termNum). */
     /** Activity function name for collecting votings. */
     public static final String ACTIVITY_VOTINGS = "Intern_CollectVotings";

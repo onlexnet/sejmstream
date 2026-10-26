@@ -35,27 +35,27 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRe
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
 
-class CollectCoordinatorEntityTest {
+class CollectCoordinatorActorTest {
 
     @Test
         void shouldResolveDispatchOperationName() {
-                assertThat(CollectCoordinatorEntity.resolveContractOperation(
+                assertThat(CollectCoordinatorActor.resolveContractOperation(
                                 CollectCoordinatorContractOperations.DISPATCH.methodName()))
                                 .isEqualTo(CollectCoordinatorContractOperations.DISPATCH);
     }
 
     @Test
         void shouldResolveDispatchOperationNameCaseInsensitively() {
-                var operation = CollectCoordinatorEntity.resolveContractOperation("DiSpAtCh");
+                var operation = CollectCoordinatorActor.resolveContractOperation("DiSpAtCh");
 
                 assertThat(operation).isEqualTo(CollectCoordinatorContractOperations.DISPATCH);
     }
 
     @Test
         void shouldThrowForUnknownOperationName() {
-                assertThatThrownBy(() -> CollectCoordinatorEntity.resolveContractOperation("unknownMethod"))
+                assertThatThrownBy(() -> CollectCoordinatorActor.resolveContractOperation("unknownMethod"))
                 .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("CollectCoordinatorEntity")
+                .hasMessageContaining("CollectCoordinatorActor")
                 .hasMessageContaining("unknownMethod");
     }
 
@@ -139,7 +139,7 @@ class CollectCoordinatorEntityTest {
         when(jsonValidator.validateToSend(eq(JsonValidator.COLLECT_ORCHESTRATION_INPUT), any(CollectOrchestrationInputDTO.class)))
                 .thenAnswer(invocation -> invocation.getArgument(1));
 
-        var entity = new CollectCoordinatorEntity(jsonValidator);
+        var entity = new CollectCoordinatorActor(jsonValidator);
         var operation = mock(TaskEntityOperation.class);
         var state = mock(TaskEntityState.class);
         var context = mock(TaskEntityContext.class);

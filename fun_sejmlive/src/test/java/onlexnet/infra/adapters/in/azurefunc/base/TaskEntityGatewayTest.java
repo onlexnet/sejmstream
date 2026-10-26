@@ -4,11 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.lang.reflect.Constructor;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -65,6 +67,50 @@ class TaskEntityGatewayTest extends PostgresIntegrationTestSupport {
         var result = taskEntityGateway.run(operation);
 
         assertThat(result).isEqualTo("local-result");
+    }
+
+    @Test
+    void shouldRejectUnknownEntityType() {
+        var operation = createOperation("unregistered-actor", "ping");
+
+        assertThatThrownBy(() -> taskEntityGateway.run(operation))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("No durable entity component registered for entity name 'unregistered-actor'.");
+    }
+
+    @Test
+    void shouldRequireExactRegisteredTypeRatherThanCaseInsensitiveFallback() {
+        var gateway = new TaskEntityGateway(List.of(new LocalDurableEntityComponent("Local-Test-Entity")));
+        var operation = createOperation(LOCAL_ENTITY_NAME, "ping");
+
+        assertThatThrownBy(() -> gateway.run(operation))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("No durable entity component registered")
+                .hasMessageContaining(LOCAL_ENTITY_NAME);
+    }
+
+    @Test
+    void shouldRejectUnsupportedOperationBeforeExecutingComponent() {
+        var operation = createOperation(LOCAL_ENTITY_NAME, "unsupported");
+
+        assertThatThrownBy(() -> taskEntityGateway.run(operation))
+                .isInstanceOf(UnsupportedOperationException.class)
+                .hasMessageContaining("unsupported");
+    }
+
+    @Test
+    void shouldFailStartupForDuplicateTypeRegistrations() {
+        new ApplicationContextRunner()
+                .withBean("firstActor", EntityComponent.class, () -> new LocalDurableEntityComponent(LOCAL_ENTITY_NAME))
+                .withBean("secondActor", EntityComponent.class, () -> new LocalDurableEntityComponent(LOCAL_ENTITY_NAME))
+                .withBean(TaskEntityGateway.class)
+                .run(context -> {
+                    assertThat(context).hasFailed();
+                    assertThat(context.getStartupFailure())
+                            .hasRootCauseInstanceOf(IllegalStateException.class)
+                            .hasRootCauseMessage(
+                                    "Duplicate durable entity component registration for entity name '" + LOCAL_ENTITY_NAME + "'.");
+                });
     }
 
     @Test
@@ -130,7 +176,7 @@ class TaskEntityGatewayTest extends PostgresIntegrationTestSupport {
 
         @Bean("localDurableEntityComponent")
         EntityComponent localDurableEntityComponent() {
-            return new LocalDurableEntityComponent();
+            return new LocalDurableEntityComponent(LOCAL_ENTITY_NAME);
         }
 
         @Bean("brokenDurableEntityComponent")
@@ -139,15 +185,10 @@ class TaskEntityGatewayTest extends PostgresIntegrationTestSupport {
         }
     }
 
-    private static final class LocalDurableEntityComponent implements EntityComponent, LocalEntityContract {
+    private record LocalDurableEntityComponent(String entityName) implements EntityComponent, LocalEntityContract {
 
         private static final DurableEntityOperationBinding<LocalEntityContract, String> PING_OPERATION =
                 DurableEntityOperationBinding.of("ping", String.class, LocalEntityContract::ping);
-
-        @Override
-        public String entityName() {
-            return LOCAL_ENTITY_NAME;
-        }
 
         @Override
         public DurableEntityOperationBinding<LocalEntityContract, ?> resolveOperation(String requestedMethod) {

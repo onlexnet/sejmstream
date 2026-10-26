@@ -28,10 +28,10 @@ import onlexnet.app.ports.out.RecognizedEntities;
 import onlexnet.app.ports.out.RecognizedEntity;
 import onlexnet.app.ports.out.SejmApiClient;
 
-class TermSnapshotReconcilerEntityTest {
+class TermSnapshotReconcilerActorTest {
 
-    private static TermSnapshotReconcilerEntity newEntity(ProjectOwnerNotifier ownerNotifier) {
-        return new TermSnapshotReconcilerEntity(
+    private static TermSnapshotReconcilerActor newEntity(ProjectOwnerNotifier ownerNotifier) {
+        return new TermSnapshotReconcilerActor(
                 ownerNotifier,
                 mock(SejmApiClient.class),
                 mock(EntityRecognitionPort.class),
@@ -41,16 +41,16 @@ class TermSnapshotReconcilerEntityTest {
 
     @Test
     void givenKnownOperationName_whenResolving_thenReturnsExpectedBinding() {
-        assertThat(TermSnapshotReconcilerEntity.resolveContractOperation(
+        assertThat(TermSnapshotReconcilerActor.resolveContractOperation(
                 TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName()))
                 .isEqualTo(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED);
     }
 
     @Test
     void givenUnknownOperationName_whenResolving_thenThrowsWithEntityNameAndOperation() {
-        assertThatThrownBy(() -> TermSnapshotReconcilerEntity.resolveContractOperation("unknownMethod"))
+        assertThatThrownBy(() -> TermSnapshotReconcilerActor.resolveContractOperation("unknownMethod"))
                 .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("TermSnapshotReconcilerEntity")
+                .hasMessageContaining("TermSnapshotReconcilerActor")
                 .hasMessageContaining("unknownMethod");
     }
 
@@ -60,7 +60,7 @@ class TermSnapshotReconcilerEntityTest {
         var operation = mock(TaskEntityOperation.class);
         var context = mock(TaskEntityContext.class);
         when(operation.getContext()).thenReturn(context);
-        when(context.getId()).thenReturn(new EntityInstanceId("sejmTermSnapshot", "10"));
+        when(context.getId()).thenReturn(new EntityInstanceId("termsnapshotreconciler", "10"));
         var event = new TermSnapshotCollectedEvent(
             20260827,
                 "timer",
@@ -75,6 +75,46 @@ class TermSnapshotReconcilerEntityTest {
         TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.invoke(target, operation);
 
         verify(target).termSnapshotCollected(event);
+    }
+
+    @Test
+    void shouldInitializeAbsentTargetAndReuseBaselineForRepeatedSnapshot() {
+        var state = new TermSnapshotReconcilerState();
+        var ownerNotifier = mock(ProjectOwnerNotifier.class);
+        var actor = new DispatchProbeEntity(ownerNotifier);
+        var event = new TermSnapshotCollectedEvent(
+                20260827,
+                "timer",
+                "instance-1",
+                Map.of("77", "hash-1"),
+                Map.of("77", new TermSnapshotCollectedEvent.InterpellationPresentation("Title 77", "https://sejm.example/77")),
+                List.of("301"),
+                List.of("401"),
+                List.of("501"));
+
+        var first = TermSnapshotReconcilerActor.reconcile(state, 10, event).diff();
+        actor.dispatchRecognizedEvents(first, event);
+
+        assertThat(first.newInterpellations()).containsExactly("77");
+        assertThat(first.updatedInterpellations()).isEmpty();
+        assertThat(first.newWrittenQuestions()).containsExactly("301");
+        assertThat(first.newPrints()).containsExactly("401");
+        assertThat(first.newBills()).containsExactly("501");
+        assertThat(state.getLatestSnapshot()).isNotNull();
+
+        var repeated = TermSnapshotReconcilerActor.reconcile(state, 10, event).diff();
+        actor.dispatchRecognizedEvents(repeated, event);
+
+        assertThat(repeated.newInterpellations()).isEmpty();
+        assertThat(repeated.updatedInterpellations()).isEmpty();
+        assertThat(repeated.newWrittenQuestions()).isEmpty();
+        assertThat(repeated.newPrints()).isEmpty();
+        assertThat(repeated.newBills()).isEmpty();
+        assertThat(actor.newInterpellationsEvents).isEqualTo(1);
+        assertThat(actor.newWrittenQuestionsEvents).isEqualTo(1);
+        assertThat(actor.newPrintsEvents).isEqualTo(1);
+        assertThat(actor.newBillsEvents).isEqualTo(1);
+        verify(ownerNotifier).notifyOwner(anyString());
     }
 
     @Test
@@ -102,7 +142,7 @@ class TermSnapshotReconcilerEntityTest {
                 List.of("401", "402"),
                 List.of("501", "502"));
 
-        var outcome = TermSnapshotReconcilerEntity.reconcile(state, 10, event);
+        var outcome = TermSnapshotReconcilerActor.reconcile(state, 10, event);
 
         assertThat(outcome.diff().newInterpellations()).containsExactly("79");
         assertThat(outcome.diff().updatedInterpellations()).containsExactly("77");
@@ -125,7 +165,7 @@ class TermSnapshotReconcilerEntityTest {
                 List.of("301"),
                 List.of("401"),
                 List.of("501"));
-        var day1Outcome = TermSnapshotReconcilerEntity.reconcile(state, 10, day1Event);
+        var day1Outcome = TermSnapshotReconcilerActor.reconcile(state, 10, day1Event);
         assertThat(day1Outcome.diff().newInterpellations()).containsExactly("79");
         assertThat(day1Outcome.diff().newWrittenQuestions()).containsExactly("301");
         assertThat(day1Outcome.diff().newPrints()).containsExactly("401");
@@ -141,7 +181,7 @@ class TermSnapshotReconcilerEntityTest {
                 List.of(),
                 List.of(),
                 List.of());
-        var day2Outcome = TermSnapshotReconcilerEntity.reconcile(state, 10, day2Event);
+        var day2Outcome = TermSnapshotReconcilerActor.reconcile(state, 10, day2Event);
         assertThat(day2Outcome.diff().newInterpellations()).isEmpty();
         assertThat(day2Outcome.diff().updatedInterpellations()).isEmpty();
 
@@ -155,7 +195,7 @@ class TermSnapshotReconcilerEntityTest {
                 List.of("301"),
                 List.of("401"),
                 List.of("501"));
-        var day3Outcome = TermSnapshotReconcilerEntity.reconcile(state, 10, day3Event);
+        var day3Outcome = TermSnapshotReconcilerActor.reconcile(state, 10, day3Event);
 
         assertThat(day3Outcome.diff().newInterpellations()).isEmpty();
         assertThat(day3Outcome.diff().updatedInterpellations()).containsExactly("79");
@@ -168,7 +208,7 @@ class TermSnapshotReconcilerEntityTest {
     void givenDiffWithAllEvents_whenDispatching_thenInvokesSeparatedHandlers() {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
         var probe = new DispatchProbeEntity(ownerNotifier);
-        var diff = new TermSnapshotReconcilerEntity.TermSnapshotDiff(
+        var diff = new TermSnapshotReconcilerActor.TermSnapshotDiff(
                 10,
                 List.of("79"),
                 List.of("77"),
@@ -205,7 +245,7 @@ class TermSnapshotReconcilerEntityTest {
     void givenDiffWithoutChanges_whenDispatching_thenDoesNotNotifyOwner() {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
         var entity = newEntity(ownerNotifier);
-        var diff = new TermSnapshotReconcilerEntity.TermSnapshotDiff(
+        var diff = new TermSnapshotReconcilerActor.TermSnapshotDiff(
                 10,
                 List.of(),
                 List.of(),
@@ -231,7 +271,7 @@ class TermSnapshotReconcilerEntityTest {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
         var entity = newEntity(ownerNotifier);
 
-        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerActor.NewInterpellationsDetectedEvent(
                 10,
                 List.of("79", "80"),
                 Map.of(
@@ -255,14 +295,14 @@ class TermSnapshotReconcilerEntityTest {
                 List.of(new RecognizedEntity("Jan Kowalski", null)),
                 List.of(new RecognizedEntity("PKN Orlen", "Orlen S.A.")),
                 List.of(new RecognizedEntity("Warszawy", "Warszawa"))));
-        var entity = new TermSnapshotReconcilerEntity(
+        var entity = new TermSnapshotReconcilerActor(
                 ownerNotifier,
                 sejmApiClient,
                 entityRecognitionPort,
                 mock(LocationExtractionPort.class),
                 new InterpellationEntitySummaryPresenter());
 
-        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerActor.NewInterpellationsDetectedEvent(
                 10,
                 List.of("79"),
                 Map.of("79", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 79", "https://sejm.example/79"))));
@@ -282,14 +322,14 @@ class TermSnapshotReconcilerEntityTest {
         when(entityRecognitionPort.recognize("Interpelacja dotyczy Białegostoku.")).thenReturn(RecognizedEntities.empty());
         when(locationExtractionPort.extractLocations("Interpelacja dotyczy Białegostoku.")).thenReturn(List.of(
                 new LocationCandidate("Białegostoku", "Białystok", "podlaskie", null, null, null, 0.95)));
-        var entity = new TermSnapshotReconcilerEntity(
+        var entity = new TermSnapshotReconcilerActor(
                 ownerNotifier,
                 sejmApiClient,
                 entityRecognitionPort,
                 locationExtractionPort,
                 new InterpellationEntitySummaryPresenter());
 
-        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerActor.NewInterpellationsDetectedEvent(
                 10,
                 List.of("79"),
                 Map.of("79", new TermSnapshotCollectedEvent.InterpellationPresentation("Tytul 79", "https://sejm.example/79"))));
@@ -302,7 +342,7 @@ class TermSnapshotReconcilerEntityTest {
         var ownerNotifier = mock(ProjectOwnerNotifier.class);
         var entity = newEntity(ownerNotifier);
 
-        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerActor.NewInterpellationsDetectedEvent(
                 10,
                 List.of("79"),
                 Map.of("79", new TermSnapshotCollectedEvent.InterpellationPresentation("", null))));
@@ -326,7 +366,7 @@ class TermSnapshotReconcilerEntityTest {
                     "https://sejm.example/interpelacja/" + i));
         }
 
-        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerEntity.NewInterpellationsDetectedEvent(
+        entity.onNewInterpellationsDetected(new TermSnapshotReconcilerActor.NewInterpellationsDetectedEvent(
                 10,
                 List.copyOf(numbers),
                 Map.copyOf(presentation)));
@@ -338,7 +378,7 @@ class TermSnapshotReconcilerEntityTest {
         assertThat(captor.getAllValues()).allMatch(message -> message.length() <= 3900);
     }
 
-    private static final class DispatchProbeEntity extends TermSnapshotReconcilerEntity {
+    private static final class DispatchProbeEntity extends TermSnapshotReconcilerActor {
         private int newInterpellationsEvents;
         private int updatedInterpellationsEvents;
         private int newWrittenQuestionsEvents;

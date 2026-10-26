@@ -17,7 +17,6 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.microsoft.durabletask.EntityInstanceId;
 
-import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestratorEventV1DTO;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotCollectedEvent;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotCollectedEventMaterializer;
@@ -59,7 +58,7 @@ class TermSnapshotReconcilerCollectEventFunctionTest {
                 new SejmCollectFunctionTestSupport.FakeExecutionContext());
 
         assertThat(durableClientContext.lastSignaledEntityId)
-                .isEqualTo(new EntityInstanceId(SejmCollectFunctions.TERM_SNAPSHOT_ENTITY_NAME, "10"));
+                .isEqualTo(new EntityInstanceId("termsnapshotreconciler", "10"));
         assertThat(durableClientContext.lastEntityOperationName)
                 .isEqualTo(TermSnapshotReconcilerContractOperations.TERM_SNAPSHOT_COLLECTED.methodName());
         assertThat(durableClientContext.lastEntityPayload).isEqualTo(snapshotEvent);
@@ -69,6 +68,21 @@ class TermSnapshotReconcilerCollectEventFunctionTest {
                         && "timer".equals(event.getSource())
                         && Integer.valueOf(10).equals(event.getTermNum())
                         && Integer.valueOf(20260907).equals(event.getCollectionDate())));
+
+        var firstTermId = durableClientContext.lastSignaledEntityId;
+        durableClientContext.resetCapturedSignals();
+        collectEventPayload.setTermNum(11);
+
+        function.runFromCollectEvent(
+                objectMapper.writeValueAsString(collectEventPayload),
+                durableClientContext,
+                new SejmCollectFunctionTestSupport.FakeExecutionContext());
+
+        assertThat(durableClientContext.lastSignaledEntityId)
+                .isEqualTo(new EntityInstanceId("termsnapshotreconciler", "11"))
+                .isNotEqualTo(firstTermId);
+        assertThat(durableClientContext.lastEntityOperationName).isEqualTo("termSnapshotCollected");
+        assertThat(durableClientContext.lastEntityPayload).isEqualTo(snapshotEvent);
     }
 
     @Test

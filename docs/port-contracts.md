@@ -227,7 +227,7 @@ where `RecognizedEntity(String mentionText, @Nullable String canonicalName)` car
 **Adapter**: `AzureLanguageEntityRecognitionAdapter` (Azure AI Language `analyze-text` REST API — NER + Entity Linking).
 Disabled (returns `RecognizedEntities.empty()`) when `AZURE_LANGUAGE_ENDPOINT`/`AZURE_LANGUAGE_KEY` are not configured.
 
-Used by `TermSnapshotReconcilerEntity` to enrich the "new interpellations" Telegram owner notification with recognized
+Used by `TermSnapshotReconcilerActor` to enrich the "new interpellations" Telegram owner notification with recognized
 persons/organizations/locations found in the interpellation body (fetched via `SejmApiClient.fetchInterpellationBodyText`),
 unified via `InterpellationEntitySummaryPresenter`.
 
@@ -251,7 +251,7 @@ Candidates below a minimum confidence threshold are dropped for precision. Disab
 This is a dedicated, geography-specific complement to `EntityRecognitionPort`'s general `Location` category: it is
 normalization-aware (canonical names, province) rather than raw NER. `InterpellationEntitySummaryPresenter` renders
 `LocationCandidate` results for "Miejscowości" when available, falling back to `EntityRecognitionPort`'s `Location`
-mentions otherwise (e.g. when the Foundry adapter is disabled or returns no candidates), so `TermSnapshotReconcilerEntity`
+mentions otherwise (e.g. when the Foundry adapter is disabled or returns no candidates), so `TermSnapshotReconcilerActor`
 degrades gracefully rather than losing location information from the Telegram summary.
 
 See ADR [008-foundry-location-extraction.md](adr/008-foundry-location-extraction.md).

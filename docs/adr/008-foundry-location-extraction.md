@@ -38,7 +38,7 @@ model used purely for extraction (no agent/tooling is provisioned).
 renders `LocationCandidate` results (canonical name plus province when known) for "Miejscowości"
 when present, and falls back to `EntityRecognitionPort`'s general `Location` mentions otherwise
 (disabled adapter, model failure, or no candidates above the confidence threshold).
-`TermSnapshotReconcilerEntity` calls both ports and passes both results to the presenter, keeping
+`TermSnapshotReconcilerActor` calls both ports and passes both results to the presenter, keeping
 `EntityRecognitionPort` as the fallback rather than replacing it.
 
 Terraform provisions the Foundry/OpenAI resource and model deployment
