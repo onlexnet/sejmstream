@@ -15,7 +15,7 @@ System_Ext(collect_events_queue, "Azure Storage Queue", "Collect orchestration o
 
 Container_Boundary(func_app, "Azure Function App (Java)") {
   Component(collect_in, "SejmCollectFunctions", "Timer/HTTP + Durable starter")
-  Component(collect_uc, "CollectDailyDigestUseCase", "Use case")
+  Component(collect_uc, "IngestDailyDigestUseCase", "Use case")
   Component(collect_ops, "SejmCollectService", "Collection orchestrator")
   Component(term_snapshot_in, "TermSnapshotReconcilerCollectEventFunction", "Queue trigger", "Materializes collect v1 event to term snapshot payload and signals durable entity")
 

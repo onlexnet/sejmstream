@@ -76,12 +76,13 @@ This application follows Hexagonal Architecture (Ports and Adapters).
 4. Output ports are fulfilled by output adapters.
 5. The input adapter maps the result back to channel-specific response behavior.
 
-For the collect pipeline, runtime coordination uses two durable business actors:
-- `CollectCoordinatorActor` (`collectcoordinator` / `singleton`) serializes collect-run requests.
+For daily-digest ingestion, runtime coordination uses two durable business actors:
+- `DailyDigestIngestionCoordinatorActor` (`collectcoordinator` / `singleton`) serializes ingestion requests.
 	- Business signaling contract is a single operation: `dispatch`.
 	- `dispatch` payload is `CollectCoordinatorDispatchCommand` (`oneOf` with discriminator `type`):
 		`requestCollect`, `collectCompleted`, `collectFailed`, `forceStartNext`.
-	- This contract is runtime-breaking for older senders that still use legacy operation names.
+	- Generated command schema/discriminator names and the durable entity identity remain unchanged
+	  for compatibility; the ingestion terminology applies to the Java business API.
 - `TermSnapshotReconcilerActor` (`termsnapshotreconciler` / positive decimal term key)
 	stores latest per-term snapshot state and dispatches recognized
 	events (new/updated interpellations, new questions/prints/bills, term switch)

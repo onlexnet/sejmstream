@@ -29,7 +29,7 @@ import onlexnet.app.ports.in.admin.AdminUseCase;
 import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.TelegramNotifier;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 import onlexnet.infra.adapters.in.telegram.model.TelegramUpdate;
@@ -128,7 +128,7 @@ public final class TelegramBotFunctions {
                 forceStartNextCommand.setSource(COLLECT_RECOVER_SOURCE);
                 entityClient.signalEntity(
                         COLLECT_COORDINATOR_ENTITY_ID,
-                        CollectCoordinatorContractOperations.DISPATCH.methodName(),
+                        DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName(),
                         forceStartNextCommand);
                 this.telegramNotifier.sendMessage(
                         chatId,
@@ -138,7 +138,7 @@ public final class TelegramBotFunctions {
                 requestCollectCommand.setSource(COLLECT_RECOVER_SOURCE);
                 entityClient.signalEntity(
                         COLLECT_COORDINATOR_ENTITY_ID,
-                        CollectCoordinatorContractOperations.DISPATCH.methodName(),
+                        DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName(),
                         requestCollectCommand);
                 this.telegramNotifier.sendMessage(
                         chatId,

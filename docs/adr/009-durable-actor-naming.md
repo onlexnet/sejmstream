@@ -12,9 +12,9 @@ Durable Task Scheduler task hub and must remain independent of Java implementati
 
 ## Decision
 
-- Business components use `<Role>Actor`: `CollectCoordinatorActor` and
+- Business components use `<Role>Actor`: `DailyDigestIngestionCoordinatorActor` and
   `TermSnapshotReconcilerActor`. Contracts retain `<Role>ContractV<n>`.
-- Azure adapters retain `<Role>EntityFunction`: `CollectCoordinatorEntityFunction`
+- Azure adapters retain `<Role>EntityFunction`: `DailyDigestIngestionCoordinatorEntityFunction`
   and `TermSnapshotReconcilerEntityFunction`. `TaskEntityGateway`, `EntityComponent`,
   Azure SDK types, text-recognition types, and persistence entities keep their names.
 - Declare lowercase role names explicitly in `SejmCollectFunctions`; never derive

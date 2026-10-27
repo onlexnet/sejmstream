@@ -5,46 +5,46 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 import lombok.RequiredArgsConstructor;
-import onlexnet.app.ports.in.collect.CollectDailyDigestCommand;
-import onlexnet.app.ports.in.collect.CollectDailyDigestOutcome;
-import onlexnet.app.ports.in.collect.CollectDailyDigestUseCase;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestCommand;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestOutcome;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestUseCase;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.shared.Guards;
 
 /**
- * Default application implementation for daily collect processing.
+ * Default application implementation for daily-digest ingestion.
  */
 @Component
 @RequiredArgsConstructor
-public class DefaultCollectDailyDigestUseCase implements CollectDailyDigestUseCase {
+public class DefaultIngestDailyDigestUseCase implements IngestDailyDigestUseCase {
 
     private final SejmApiClient sejmApiClient;
     private final SejmCollectOperations sejmCollectService;
 
     @Override
-    public CollectDailyDigestOutcome collect(CollectDailyDigestCommand command) {
+    public IngestDailyDigestOutcome ingest(IngestDailyDigestCommand command) {
         var date = command.date();
         var termNum = resolveCurrentTermNumber();
         if (termNum.isEmpty()) {
-            return new CollectDailyDigestOutcome.TermMissing(date);
+            return new IngestDailyDigestOutcome.TermMissing(date);
         }
 
         try {
             var term = termNum.get();
             var countsByType = Map.of(
-                    CollectDailyDigestOutcome.TYPE_VOTING, this.sejmCollectService.collectVotings(term, date),
-                    CollectDailyDigestOutcome.TYPE_COMMITTEE_SITTING,
+                    IngestDailyDigestOutcome.TYPE_VOTING, this.sejmCollectService.collectVotings(term, date),
+                    IngestDailyDigestOutcome.TYPE_COMMITTEE_SITTING,
                     this.sejmCollectService.collectCommitteeSittings(term, date),
-                    CollectDailyDigestOutcome.TYPE_PRINT, this.sejmCollectService.collectPrints(term, date),
-                    CollectDailyDigestOutcome.TYPE_INTERPELLATION,
+                    IngestDailyDigestOutcome.TYPE_PRINT, this.sejmCollectService.collectPrints(term, date),
+                    IngestDailyDigestOutcome.TYPE_INTERPELLATION,
                     this.sejmCollectService.collectInterpellations(term, date),
-                    CollectDailyDigestOutcome.TYPE_WRITTEN_QUESTION,
+                    IngestDailyDigestOutcome.TYPE_WRITTEN_QUESTION,
                     this.sejmCollectService.collectWrittenQuestions(term, date),
-                    CollectDailyDigestOutcome.TYPE_BILL, this.sejmCollectService.collectBills(term, date));
-            return new CollectDailyDigestOutcome.Collected(date, term, countsByType);
+                    IngestDailyDigestOutcome.TYPE_BILL, this.sejmCollectService.collectBills(term, date));
+            return new IngestDailyDigestOutcome.Ingested(date, term, countsByType);
         } catch (RuntimeException exception) {
-            return new CollectDailyDigestOutcome.Failed(date, exception);
+            return new IngestDailyDigestOutcome.Failed(date, exception);
         }
     }
 

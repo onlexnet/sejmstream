@@ -193,11 +193,11 @@ Supporting enums:
 Default method: deliveryPolicy() → switches on NoReply/ImmediateReply/DeferredReply
 ```
 
-### CollectDailyDigestOutcome (sealed)
+### IngestDailyDigestOutcome (sealed)
 ```
-CollectDailyDigestOutcome (sealed)
+IngestDailyDigestOutcome (sealed)
 ├── TermMissing
-├── Collected(...)
+├── Ingested(...)
 └── Failed(reason)
 ```
 

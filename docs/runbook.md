@@ -78,7 +78,7 @@ mvn test
 
 ### Run Single Test
 ```bash
-mvn test -Dtest=DefaultCollectDailyDigestUseCaseTest
+mvn test -Dtest=DefaultIngestDailyDigestUseCaseTest
 ```
 
 ### Skip Tests (for quick iteration)
@@ -315,7 +315,7 @@ before operator-authorized intervention through the configured scheduler.
 | `/help` | Show available commands |
 | `/data` | Show current Sejm term info |
 | `/collect` | Trigger immediate data collection |
-| `/collect_recover` | Force `CollectCoordinator` to start next collect run (`forceStartNext`) |
+| `/collect_recover` | Force `DailyDigestIngestionCoordinatorActor` to start the next daily-digest ingestion run |
 | `/publish` | Trigger immediate digest publishing |
 
 ### Authorization

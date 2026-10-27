@@ -13,9 +13,9 @@ import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.in.admin.AdminUseCase;
-import onlexnet.app.ports.in.collect.CollectDailyDigestCommand;
-import onlexnet.app.ports.in.collect.CollectDailyDigestOutcome;
-import onlexnet.app.ports.in.collect.CollectDailyDigestUseCase;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestCommand;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestOutcome;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestUseCase;
 import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
 import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
@@ -33,7 +33,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultAdminUseCase.class);
 
     private final SejmApiClient sejmApiClient;
-    private final CollectDailyDigestUseCase collectDailyDigestUseCase;
+    private final IngestDailyDigestUseCase ingestDailyDigestUseCase;
     private final PublishDailyDigestUseCase publishDailyDigestUseCase;
     private final AdminAccessPolicy accessPolicy;
 
@@ -84,26 +84,26 @@ public class DefaultAdminUseCase implements AdminUseCase {
     }
 
     private AdminOutcome handleCollect() {
-        var outcome = this.collectDailyDigestUseCase
-                .collect(new CollectDailyDigestCommand(LocalDate.now()));
+        var outcome = this.ingestDailyDigestUseCase
+                .ingest(new IngestDailyDigestCommand(LocalDate.now()));
 
         return switch (outcome) {
-            case CollectDailyDigestOutcome.TermMissing _ -> new AdminOutcome.CollectTermMissing();
-            case CollectDailyDigestOutcome.Collected collected -> {
-                var votings = countFor(collected, CollectDailyDigestOutcome.TYPE_VOTING);
-                var committeeSittings = countFor(collected,
-                    CollectDailyDigestOutcome.TYPE_COMMITTEE_SITTING);
-                var prints = countFor(collected, CollectDailyDigestOutcome.TYPE_PRINT);
-                var interpellations = countFor(collected,
-                    CollectDailyDigestOutcome.TYPE_INTERPELLATION);
-                var writtenQuestions = countFor(collected,
-                    CollectDailyDigestOutcome.TYPE_WRITTEN_QUESTION);
-                var bills = countFor(collected, CollectDailyDigestOutcome.TYPE_BILL);
+            case IngestDailyDigestOutcome.TermMissing _ -> new AdminOutcome.CollectTermMissing();
+            case IngestDailyDigestOutcome.Ingested ingested -> {
+                var votings = countFor(ingested, IngestDailyDigestOutcome.TYPE_VOTING);
+                var committeeSittings = countFor(ingested,
+                    IngestDailyDigestOutcome.TYPE_COMMITTEE_SITTING);
+                var prints = countFor(ingested, IngestDailyDigestOutcome.TYPE_PRINT);
+                var interpellations = countFor(ingested,
+                    IngestDailyDigestOutcome.TYPE_INTERPELLATION);
+                var writtenQuestions = countFor(ingested,
+                    IngestDailyDigestOutcome.TYPE_WRITTEN_QUESTION);
+                var bills = countFor(ingested, IngestDailyDigestOutcome.TYPE_BILL);
                 var total = votings + committeeSittings + prints + interpellations + writtenQuestions + bills;
 
                 yield new AdminOutcome.CollectSuccess(
-                        collected.date(),
-                        collected.termNum(),
+                        ingested.date(),
+                        ingested.termNum(),
                         total,
                         votings,
                         committeeSittings,
@@ -112,7 +112,7 @@ public class DefaultAdminUseCase implements AdminUseCase {
                         writtenQuestions,
                         bills);
             }
-            case CollectDailyDigestOutcome.Failed failed -> {
+            case IngestDailyDigestOutcome.Failed failed -> {
                 LOGGER.warn("Admin collect action failed", failed.exception());
                 yield new AdminOutcome.CollectFailureDTO(safeErrorMessage(failed.exception()));
             }
@@ -136,9 +136,9 @@ public class DefaultAdminUseCase implements AdminUseCase {
     }
 
     private int countFor(
-            CollectDailyDigestOutcome.Collected collected,
+            IngestDailyDigestOutcome.Ingested ingested,
             String type) {
-        return collected.countsByType().getOrDefault(type, 0);
+        return ingested.countsByType().getOrDefault(type, 0);
     }
 
     private String safeErrorMessage(RuntimeException exception) {

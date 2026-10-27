@@ -1,6 +1,6 @@
 package onlexnet.infra.adapters.in.azurefunc;
 
-import static onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations.DISPATCH;
+import static onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorContractOperations.DISPATCH;
 
 import java.util.Map;
 import java.util.Optional;

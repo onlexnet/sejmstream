@@ -41,7 +41,7 @@ import onlexnet.app.ports.in.admin.AdminOutcome;
 import onlexnet.app.ports.in.admin.AdminUseCase;
 import onlexnet.app.ports.out.AdminAccessPolicy;
 import onlexnet.app.ports.out.TelegramNotifier;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 
@@ -270,7 +270,7 @@ class TelegramBotFunctionsTest {
         var payloadCaptor = ArgumentCaptor.forClass(Object.class);
         verify(entityClient).signalEntity(
             eq(new EntityInstanceId("collectcoordinator", "singleton")),
-            eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+            eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
             payloadCaptor.capture());
         assertThat(payloadCaptor.getValue()).isInstanceOf(CollectCoordinatorForceStartNextCommandDTO.class);
         var command = (CollectCoordinatorForceStartNextCommandDTO) payloadCaptor.getValue();
@@ -295,7 +295,7 @@ class TelegramBotFunctionsTest {
                         .when(entityClient)
                         .signalEntity(
                                 eq(new EntityInstanceId("collectcoordinator", "singleton")),
-                        eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                        eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                         any(CollectCoordinatorForceStartNextCommandDTO.class));
 
                 var functions = new TelegramBotFunctions(
@@ -329,7 +329,7 @@ class TelegramBotFunctionsTest {
                 var payloadCaptor = ArgumentCaptor.forClass(Object.class);
                 verify(entityClient, times(2)).signalEntity(
                     eq(new EntityInstanceId("collectcoordinator", "singleton")),
-                    eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                    eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                     payloadCaptor.capture());
                 assertThat(payloadCaptor.getAllValues().get(0)).isInstanceOf(CollectCoordinatorForceStartNextCommandDTO.class);
                 assertThat(payloadCaptor.getAllValues().get(1)).isInstanceOf(CollectCoordinatorRequestCollectCommandDTO.class);

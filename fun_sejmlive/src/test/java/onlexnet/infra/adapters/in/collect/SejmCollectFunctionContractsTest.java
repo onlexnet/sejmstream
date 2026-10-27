@@ -42,10 +42,10 @@ import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectQuestions
 import onlexnet.infra.adapters.in.azurefunc.collectactivity.SejmCollectVotingsActivityFunction;
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.SejmCollectOrchestratorFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectTimerFunction;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractV1;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorActor;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorEntityFunction;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorContractV1;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorActor;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerCollectEventFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerActor;
@@ -61,7 +61,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     private static final String COORDINATOR_ENTITY_NAME = "collectcoordinator";
     private static final String TERM_SNAPSHOT_ENTITY_NAME = "termsnapshotreconciler";
 
-    private static final List<String> COLLECT_COORDINATOR_OPERATIONS = CollectCoordinatorContractOperations.BUSINESS_OPERATIONS
+    private static final List<String> COLLECT_COORDINATOR_OPERATIONS = DailyDigestIngestionCoordinatorContractOperations.BUSINESS_OPERATIONS
             .stream()
             .map(onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding::methodName)
             .toList();
@@ -79,11 +79,11 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     private SejmApiClient sejmApiClient;
 
         @Autowired
-        private CollectCoordinatorActor collectCoordinatorActor;
+        private DailyDigestIngestionCoordinatorActor dailyDigestIngestionCoordinatorActor;
 
     @Test
     void shouldMatchActorRegistrationsAndSdkIdentitiesWithTriggerTypes() {
-        var coordinator = applicationContext.getBean(CollectCoordinatorActor.class);
+        var coordinator = applicationContext.getBean(DailyDigestIngestionCoordinatorActor.class);
         var reconciler = applicationContext.getBean(TermSnapshotReconcilerActor.class);
         var coordinatorId = new EntityInstanceId(SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
                 SejmCollectFunctions.COORDINATOR_ENTITY_KEY);
@@ -91,7 +91,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
 
         assertThat(coordinator.entityName()).isEqualTo(COORDINATOR_ENTITY_NAME).isEqualTo(coordinatorId.getName());
         assertThat(reconciler.entityName()).isEqualTo(TERM_SNAPSHOT_ENTITY_NAME).isEqualTo(snapshotId.getName());
-        assertThat(coordinatorId).isEqualTo(new EntityInstanceId("CollectCoordinator", "singleton"));
+        assertThat(coordinatorId).isEqualTo(new EntityInstanceId("collectcoordinator", "singleton"));
         assertThat(coordinatorId.getKey()).isEqualTo("singleton");
         assertThat(snapshotId.getKey()).isEqualTo("10");
         assertThat(snapshotId).isNotEqualTo(new EntityInstanceId("SejmTermSnapshot", "10"));
@@ -161,8 +161,8 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     @Test
     void givenCoordinatorEntityFunction_whenCheckingTriggerContract_thenFunctionAndEntityTriggerAreConfigured()
             throws NoSuchMethodException {
-        var method = CollectCoordinatorEntityFunction.class.getDeclaredMethod(
-                "runCollectCoordinatorEntity",
+        var method = DailyDigestIngestionCoordinatorEntityFunction.class.getDeclaredMethod(
+                "runDailyDigestIngestionCoordinatorEntity",
                 String.class,
                 ExecutionContext.class);
 
@@ -244,18 +244,18 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     }
 
     @Test
-        void shouldExposeOnlyDispatchAsCollectCoordinatorBusinessOperation() {
-        var publicMethods = Arrays.stream(CollectCoordinatorContractV1.class.getMethods())
+        void shouldExposeOnlyDispatchAsDailyDigestIngestionCoordinatorBusinessOperation() {
+        var publicMethods = Arrays.stream(DailyDigestIngestionCoordinatorContractV1.class.getMethods())
                 .map(Method::getName)
                 .map(String::toLowerCase)
                 .collect(Collectors.toSet());
 
                 assertThat(COLLECT_COORDINATOR_OPERATIONS)
-                                .containsExactly(CollectCoordinatorContractOperations.DISPATCH.methodName());
+                                .containsExactly(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName());
 
         for (var op : COLLECT_COORDINATOR_OPERATIONS) {
             assertThat(publicMethods)
-                    .as("enum %s must match a public method on CollectCoordinatorActor", op)
+                    .as("enum %s must match a public method on DailyDigestIngestionCoordinatorActor", op)
                     .contains(op.toLowerCase());
         }
     }
@@ -263,10 +263,10 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     @Test
     void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
         var objectMapper = new ObjectMapper();
-                var getStateType = CollectCoordinatorActor.class.getDeclaredMethod("getStateType");
+                var getStateType = DailyDigestIngestionCoordinatorActor.class.getDeclaredMethod("getStateType");
                 getStateType.setAccessible(true);
                 @SuppressWarnings("unchecked")
-                var stateClass = (Class<Object>) getStateType.invoke(this.collectCoordinatorActor);
+                var stateClass = (Class<Object>) getStateType.invoke(this.dailyDigestIngestionCoordinatorActor);
         var constructor = stateClass.getDeclaredConstructor();
         constructor.setAccessible(true);
         var state = constructor.newInstance();

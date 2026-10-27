@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc.collectcoordinator;
+package onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -35,61 +35,61 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRe
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
 
-class CollectCoordinatorActorTest {
+class DailyDigestIngestionCoordinatorActorTest {
 
     @Test
         void shouldResolveDispatchOperationName() {
-                assertThat(CollectCoordinatorActor.resolveContractOperation(
-                                CollectCoordinatorContractOperations.DISPATCH.methodName()))
-                                .isEqualTo(CollectCoordinatorContractOperations.DISPATCH);
+                assertThat(DailyDigestIngestionCoordinatorActor.resolveContractOperation(
+                                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()))
+                                .isEqualTo(DailyDigestIngestionCoordinatorContractOperations.DISPATCH);
     }
 
     @Test
         void shouldResolveDispatchOperationNameCaseInsensitively() {
-                var operation = CollectCoordinatorActor.resolveContractOperation("DiSpAtCh");
+                var operation = DailyDigestIngestionCoordinatorActor.resolveContractOperation("DiSpAtCh");
 
-                assertThat(operation).isEqualTo(CollectCoordinatorContractOperations.DISPATCH);
+                assertThat(operation).isEqualTo(DailyDigestIngestionCoordinatorContractOperations.DISPATCH);
     }
 
     @Test
         void shouldThrowForUnknownOperationName() {
-                assertThatThrownBy(() -> CollectCoordinatorActor.resolveContractOperation("unknownMethod"))
+                assertThatThrownBy(() -> DailyDigestIngestionCoordinatorActor.resolveContractOperation("unknownMethod"))
                 .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("CollectCoordinatorActor")
+                .hasMessageContaining("DailyDigestIngestionCoordinatorActor")
                 .hasMessageContaining("unknownMethod");
     }
 
         @Test
         void shouldExposeOnlyDispatchAsBusinessOperationBinding() {
-                var contractMethods = Set.of(CollectCoordinatorContractV1.class.getMethods()).stream()
+                var contractMethods = Set.of(DailyDigestIngestionCoordinatorContractV1.class.getMethods()).stream()
                                 .map(Method::getName)
                                 .collect(Collectors.toSet());
 
-                var boundOperationMethods = CollectCoordinatorContractOperations.BUSINESS_OPERATIONS.stream()
+                var boundOperationMethods = DailyDigestIngestionCoordinatorContractOperations.BUSINESS_OPERATIONS.stream()
                                 .map(DurableEntityOperationBinding::methodName)
                                 .collect(Collectors.toSet());
 
                 assertThat(boundOperationMethods)
-                                .containsExactly(CollectCoordinatorContractOperations.DISPATCH.methodName());
+                                .containsExactly(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName());
                 assertThat(boundOperationMethods).containsExactlyInAnyOrderElementsOf(contractMethods);
         }
 
         @Test
         void shouldInvokeDispatchWithRequestCollectCommandPayload() {
-                var target = mock(CollectCoordinatorContractV1.class);
+                var target = mock(DailyDigestIngestionCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
                 var command = new CollectCoordinatorRequestCollectCommandDTO();
                 command.setSource("timer");
                 when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
 
-                CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
+                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
                 verify(target).dispatch(command);
         }
 
         @Test
         void shouldInvokeDispatchWithCollectCompletedCommandPayload() {
-                var target = mock(CollectCoordinatorContractV1.class);
+                var target = mock(DailyDigestIngestionCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
                 var completion = new CollectCompletionDTO();
                 completion.setOrchestrationInstanceId("instance-1");
@@ -97,14 +97,14 @@ class CollectCoordinatorActorTest {
                 command.setCompletion(completion);
                 when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
 
-                CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
+                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
                 verify(target).dispatch(command);
         }
 
         @Test
         void shouldInvokeDispatchWithCollectFailedCommandPayload() {
-                var target = mock(CollectCoordinatorContractV1.class);
+                var target = mock(DailyDigestIngestionCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
                 var failure = new CollectFailureDTO();
                 failure.setOrchestrationInstanceId("instance-1");
@@ -113,20 +113,20 @@ class CollectCoordinatorActorTest {
                 command.setFailure(failure);
                 when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
 
-                CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
+                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
                 verify(target).dispatch(command);
         }
 
         @Test
         void shouldInvokeDispatchWithForceStartNextCommandPayload() {
-                var target = mock(CollectCoordinatorContractV1.class);
+                var target = mock(DailyDigestIngestionCoordinatorContractV1.class);
                 var operation = mock(TaskEntityOperation.class);
                 var command = new CollectCoordinatorForceStartNextCommandDTO();
                 command.setSource("manual-recovery");
                 when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
 
-                CollectCoordinatorContractOperations.DISPATCH.invoke(target, operation);
+                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.invoke(target, operation);
 
                 verify(target).dispatch(command);
         }
@@ -139,7 +139,7 @@ class CollectCoordinatorActorTest {
         when(jsonValidator.validateToSend(eq(JsonValidator.COLLECT_ORCHESTRATION_INPUT), any(CollectOrchestrationInputDTO.class)))
                 .thenAnswer(invocation -> invocation.getArgument(1));
 
-        var entity = new CollectCoordinatorActor(jsonValidator);
+        var entity = new DailyDigestIngestionCoordinatorActor(jsonValidator);
         var operation = mock(TaskEntityOperation.class);
         var state = mock(TaskEntityState.class);
         var context = mock(TaskEntityContext.class);
@@ -152,7 +152,7 @@ class CollectCoordinatorActorTest {
         var command = new CollectCoordinatorCollectFailedCommandDTO();
         command.setFailure(failure);
 
-        when(operation.getName()).thenReturn(CollectCoordinatorContractOperations.DISPATCH.methodName());
+        when(operation.getName()).thenReturn(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName());
         when(operation.getContext()).thenReturn(context);
         when(operation.getState()).thenReturn(state);
         when(state.getState(Some.class)).thenReturn(persistedState);

@@ -12,7 +12,7 @@ Container_Boundary(func_app, "Azure Function App") {
     Component(telegram_fn, "TelegramBotFunctions", "HTTP Webhook", "Receives Telegram admin commands")
 
     ' === USE CASES (Application Core) ===
-    Component(collect_uc, "CollectDailyDigestUseCase", "Use Case", "Orchestrates data collection from Sejm API")
+    Component(collect_uc, "IngestDailyDigestUseCase", "Use Case", "Orchestrates data collection from Sejm API")
     Component(publish_uc, "PublishDailyDigestUseCase", "Use Case", "Formats and publishes daily digest")
     Component(interpellation_uc, "ProcessInterpellationPublishUseCase", "Use Case", "Publishes interpellations with retry logic")
     Component(admin_uc, "AdminUseCase", "Use Case", "Handles admin commands with authorization")

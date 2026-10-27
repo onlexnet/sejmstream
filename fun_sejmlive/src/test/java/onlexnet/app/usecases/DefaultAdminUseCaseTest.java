@@ -18,9 +18,9 @@ import onlexnet.app.ports.in.admin.AdminAction;
 import onlexnet.app.ports.in.admin.AdminActor;
 import onlexnet.app.ports.in.admin.AdminCommandRequest;
 import onlexnet.app.ports.in.admin.AdminOutcome;
-import onlexnet.app.ports.in.collect.CollectDailyDigestCommand;
-import onlexnet.app.ports.in.collect.CollectDailyDigestOutcome;
-import onlexnet.app.ports.in.collect.CollectDailyDigestUseCase;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestCommand;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestOutcome;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestUseCase;
 import onlexnet.app.ports.in.publish.PublishDailyDigestCommand;
 import onlexnet.app.ports.in.publish.PublishDailyDigestOutcome;
 import onlexnet.app.ports.in.publish.PublishDailyDigestUseCase;
@@ -61,7 +61,7 @@ class DefaultAdminUseCaseTest {
     @Test
     void givenDataAction_whenHandled_thenReturnsCurrentTermSummaryArguments() {
         var sejmApiClient = mock(SejmApiClient.class);
-        var collectDailyDigestUseCase = mock(CollectDailyDigestUseCase.class);
+        var ingestDailyDigestUseCase = mock(IngestDailyDigestUseCase.class);
         var accessPolicy = allowAllAccessPolicy();
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(
@@ -74,7 +74,7 @@ class DefaultAdminUseCaseTest {
 
         var useCase = new DefaultAdminUseCase(
                 sejmApiClient,
-                collectDailyDigestUseCase,
+                ingestDailyDigestUseCase,
                 mock(PublishDailyDigestUseCase.class),
                 accessPolicy);
 
@@ -90,20 +90,20 @@ class DefaultAdminUseCaseTest {
     @Test
     void givenCollectAction_whenHandled_thenReturnsCollectionSummaryArguments() {
         var sejmApiClient = mock(SejmApiClient.class);
-        var collectDailyDigestUseCase = mock(CollectDailyDigestUseCase.class);
+        var ingestDailyDigestUseCase = mock(IngestDailyDigestUseCase.class);
         var accessPolicy = allowAllAccessPolicy();
-        when(collectDailyDigestUseCase.collect(any(CollectDailyDigestCommand.class)))
-            .thenReturn(new CollectDailyDigestOutcome.Collected(LocalDate.now(), 10, Map.of(
-                CollectDailyDigestOutcome.TYPE_VOTING, 3,
-                CollectDailyDigestOutcome.TYPE_COMMITTEE_SITTING, 4,
-                CollectDailyDigestOutcome.TYPE_PRINT, 5,
-                CollectDailyDigestOutcome.TYPE_INTERPELLATION, 2,
-                CollectDailyDigestOutcome.TYPE_WRITTEN_QUESTION, 1,
-                CollectDailyDigestOutcome.TYPE_BILL, 6)));
+        when(ingestDailyDigestUseCase.ingest(any(IngestDailyDigestCommand.class)))
+            .thenReturn(new IngestDailyDigestOutcome.Ingested(LocalDate.now(), 10, Map.of(
+                IngestDailyDigestOutcome.TYPE_VOTING, 3,
+                IngestDailyDigestOutcome.TYPE_COMMITTEE_SITTING, 4,
+                IngestDailyDigestOutcome.TYPE_PRINT, 5,
+                IngestDailyDigestOutcome.TYPE_INTERPELLATION, 2,
+                IngestDailyDigestOutcome.TYPE_WRITTEN_QUESTION, 1,
+                IngestDailyDigestOutcome.TYPE_BILL, 6)));
 
         var useCase = new DefaultAdminUseCase(
                 sejmApiClient,
-            collectDailyDigestUseCase,
+            ingestDailyDigestUseCase,
             mock(PublishDailyDigestUseCase.class),
                 accessPolicy);
 
@@ -119,7 +119,7 @@ class DefaultAdminUseCaseTest {
     @Test
     void givenPublishActionWithDigest_whenHandled_thenPublishesAndLogsSuccess() {
         var sejmApiClient = mock(SejmApiClient.class);
-        var collectDailyDigestUseCase = mock(CollectDailyDigestUseCase.class);
+        var ingestDailyDigestUseCase = mock(IngestDailyDigestUseCase.class);
         var publishUseCase = mock(PublishDailyDigestUseCase.class);
         var accessPolicy = allowAllAccessPolicy();
 
@@ -128,7 +128,7 @@ class DefaultAdminUseCaseTest {
 
         var useCase = new DefaultAdminUseCase(
                 sejmApiClient,
-                collectDailyDigestUseCase,
+                ingestDailyDigestUseCase,
                 publishUseCase,
                 accessPolicy);
 
@@ -166,11 +166,11 @@ class DefaultAdminUseCaseTest {
             PublishDailyDigestUseCase publishUseCase,
             AdminAccessPolicy accessPolicy) {
         var sejmApiClient = mock(SejmApiClient.class);
-        var collectDailyDigestUseCase = mock(CollectDailyDigestUseCase.class);
+        var ingestDailyDigestUseCase = mock(IngestDailyDigestUseCase.class);
 
         return new DefaultAdminUseCase(
                 sejmApiClient,
-            collectDailyDigestUseCase,
+            ingestDailyDigestUseCase,
                 publishUseCase,
                 accessPolicy);
     }

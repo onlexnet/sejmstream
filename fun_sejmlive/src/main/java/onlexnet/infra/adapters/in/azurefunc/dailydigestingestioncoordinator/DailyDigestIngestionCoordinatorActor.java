@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc.collectcoordinator;
+package onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
@@ -10,7 +10,7 @@ import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
 
 import lombok.RequiredArgsConstructor;
-import onlexnet.app.usecases.CollectCoordinatorDecider;
+import onlexnet.app.usecases.DailyDigestIngestionCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
@@ -23,11 +23,18 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorFo
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
 
+/**
+ * Prevents concurrent daily-digest ingestion orchestrations by coordinating ingestion requests
+ * through durable entity state.
+ *
+ * <p>Its single responsibility is to apply coordinator decisions and start an ingestion
+ * orchestration when requested; it does not fetch or persist Sejm data itself.</p>
+ */
 @Component
 @RequiredArgsConstructor
-public class CollectCoordinatorActor implements CollectCoordinatorContractV1, EntityComponent {
+public class DailyDigestIngestionCoordinatorActor implements DailyDigestIngestionCoordinatorContractV1, EntityComponent {
 
-    private static final CollectCoordinatorDecider DECIDER = new CollectCoordinatorDecider();
+    private static final DailyDigestIngestionCoordinatorDecider DECIDER = new DailyDigestIngestionCoordinatorDecider();
     // private static final String DELETE_OPERATION_NAME = "delete";
     private final JsonValidator jsonValidator;
     private EntityState state = None.INSTANCE;
@@ -47,7 +54,7 @@ public class CollectCoordinatorActor implements CollectCoordinatorContractV1, En
     }
 
     @Override
-    public DurableEntityOperationBinding<CollectCoordinatorContractV1, ?> resolveOperation(String requestedMethod) {
+    public DurableEntityOperationBinding<DailyDigestIngestionCoordinatorContractV1, ?> resolveOperation(String requestedMethod) {
         return resolveContractOperation(requestedMethod);
     }
 
@@ -71,8 +78,8 @@ public class CollectCoordinatorActor implements CollectCoordinatorContractV1, En
         return null;
     }
 
-    public static DurableEntityOperationBinding<CollectCoordinatorContractV1, ?> resolveContractOperation(String requestedMethod) {
-        return CollectCoordinatorContractOperations.resolveOperation(CollectCoordinatorActor.class, requestedMethod);
+    public static DurableEntityOperationBinding<DailyDigestIngestionCoordinatorContractV1, ?> resolveContractOperation(String requestedMethod) {
+        return DailyDigestIngestionCoordinatorContractOperations.resolveOperation(DailyDigestIngestionCoordinatorActor.class, requestedMethod);
     }
 
     @Override
@@ -83,71 +90,72 @@ public class CollectCoordinatorActor implements CollectCoordinatorContractV1, En
 
         switch (command) {
             case CollectCoordinatorRequestCollectCommandDTO requestCollectCommand ->
-                    handleRequestCollect(requestCollectCommand.getSource());
+                    handleRequestIngestion(requestCollectCommand.getSource());
             case CollectCoordinatorCollectCompletedCommandDTO collectCompletedCommand ->
-                    handleCollectCompleted(collectCompletedCommand);
+                    handleIngestionCompleted(collectCompletedCommand);
             case CollectCoordinatorCollectFailedCommandDTO collectFailedCommand ->
-                    handleCollectFailed(collectFailedCommand);
+                    handleIngestionFailed(collectFailedCommand);
             case CollectCoordinatorForceStartNextCommandDTO forceStartNextCommand ->
-                    handleForceStartNext(forceStartNextCommand.getSource());
+                    handleForceStartNextIngestion(forceStartNextCommand.getSource());
             default -> throw new UnsupportedOperationException(
-                    "Unsupported collect coordinator dispatch command type: " + command.getClass().getName());
+                    "Unsupported daily-digest ingestion coordinator command type: " + command.getClass().getName());
         }
     }
 
-    private void handleRequestCollect(String source) {
+    private void handleRequestIngestion(String source) {
         var decision = DECIDER.decide(
                 requireState().toDeciderState(),
-                new CollectCoordinatorDecider.RequestCollect(source));
+                new DailyDigestIngestionCoordinatorDecider.RequestIngestion(source));
         applyDecision(decision);
     }
 
-    private void handleCollectCompleted(CollectCoordinatorCollectCompletedCommandDTO command) {
+    private void handleIngestionCompleted(CollectCoordinatorCollectCompletedCommandDTO command) {
         var validatedCompletion = jsonValidator.validateReceived(
                 JsonValidator.COLLECT_COMPLETION,
                 command.getCompletion());
         var decision = DECIDER.decide(
                 requireState().toDeciderState(),
-                new CollectCoordinatorDecider.CollectCompleted(validatedCompletion.getOrchestrationInstanceId()));
+                new DailyDigestIngestionCoordinatorDecider.IngestionCompleted(
+                        validatedCompletion.getOrchestrationInstanceId()));
         applyDecision(decision);
     }
 
-    private void handleCollectFailed(CollectCoordinatorCollectFailedCommandDTO command) {
+    private void handleIngestionFailed(CollectCoordinatorCollectFailedCommandDTO command) {
         var validatedFailure = jsonValidator.validateReceived(
                 JsonValidator.COLLECT_FAILURE,
                 command.getFailure());
         var decision = DECIDER.decide(
                 requireState().toDeciderState(),
-                new CollectCoordinatorDecider.CollectFailed(
+                new DailyDigestIngestionCoordinatorDecider.IngestionFailed(
                         validatedFailure.getOrchestrationInstanceId(),
                         validatedFailure.getMessage()));
         applyDecision(decision);
     }
 
-    private void handleForceStartNext(String source) {
+    private void handleForceStartNextIngestion(String source) {
         var normalizedSource = source == null || source.isBlank() ? "manual-recovery" : source;
         var decision = DECIDER.decide(
                 requireState().toDeciderState(),
-                new CollectCoordinatorDecider.ForceStartNext(normalizedSource));
+                new DailyDigestIngestionCoordinatorDecider.ForceStartNextIngestion(normalizedSource));
         applyDecision(decision);
     }
 
-    private void applyDecision(CollectCoordinatorDecider.Decision decision) {
+    private void applyDecision(DailyDigestIngestionCoordinatorDecider.Decision decision) {
         requireState().apply(decision.state());
-        if (decision.effect() instanceof CollectCoordinatorDecider.Effect.StartCollectRun startCollectRun) {
-            startNextRun(startCollectRun.source());
+        if (decision.effect() instanceof DailyDigestIngestionCoordinatorDecider.Effect.StartIngestionRun startIngestionRun) {
+            startNextIngestionRun(startIngestionRun.source());
             return;
         }
-        if (decision.effect() instanceof CollectCoordinatorDecider.Effect.StartCollectRunDelayed startCollectRunDelayed) {
-            startNextRun(startCollectRunDelayed.source(), Instant.now().plus(startCollectRunDelayed.delay()));
+        if (decision.effect() instanceof DailyDigestIngestionCoordinatorDecider.Effect.StartIngestionRunDelayed startIngestionRunDelayed) {
+            startNextIngestionRun(startIngestionRunDelayed.source(), Instant.now().plus(startIngestionRunDelayed.delay()));
         }
     }
 
-    private void startNextRun(String source) {
-        startNextRun(source, null);
+    private void startNextIngestionRun(String source) {
+        startNextIngestionRun(source, null);
     }
 
-    private void startNextRun(String source, @Nullable Instant startTime) {
+    private void startNextIngestionRun(String source, @Nullable Instant startTime) {
         var options = new NewOrchestrationInstanceOptions();
         if (startTime != null) {
             options.setStartTime(startTime);

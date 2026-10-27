@@ -17,7 +17,7 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorFo
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
 
-class CollectCoordinatorDispatchCommandJsonRoundTripTest {
+class DailyDigestIngestionCoordinatorDispatchCommandJsonRoundTripTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
             .findAndRegisterModules()

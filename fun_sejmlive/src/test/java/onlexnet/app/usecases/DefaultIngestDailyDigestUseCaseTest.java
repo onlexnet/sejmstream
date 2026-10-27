@@ -11,14 +11,14 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import onlexnet.app.ports.in.collect.CollectDailyDigestCommand;
-import onlexnet.app.ports.in.collect.CollectDailyDigestOutcome;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestCommand;
+import onlexnet.app.ports.in.ingest.IngestDailyDigestOutcome;
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmApiClient.SejmPrints;
 import onlexnet.app.ports.out.SejmCollectOperations;
 import onlexnet.app.ports.out.SejmApiClient.SejmTerm;
 
-class DefaultCollectDailyDigestUseCaseTest {
+class DefaultIngestDailyDigestUseCaseTest {
 
     @Test
     void givenCurrentTermAndCollectData_whenCollectCalled_thenReturnsCollectedOutcome() {
@@ -34,21 +34,21 @@ class DefaultCollectDailyDigestUseCaseTest {
         when(sejmCollectService.collectWrittenQuestions(10, date)).thenReturn(1);
         when(sejmCollectService.collectBills(10, date)).thenReturn(6);
 
-        var useCase = new DefaultCollectDailyDigestUseCase(sejmApiClient, sejmCollectService);
+        var useCase = new DefaultIngestDailyDigestUseCase(sejmApiClient, sejmCollectService);
 
-        var outcome = useCase.collect(new CollectDailyDigestCommand(date));
+        var outcome = useCase.ingest(new IngestDailyDigestCommand(date));
 
         assertThat(outcome)
-                .isInstanceOfSatisfying(CollectDailyDigestOutcome.Collected.class, collected -> {
+                .isInstanceOfSatisfying(IngestDailyDigestOutcome.Ingested.class, collected -> {
                     assertThat(collected.date()).isEqualTo(date);
                     assertThat(collected.termNum()).isEqualTo(10);
-                    assertThat(collected.countsByType()).containsEntry(CollectDailyDigestOutcome.TYPE_VOTING, 3);
-                    assertThat(collected.countsByType()).containsEntry(CollectDailyDigestOutcome.TYPE_COMMITTEE_SITTING, 4);
-                    assertThat(collected.countsByType()).containsEntry(CollectDailyDigestOutcome.TYPE_PRINT, 5);
-                    assertThat(collected.countsByType()).containsEntry(CollectDailyDigestOutcome.TYPE_INTERPELLATION, 2);
+                    assertThat(collected.countsByType()).containsEntry(IngestDailyDigestOutcome.TYPE_VOTING, 3);
+                    assertThat(collected.countsByType()).containsEntry(IngestDailyDigestOutcome.TYPE_COMMITTEE_SITTING, 4);
+                    assertThat(collected.countsByType()).containsEntry(IngestDailyDigestOutcome.TYPE_PRINT, 5);
+                    assertThat(collected.countsByType()).containsEntry(IngestDailyDigestOutcome.TYPE_INTERPELLATION, 2);
                     assertThat(collected.countsByType())
-                            .containsEntry(CollectDailyDigestOutcome.TYPE_WRITTEN_QUESTION, 1);
-                    assertThat(collected.countsByType()).containsEntry(CollectDailyDigestOutcome.TYPE_BILL, 6);
+                            .containsEntry(IngestDailyDigestOutcome.TYPE_WRITTEN_QUESTION, 1);
+                    assertThat(collected.countsByType()).containsEntry(IngestDailyDigestOutcome.TYPE_BILL, 6);
                 });
     }
 
@@ -60,12 +60,12 @@ class DefaultCollectDailyDigestUseCaseTest {
 
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(nonCurrentTerm(9)));
 
-        var useCase = new DefaultCollectDailyDigestUseCase(sejmApiClient, sejmCollectService);
+        var useCase = new DefaultIngestDailyDigestUseCase(sejmApiClient, sejmCollectService);
 
-        var outcome = useCase.collect(new CollectDailyDigestCommand(date));
+        var outcome = useCase.ingest(new IngestDailyDigestCommand(date));
 
         assertThat(outcome)
-                .isInstanceOfSatisfying(CollectDailyDigestOutcome.TermMissing.class,
+                .isInstanceOfSatisfying(IngestDailyDigestOutcome.TermMissing.class,
                         termMissing -> assertThat(termMissing.date()).isEqualTo(date));
     }
 
@@ -78,12 +78,12 @@ class DefaultCollectDailyDigestUseCaseTest {
         when(sejmApiClient.fetchTerms()).thenReturn(List.of(currentTerm(10)));
         when(sejmCollectService.collectVotings(eq(10), eq(date))).thenThrow(new IllegalStateException("boom"));
 
-        var useCase = new DefaultCollectDailyDigestUseCase(sejmApiClient, sejmCollectService);
+        var useCase = new DefaultIngestDailyDigestUseCase(sejmApiClient, sejmCollectService);
 
-        var outcome = useCase.collect(new CollectDailyDigestCommand(date));
+        var outcome = useCase.ingest(new IngestDailyDigestCommand(date));
 
         assertThat(outcome)
-                .isInstanceOfSatisfying(CollectDailyDigestOutcome.Failed.class,
+                .isInstanceOfSatisfying(IngestDailyDigestOutcome.Failed.class,
                         failed -> assertThat(failed.exception()).isInstanceOf(IllegalStateException.class));
     }
 

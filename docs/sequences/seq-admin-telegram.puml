@@ -7,7 +7,7 @@ participant "TelegramBotFunctions" as fn
 participant "TelegramAdminActionParser" as parser
 participant "AdminUseCase" as uc
 participant "AdminAccessPolicy" as policy
-participant "CollectDailyDigestUseCase" as collect
+participant "IngestDailyDigestUseCase" as collect
 participant "PublishDailyDigestUseCase" as publish
 participant "SejmApiClient" as api
 participant "TelegramAdminOutcomePresenter" as presenter
@@ -49,15 +49,15 @@ else Authorized
         end
 
     else Action = Collect
-        uc -> collect: collect(CollectDailyDigestCommand(today))
+        uc -> collect: collect(IngestDailyDigestCommand(today))
         alt TermMissing
-            collect --> uc: CollectDailyDigestOutcome.TermMissing
+            collect --> uc: IngestDailyDigestOutcome.TermMissing
             uc --> fn: AdminOutcome.CollectTermMissing
         else Collected
-            collect --> uc: CollectDailyDigestOutcome.Collected(...)
+            collect --> uc: IngestDailyDigestOutcome.Ingested(...)
             uc --> fn: AdminOutcome.CollectSuccess(date, termNum, counts...)
         else Failed
-            collect --> uc: CollectDailyDigestOutcome.Failed(reason)
+            collect --> uc: IngestDailyDigestOutcome.Failed(reason)
             uc --> fn: AdminOutcome.CollectFailure(reason)
         end
 

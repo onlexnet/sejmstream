@@ -1,4 +1,4 @@
-package onlexnet.infra.adapters.in.azurefunc.collectcoordinator;
+package onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
@@ -10,23 +10,23 @@ import com.microsoft.durabletask.EntityRunner;
 import com.microsoft.durabletask.azurefunctions.DurableEntityTrigger;
 
 import lombok.RequiredArgsConstructor;
-import onlexnet.app.usecases.CollectCoordinatorDecider;
+import onlexnet.app.usecases.DailyDigestIngestionCoordinatorDecider;
 import onlexnet.infra.adapters.in.azurefunc.Log;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityGateway;
 
 @Component
 @RequiredArgsConstructor
-public final class CollectCoordinatorEntityFunction {
+public final class DailyDigestIngestionCoordinatorEntityFunction {
 
     private final ObjectProvider<TaskEntityGateway> taskEntityGatewayProvider;
 
     @FunctionName(SejmCollectFunctions.COORDINATOR_ENTITY_FUNCTION_NAME)
-    public String runCollectCoordinatorEntity(
+    public String runDailyDigestIngestionCoordinatorEntity(
         @DurableEntityTrigger(name = "entityRequest", entityName = SejmCollectFunctions.COORDINATOR_ENTITY_NAME) String entityBatchRequest,
         ExecutionContext execCtx) {
 
-        Log.info(execCtx, "Processing collect coordinator entity batch");
+        Log.info(execCtx, "Processing daily-digest ingestion coordinator entity batch");
         return EntityRunner.loadAndRun(entityBatchRequest, () -> taskEntityGatewayProvider.getObject());
     }
 
@@ -47,11 +47,11 @@ final class Some implements EntityState {
         this.running = running;
     }
 
-    public CollectCoordinatorDecider.State toDeciderState() {
-        return new CollectCoordinatorDecider.State(this.running);
+    public DailyDigestIngestionCoordinatorDecider.State toDeciderState() {
+        return new DailyDigestIngestionCoordinatorDecider.State(this.running);
     }
 
-    public void apply(CollectCoordinatorDecider.State state) {
+    public void apply(DailyDigestIngestionCoordinatorDecider.State state) {
         this.running = state.running();
     }
 }

@@ -30,14 +30,14 @@
 
 ## Inbound Ports (Use Case Interfaces)
 
-### CollectDailyDigestUseCase
+### IngestDailyDigestUseCase
 ```java
-public interface CollectDailyDigestUseCase {
-    CollectDailyDigestOutcome collect(CollectDailyDigestCommand command);
+public interface IngestDailyDigestUseCase {
+    IngestDailyDigestOutcome ingest(IngestDailyDigestCommand command);
 }
 ```
-**Command**: `CollectDailyDigestCommand(LocalDate date)`  
-**Outcome**: `TermMissing` | `Collected(...)` | `Failed(String reason)`
+**Command**: `IngestDailyDigestCommand(LocalDate date)`
+**Outcome**: `TermMissing` | `Ingested(...)` | `Failed(String reason)`
 
 ---
 

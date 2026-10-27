@@ -13,7 +13,7 @@ import com.restfb.FacebookClient;
 
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.base.TaskEntityGateway;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorActor;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorActor;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerActor;
 import onlexnet.infra.adapters.out.SejmCollectService;
 import onlexnet.testsupport.AppTest;
@@ -51,8 +51,8 @@ class SejmCollectFunctionsSpringBootBeansPresenceTest extends PostgresIntegratio
 
     @Test
     void shouldDiscoverBusinessActorsAsEntityComponents() {
-        assertThat(applicationContext.getBean(CollectCoordinatorActor.class))
-                .isSameAs(applicationContext.getBean("collectCoordinatorActor"));
+        assertThat(applicationContext.getBean(DailyDigestIngestionCoordinatorActor.class))
+                .isSameAs(applicationContext.getBean("dailyDigestIngestionCoordinatorActor"));
         assertThat(applicationContext.getBean(TermSnapshotReconcilerActor.class))
                 .isSameAs(applicationContext.getBean("termSnapshotReconcilerActor"));
     }

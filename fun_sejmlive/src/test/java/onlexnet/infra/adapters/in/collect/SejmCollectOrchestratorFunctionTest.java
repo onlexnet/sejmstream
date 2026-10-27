@@ -29,7 +29,7 @@ import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.CollectActivityResultWire;
 import onlexnet.infra.adapters.in.azurefunc.collectorchestrator.SejmCollectOrchestratorFunction;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
-import onlexnet.infra.adapters.in.azurefunc.collectcoordinator.CollectCoordinatorContractOperations;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectActivityRequestDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
@@ -142,7 +142,7 @@ class SejmCollectOrchestratorFunctionTest {
                 eq(String.class));
         verify(orchestrationContext).signalEntity(
                 eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                 argThat(command -> isCompletedDispatchCommand(command, "collect-instance-1")));
     }
 
@@ -173,7 +173,7 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext, never()).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                 isA(CollectCoordinatorCollectFailedCommandDTO.class));
     }
 
@@ -211,7 +211,7 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                 argThat(command -> isFailedDispatchCommand(
                         command,
                         "collect-instance-2",
@@ -246,11 +246,11 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                 argThat(command -> isFailedDispatchCommand(command, "collect-instance-cancel", "collect-cancel")));
         verify(orchestrationContext, never()).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                 isA(CollectCoordinatorCollectCompletedCommandDTO.class));
     }
 
@@ -385,7 +385,7 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                 argThat(command -> isFailedDispatchCommand(
                         command,
                         "collect-instance-publish-failure",
@@ -422,7 +422,7 @@ class SejmCollectOrchestratorFunctionTest {
 
         verify(orchestrationContext).signalEntity(
                 any(),
-                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                 argThat(command -> isFailedDispatchCommand(
                         command,
                         "collect-instance-unexpected-winner",
@@ -448,7 +448,7 @@ class SejmCollectOrchestratorFunctionTest {
 
                 verify(orchestrationContext).signalEntity(
                                 eq(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY)),
-                                                                eq(CollectCoordinatorContractOperations.DISPATCH.methodName()),
+                                                                eq(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()),
                                                                 argThat(command -> isFailedDispatchCommand(
                                                                                 command,
                                                                                 "collect-instance-invalid-input",

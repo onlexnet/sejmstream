@@ -100,7 +100,7 @@ deactivate snapshot_event_fn
 orch --> fn: CollectResult(countsByType)
 deactivate orch
 
-fn --> trigger: 200 OK / CollectDailyDigestOutcome.Collected
+fn --> trigger: 200 OK / IngestDailyDigestOutcome.Ingested
 deactivate fn
 
 @enduml
