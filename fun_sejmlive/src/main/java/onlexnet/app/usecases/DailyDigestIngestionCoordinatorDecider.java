@@ -1,63 +1,72 @@
 package onlexnet.app.usecases;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
- * Ensures at most one daily-digest ingestion orchestration runs at a time.
- * Additional ingestion requests received while a run is in progress are coalesced.
+ * Pure ownership decisions. A start effect becomes owned only when the adapter commits scheduling and its returned ID.
  */
 public final class DailyDigestIngestionCoordinatorDecider {
 
-    public Decision decide(State state, Command command) {
+    // Five replacements bound automatic recovery to six total runs per cycle (ADR-010).
+    public static final int MAX_REPLACEMENTS = 5;
+    private static final List<Duration> RETRY_DELAYS = List.of(
+            Duration.ofMinutes(1), Duration.ofMinutes(2), Duration.ofMinutes(4),
+            Duration.ofMinutes(8), Duration.ofMinutes(15));
+
+    public Decision decide(DailyDigestIngestionState state, Command command) {
         return switch (command) {
-            case RequestIngestion requestIngestion -> onRequestIngestion(state, requestIngestion);
-            case IngestionCompleted _ -> onIngestionFinished(state);
-            case IngestionFailed ingestionFailed -> onIngestionFailed(state, ingestionFailed);
-            case ForceStartNextIngestion forceStartNext -> onForceStartNext(state, forceStartNext);
+            case RequestIngestion request -> state instanceof DailyDigestIngestionState.Idle
+                    ? start(state, request.source(), 0, Duration.ZERO) : unchanged(state);
+            case IngestionCompleted completed -> requestReconciliation(state, completed.orchestrationInstanceId());
+            case IngestionFailed failed -> requestReconciliation(state, failed.orchestrationInstanceId());
+            case ForceStartNextIngestion recovery -> recover(state, recovery.source());
+            case RuntimeObserved observation -> observe(state, observation);
         };
     }
 
-    private Decision onRequestIngestion(State state, RequestIngestion requestIngestion) {
-        if (state.running()) {
-            return new Decision(state, Effect.none());
+    private Decision recover(DailyDigestIngestionState state, String source) {
+        return switch (state) {
+            case DailyDigestIngestionState.Owned owned -> requestReconciliation(state, owned.instanceId());
+            case DailyDigestIngestionState.RecoveryRequired recovery
+                    when recovery.reason() == DailyDigestIngestionState.Reason.LEGACY_OWNERSHIP -> unchanged(state);
+            default -> start(state, source, 0, Duration.ZERO);
+        };
+    }
+
+    private Decision requestReconciliation(DailyDigestIngestionState state, String instanceId) {
+        if (state instanceof DailyDigestIngestionState.Owned owned && owned.instanceId().equals(instanceId)) {
+            return unchanged(new DailyDigestIngestionState.Owned(
+                    owned.instanceId(), owned.attempt(), owned.source(), owned.scheduledStart(), true));
         }
-
-        return new Decision(new State(true), new Effect.StartIngestionRun(requestIngestion.source()));
+        return unchanged(state);
     }
 
-    private Decision onIngestionFinished(State state) {
-        return new Decision(State.idle(), Effect.none());
-    }
-
-    private Decision onIngestionFailed(State state, IngestionFailed ingestionFailed) {
-        if (isTimeoutFailure(ingestionFailed.message())) {
-            return new Decision(
-                    State.idle(),
-                    new Effect.StartIngestionRunDelayed("timeout-retry", Duration.ofHours(1)));
+    private Decision observe(DailyDigestIngestionState state, RuntimeObserved observation) {
+        if (!(state instanceof DailyDigestIngestionState.Owned owned)
+                || !owned.instanceId().equals(observation.orchestrationInstanceId())) {
+            return unchanged(state);
         }
-
-        return onIngestionFinished(state);
+        return switch (observation.status()) {
+            case COMPLETED -> unchanged(new DailyDigestIngestionState.Idle());
+            case FAILED -> owned.attempt() == MAX_REPLACEMENTS
+                    ? unchanged(new DailyDigestIngestionState.Exhausted(owned.instanceId()))
+                    : start(state, owned.source(), owned.attempt() + 1, RETRY_DELAYS.get(owned.attempt()));
+            case TERMINATED, CANCELED -> unchanged(new DailyDigestIngestionState.RecoveryRequired(
+                    DailyDigestIngestionState.Reason.ADMINISTRATIVE_STOP, owned.instanceId()));
+            case PENDING, RUNNING, SUSPENDED, CONTINUED_AS_NEW -> unchanged(state);
+        };
     }
 
-    private static boolean isTimeoutFailure(String message) {
-        if (message == null || message.isBlank()) {
-            return false;
-        }
-        return message.toLowerCase().contains("timeout");
+    private static Decision start(DailyDigestIngestionState state, String source, int attempt, Duration delay) {
+        return new Decision(state, new Effect.StartIngestionRun(source, attempt, delay));
     }
 
-    private Decision onForceStartNext(State state, ForceStartNextIngestion forceStartNext) {
-        return new Decision(new State(true), new Effect.StartIngestionRun(forceStartNext.source()));
+    private static Decision unchanged(DailyDigestIngestionState state) {
+        return new Decision(state, Effect.None.INSTANCE);
     }
 
-    public record State(boolean running) {
-        public static State idle() {
-            return new State(false);
-        }
-    }
-
-    public sealed interface Command permits RequestIngestion, IngestionCompleted, IngestionFailed,
-            ForceStartNextIngestion {
+    public sealed interface Command {
     }
 
     public record RequestIngestion(String source) implements Command {
@@ -72,22 +81,20 @@ public final class DailyDigestIngestionCoordinatorDecider {
     public record ForceStartNextIngestion(String source) implements Command {
     }
 
-    public record Decision(State state, Effect effect) {
+    public record RuntimeObserved(String orchestrationInstanceId, RuntimeStatus status) implements Command {
     }
 
-    public sealed interface Effect permits Effect.None, Effect.StartIngestionRun, Effect.StartIngestionRunDelayed {
-        static Effect none() {
-            return None.INSTANCE;
-        }
+    public enum RuntimeStatus {
+        PENDING, RUNNING, SUSPENDED, CONTINUED_AS_NEW, COMPLETED, FAILED, TERMINATED, CANCELED
+    }
 
-        enum None implements Effect {
-            INSTANCE
-        }
+    public record Decision(DailyDigestIngestionState state, Effect effect) {
+    }
 
-        record StartIngestionRun(String source) implements Effect {
-        }
+    public sealed interface Effect {
+        enum None implements Effect { INSTANCE }
 
-        record StartIngestionRunDelayed(String source, Duration delay) implements Effect {
+        record StartIngestionRun(String source, int attempt, Duration delay) implements Effect {
         }
     }
 }

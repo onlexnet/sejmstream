@@ -2,188 +2,137 @@ package onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import java.lang.reflect.Method;
-import java.time.Duration;
 import java.time.Instant;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import com.microsoft.durabletask.EntityInstanceId;
-import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
-import com.microsoft.durabletask.TaskEntityContext;
-import com.microsoft.durabletask.TaskEntityOperation;
-import com.microsoft.durabletask.TaskEntityState;
+import com.microsoft.durabletask.TaskEntity;
 
-import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
-import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
+import onlexnet.app.usecases.DailyDigestIngestionState;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCompletionDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectCompletedCommandDTO;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCollectFailedCommandDTO;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
-import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectRuntimeStatusDTO;
 
 class DailyDigestIngestionCoordinatorActorTest {
 
     @Test
-        void shouldResolveDispatchOperationName() {
-                assertThat(DailyDigestIngestionCoordinatorActor.resolveContractOperation(
-                                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName()))
-                                .isEqualTo(DailyDigestIngestionCoordinatorContractOperations.DISPATCH);
+    void shouldResolveDispatchAndRejectUnknownOperation() {
+        assertThat(DailyDigestIngestionCoordinatorActor.resolveContractOperation("DiSpAtCh"))
+                .isEqualTo(DailyDigestIngestionCoordinatorContractOperations.DISPATCH);
+        assertThatThrownBy(() -> DailyDigestIngestionCoordinatorActor.resolveContractOperation("unknown"))
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThatThrownBy(() -> new DailyDigestIngestionCoordinatorActor(CoordinatorTestSupport.validator())
+                .dispatch(CoordinatorTestSupport.request())).isInstanceOf(IllegalStateException.class);
     }
 
     @Test
-        void shouldResolveDispatchOperationNameCaseInsensitively() {
-                var operation = DailyDigestIngestionCoordinatorActor.resolveContractOperation("DiSpAtCh");
-
-                assertThat(operation).isEqualTo(DailyDigestIngestionCoordinatorContractOperations.DISPATCH);
+    void shouldCommitOneOwnedStartForRepeatedRequestsInOneBatch() throws Exception {
+        var result = CoordinatorTestSupport.run(CoordinatorTestSupport.state(new DailyDigestIngestionState.Idle()),
+                CoordinatorTestSupport.request(), CoordinatorTestSupport.request());
+        assertThat(result.getResultsList()).allMatch(operation -> operation.hasSuccess());
+        assertThat(result.getActionsCount()).isEqualTo(1);
+        var action = result.getActions(0).getStartNewOrchestration();
+        var owned = (DailyDigestIngestionState.Owned) CoordinatorTestSupport.lifecycle(result);
+        assertThat(action.getName()).isEqualTo(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME);
+        assertThat(owned.instanceId()).isEqualTo(action.getInstanceId()).isNotBlank();
+        assertThat(owned.attempt()).isZero();
+        assertThat(owned.scheduledStart().getEpochSecond()).isEqualTo(action.getScheduledTime().getSeconds());
     }
 
     @Test
-        void shouldThrowForUnknownOperationName() {
-                assertThatThrownBy(() -> DailyDigestIngestionCoordinatorActor.resolveContractOperation("unknownMethod"))
-                .isInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("DailyDigestIngestionCoordinatorActor")
-                .hasMessageContaining("unknownMethod");
-    }
-
-        @Test
-        void shouldExposeOnlyDispatchAsBusinessOperationBinding() {
-                var contractMethods = Set.of(DailyDigestIngestionCoordinatorContractV1.class.getMethods()).stream()
-                                .map(Method::getName)
-                                .collect(Collectors.toSet());
-
-                var boundOperationMethods = DailyDigestIngestionCoordinatorContractOperations.BUSINESS_OPERATIONS.stream()
-                                .map(DurableEntityOperationBinding::methodName)
-                                .collect(Collectors.toSet());
-
-                assertThat(boundOperationMethods)
-                                .containsExactly(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName());
-                assertThat(boundOperationMethods).containsExactlyInAnyOrderElementsOf(contractMethods);
-        }
-
-        @Test
-        void shouldInvokeDispatchWithRequestCollectCommandPayload() {
-                var target = mock(DailyDigestIngestionCoordinatorContractV1.class);
-                var operation = mock(TaskEntityOperation.class);
-                var command = new CollectCoordinatorRequestCollectCommandDTO();
-                command.setSource("timer");
-                when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
-
-                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.invoke(target, operation);
-
-                verify(target).dispatch(command);
-        }
-
-        @Test
-        void shouldInvokeDispatchWithCollectCompletedCommandPayload() {
-                var target = mock(DailyDigestIngestionCoordinatorContractV1.class);
-                var operation = mock(TaskEntityOperation.class);
-                var completion = new CollectCompletionDTO();
-                completion.setOrchestrationInstanceId("instance-1");
-                var command = new CollectCoordinatorCollectCompletedCommandDTO();
-                command.setCompletion(completion);
-                when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
-
-                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.invoke(target, operation);
-
-                verify(target).dispatch(command);
-        }
-
-        @Test
-        void shouldInvokeDispatchWithCollectFailedCommandPayload() {
-                var target = mock(DailyDigestIngestionCoordinatorContractV1.class);
-                var operation = mock(TaskEntityOperation.class);
-                var failure = new CollectFailureDTO();
-                failure.setOrchestrationInstanceId("instance-1");
-                failure.setMessage("boom");
-                var command = new CollectCoordinatorCollectFailedCommandDTO();
-                command.setFailure(failure);
-                when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
-
-                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.invoke(target, operation);
-
-                verify(target).dispatch(command);
-        }
-
-        @Test
-        void shouldInvokeDispatchWithForceStartNextCommandPayload() {
-                var target = mock(DailyDigestIngestionCoordinatorContractV1.class);
-                var operation = mock(TaskEntityOperation.class);
-                var command = new CollectCoordinatorForceStartNextCommandDTO();
-                command.setSource("manual-recovery");
-                when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
-
-                DailyDigestIngestionCoordinatorContractOperations.DISPATCH.invoke(target, operation);
-
-                verify(target).dispatch(command);
-        }
-
-    @Test
-    void givenRunningStateAndTimeoutFailure_whenCollectFailed_thenSchedulesNewRunOneHourLater() {
-        var jsonValidator = mock(JsonValidator.class);
-        when(jsonValidator.validateReceived(eq(JsonValidator.COLLECT_FAILURE), any(CollectFailureDTO.class)))
-                .thenAnswer(invocation -> invocation.getArgument(1));
-        when(jsonValidator.validateToSend(eq(JsonValidator.COLLECT_ORCHESTRATION_INPUT), any(CollectOrchestrationInputDTO.class)))
-                .thenAnswer(invocation -> invocation.getArgument(1));
-
-        var entity = new DailyDigestIngestionCoordinatorActor(jsonValidator);
-        var operation = mock(TaskEntityOperation.class);
-        var state = mock(TaskEntityState.class);
-        var context = mock(TaskEntityContext.class);
-
-        var persistedState = new Some();
-        persistedState.setRunning(true);
-        var failure = new CollectFailureDTO();
-        failure.setOrchestrationInstanceId("collect-instance-1");
-        failure.setMessage("io.netty.handler.timeout.ReadTimeoutException");
-        var command = new CollectCoordinatorCollectFailedCommandDTO();
-        command.setFailure(failure);
-
-        when(operation.getName()).thenReturn(DailyDigestIngestionCoordinatorContractOperations.DISPATCH.methodName());
-        when(operation.getContext()).thenReturn(context);
-        when(operation.getState()).thenReturn(state);
-        when(state.getState(Some.class)).thenReturn(persistedState);
-        when(operation.getInput(CollectCoordinatorDispatchCommandDTO.class)).thenReturn(command);
-        when(context.getId()).thenReturn(new EntityInstanceId(
-                SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
-                SejmCollectFunctions.COORDINATOR_ENTITY_KEY));
-
-        var inputCaptor = ArgumentCaptor.forClass(CollectOrchestrationInputDTO.class);
-        var optionsCaptor = ArgumentCaptor.forClass(NewOrchestrationInstanceOptions.class);
+    void shouldOwnDelayedReplacementAndIgnoreRepeatedFailureAndRequestsAfterRestart() throws Exception {
+        var original = owned("original", 0);
+        var failure = CoordinatorTestSupport.observation("original", CollectRuntimeStatusDTO.FAILED);
         var before = Instant.now();
+        var result = CoordinatorTestSupport.run(CoordinatorTestSupport.state(original), failure, failure,
+                CoordinatorTestSupport.request());
+        assertThat(result.getActionsCount()).isEqualTo(1);
+        var replacement = (DailyDigestIngestionState.Owned) CoordinatorTestSupport.lifecycle(result);
+        assertThat(replacement.instanceId()).isNotEqualTo("original");
+        assertThat(replacement.attempt()).isEqualTo(1);
+        assertThat(replacement.scheduledStart()).isAfterOrEqualTo(before.plusSeconds(60));
 
-        entity.runOperation(operation);
+        var restarted = CoordinatorTestSupport.run(result.getEntityState().getValue(), CoordinatorTestSupport.request(), failure);
+        assertThat(restarted.getActionsList()).isEmpty();
+        assertThat(CoordinatorTestSupport.lifecycle(restarted)).isEqualTo(replacement);
+    }
 
-        var after = Instant.now();
-        verify(context).startNewOrchestration(
-                eq(SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME),
-                inputCaptor.capture(),
-                optionsCaptor.capture());
+    @Test
+    void shouldTreatCompletionAsHintUntilRuntimeConfirmsCompletion() throws Exception {
+        var completion = new CollectCompletionDTO();
+        completion.setOrchestrationInstanceId("run");
+        var command = new CollectCoordinatorCollectCompletedCommandDTO();
+        command.setCompletion(completion);
+        var result = CoordinatorTestSupport.run(CoordinatorTestSupport.state(owned("run", 2)), command,
+                CoordinatorTestSupport.request());
+        var hinted = (DailyDigestIngestionState.Owned) CoordinatorTestSupport.lifecycle(result);
+        assertThat(hinted.reconciliationRequested()).isTrue();
+        assertThat(result.getActionsList()).isEmpty();
 
-        var capturedInput = inputCaptor.getValue();
-        assertThat(capturedInput.getCoordinatorEntityId())
-                .isEqualTo(new EntityInstanceId(
-                        SejmCollectFunctions.COORDINATOR_ENTITY_NAME,
-                        SejmCollectFunctions.COORDINATOR_ENTITY_KEY).toString());
-        assertThat(capturedInput.getSource()).isEqualTo("timeout-retry");
+        var completed = CoordinatorTestSupport.run(result.getEntityState().getValue(),
+                CoordinatorTestSupport.observation("run", CollectRuntimeStatusDTO.COMPLETED));
+        assertThat(CoordinatorTestSupport.lifecycle(completed)).isEqualTo(new DailyDigestIngestionState.Idle());
+    }
 
-        var startTime = optionsCaptor.getValue().getStartTime();
-        assertThat(startTime).isNotNull();
-        assertThat(startTime)
-                .isAfterOrEqualTo(before.plus(Duration.ofHours(1)).minusSeconds(5))
-                .isBeforeOrEqualTo(after.plus(Duration.ofHours(1)).plusSeconds(5));
+    @Test
+    void shouldRollbackScheduledActionAndStateWhenOperationFails() throws Exception {
+        var gateway = CoordinatorTestSupport.gateway();
+        TaskEntity failAfterScheduling = operation -> {
+            gateway.run(operation);
+            throw new IllegalStateException("Injected failure after scheduling and state write");
+        };
+        var initial = CoordinatorTestSupport.state(owned("failed", 2));
+        var result = CoordinatorTestSupport.run(failAfterScheduling, initial,
+                CoordinatorTestSupport.observation("failed", CollectRuntimeStatusDTO.FAILED));
+        assertThat(result.getResults(0).hasFailure()).isTrue();
+        assertThat(result.getActionsList()).isEmpty();
+        assertThat(result.getEntityState().getValue()).isEqualTo(initial);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void shouldRejectBothLegacyStatesEvenForManualRecovery(boolean running) throws Exception {
+        var recovery = new CollectCoordinatorForceStartNextCommandDTO();
+        recovery.setSource("admin");
+        var legacyState = "{\"running\":" + running + "}";
+        var result = CoordinatorTestSupport.run(legacyState, CoordinatorTestSupport.request(), recovery);
+        assertThat(result.getResultsList()).allMatch(operation -> operation.hasFailure());
+        assertThat(result.getActionsList()).isEmpty();
+        assertThat(result.getEntityState().getValue()).isEqualTo(legacyState);
+    }
+
+    @Test
+    void shouldRejectMalformedObservationWithoutChangingOwnership() throws Exception {
+        var initial = CoordinatorTestSupport.state(owned("run", 1));
+        var invalid = CoordinatorTestSupport.observation(" ", CollectRuntimeStatusDTO.FAILED);
+        var result = CoordinatorTestSupport.run(initial, invalid);
+        assertThat(result.getResults(0).hasFailure()).isTrue();
+        assertThat(result.getActionsList()).isEmpty();
+        assertThat(result.getEntityState().getValue()).isEqualTo(initial);
+    }
+
+    @Test
+    void shouldExhaustAndRequireExplicitRecoveryWithoutBypassingScheduledOwner() throws Exception {
+        var result = CoordinatorTestSupport.run(CoordinatorTestSupport.state(owned("last", 5)),
+                CoordinatorTestSupport.observation("last", CollectRuntimeStatusDTO.FAILED), CoordinatorTestSupport.request());
+        assertThat(CoordinatorTestSupport.lifecycle(result)).isEqualTo(new DailyDigestIngestionState.Exhausted("last"));
+        assertThat(result.getActionsList()).isEmpty();
+
+        var recovery = new CollectCoordinatorForceStartNextCommandDTO();
+        recovery.setSource("telegram-recovery");
+        var recovered = CoordinatorTestSupport.run(result.getEntityState().getValue(), recovery, recovery);
+        assertThat(recovered.getActionsCount()).isEqualTo(1);
+        assertThat(((DailyDigestIngestionState.Owned) CoordinatorTestSupport.lifecycle(recovered)).attempt()).isZero();
+    }
+
+    private static DailyDigestIngestionState.Owned owned(String instanceId, int attempt) {
+        return new DailyDigestIngestionState.Owned(instanceId, attempt, "timer",
+                Instant.parse("2026-10-28T10:00:00Z"), false);
     }
 }

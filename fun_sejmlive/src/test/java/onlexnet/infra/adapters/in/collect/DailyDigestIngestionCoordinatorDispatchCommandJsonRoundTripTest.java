@@ -15,6 +15,8 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCo
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRuntimeObservedCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectRuntimeStatusDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectFailureDTO;
 
 class DailyDigestIngestionCoordinatorDispatchCommandJsonRoundTripTest {
@@ -78,6 +80,21 @@ class DailyDigestIngestionCoordinatorDispatchCommandJsonRoundTripTest {
             assertThat(restored).isInstanceOf(CollectCoordinatorForceStartNextCommandDTO.class);
             var forceStartNext = (CollectCoordinatorForceStartNextCommandDTO) restored;
             assertThat(forceStartNext.getSource()).isEqualTo("manual-recovery");
+        });
+    }
+
+    @Test
+    void shouldRoundTripRuntimeObservationThroughDispatchBaseType() throws Exception {
+        var command = new CollectCoordinatorRuntimeObservedCommandDTO();
+        command.setOrchestrationInstanceId("observed-1");
+        command.setRuntimeStatus(CollectRuntimeStatusDTO.FAILED);
+
+        assertRoundTrip(command, "runtimeObserved", restored -> {
+            assertThat(restored).isInstanceOf(CollectCoordinatorRuntimeObservedCommandDTO.class);
+            var observation = (CollectCoordinatorRuntimeObservedCommandDTO) restored;
+            assertThat(observation.getOrchestrationInstanceId()).isEqualTo("observed-1");
+            assertThat(observation.getRuntimeStatus())
+                    .isEqualTo(CollectRuntimeStatusDTO.FAILED);
         });
     }
 

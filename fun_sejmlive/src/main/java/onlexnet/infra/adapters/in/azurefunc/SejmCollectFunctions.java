@@ -10,6 +10,8 @@ public final class SejmCollectFunctions {
 
     /** Timer trigger function name. */
     public static final String TIMER_FUNCTION_NAME = "Fun_SejmCollectTimer";
+    /** Independent status observation; never starts loading orchestrations directly. */
+    public static final String OBSERVER_FUNCTION_NAME = "Fun_CollectRuntimeObserver";
     /** HTTP starter function name for manual trigger. */
     public static final String HTTP_STARTER_FUNCTION_NAME = "Fun_CollectStart";
     /** Durable orchestrator function name. */

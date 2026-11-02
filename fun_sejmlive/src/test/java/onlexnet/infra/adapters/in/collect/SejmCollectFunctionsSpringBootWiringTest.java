@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.restfb.FacebookClient;
 
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestRuntimeObserverFunction;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestRuntimeObserverSupport;
 import onlexnet.testsupport.AppTest;
 import onlexnet.testsupport.PostgresIntegrationTestSupport;
 
@@ -33,6 +35,12 @@ class SejmCollectFunctionsSpringBootWiringTest extends PostgresIntegrationTestSu
     void shouldResolveCoreInfraBeansAsSameSingletons() {
         assertThat(this.applicationContext.getBean(ObjectMapper.class)).isSameAs(this.objectMapper);
         assertThat(this.applicationContext.getBean(JsonValidator.class)).isSameAs(this.jsonValidator);
+    }
+
+    @Test
+    void shouldLoadRuntimeObserverAndSupport() {
+        assertThat(applicationContext.getBean(DailyDigestRuntimeObserverFunction.class)).isNotNull();
+        assertThat(applicationContext.getBean(DailyDigestRuntimeObserverSupport.class)).isNotNull();
     }
 
     @Test

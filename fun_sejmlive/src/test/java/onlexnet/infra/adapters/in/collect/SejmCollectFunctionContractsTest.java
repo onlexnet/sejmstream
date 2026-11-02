@@ -1,6 +1,7 @@
 package onlexnet.infra.adapters.in.collect;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -46,6 +47,8 @@ import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.Dail
 import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorContractV1;
 import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorActor;
 import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorEntityFunction;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestRuntimeObserverFunction;
+import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorState;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerCollectEventFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerEntityFunction;
 import onlexnet.infra.adapters.in.azurefunc.termsnapshotreconciler.TermSnapshotReconcilerActor;
@@ -80,6 +83,15 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
 
         @Autowired
         private DailyDigestIngestionCoordinatorActor dailyDigestIngestionCoordinatorActor;
+
+    @Test
+    void shouldObserveRuntimeEveryMinuteWithDurableClientBinding() throws NoSuchMethodException {
+        var method = DailyDigestRuntimeObserverFunction.class.getDeclaredMethod(
+                "observeRuntime", String.class, DurableClientContext.class);
+        assertThat(method.getAnnotation(FunctionName.class).value()).isEqualTo(SejmCollectFunctions.OBSERVER_FUNCTION_NAME);
+        assertThat(method.getParameters()[0].getAnnotation(TimerTrigger.class).schedule()).isEqualTo("0 * * * * *");
+        assertThat(method.getParameters()[1].getAnnotation(DurableClientInput.class).name()).isEqualTo("durableContext");
+    }
 
     @Test
     void shouldMatchActorRegistrationsAndSdkIdentitiesWithTriggerTypes() {
@@ -261,30 +273,12 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     }
 
     @Test
-    void givenCoordinatorState_whenSerializedWithJackson_thenRoundTripsSuccessfully() throws Exception {
-        var objectMapper = new ObjectMapper();
-                var getStateType = DailyDigestIngestionCoordinatorActor.class.getDeclaredMethod("getStateType");
-                getStateType.setAccessible(true);
-                @SuppressWarnings("unchecked")
-                var stateClass = (Class<Object>) getStateType.invoke(this.dailyDigestIngestionCoordinatorActor);
-        var constructor = stateClass.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        var state = constructor.newInstance();
-        var setRunning = stateClass.getDeclaredMethod("setRunning", boolean.class);
-        setRunning.setAccessible(true);
-        setRunning.invoke(state, true);
-
-        var json = objectMapper.writeValueAsString(state);
-        var restored = objectMapper.readValue(json, stateClass);
-        var isRunning = stateClass.getDeclaredMethod("isRunning");
-        isRunning.setAccessible(true);
-
-        assertThat(isRunning.invoke(restored)).isEqualTo(true);
-
-        var restoredFromLegacyPayload = objectMapper.readValue(
-                "{\"running\":true,\"pendingRequests\":2}",
-                stateClass);
-        assertThat(isRunning.invoke(restoredFromLegacyPayload)).isEqualTo(true);
+    void shouldRejectLegacyCoordinatorStateWithApplicationMapper() {
+        var objectMapper = applicationContext.getBean(ObjectMapper.class);
+        assertThatThrownBy(() -> objectMapper.readValue("{\"running\":true,\"pendingRequests\":2}",
+                DailyDigestIngestionCoordinatorState.class))
+                .isInstanceOf(com.fasterxml.jackson.core.JsonProcessingException.class)
+                .hasMessageContaining("legacy state is unsupported");
     }
 
     private static void assertActivityContract(

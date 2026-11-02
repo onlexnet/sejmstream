@@ -113,6 +113,25 @@ public interface SejmCollectOperations {
     the activity logs the error and returns `0`, allowing orchestration to complete with
     partial counts for other data types.
 
+### Daily-digest orchestration lifecycle
+
+`collectcoordinator@singleton` owns at most one loading orchestration, including
+future scheduled starts. Completion/failure notifications carry its instance ID
+and request reconciliation; only a matching terminal runtime observation releases
+ownership. Stale or duplicate observations cannot create extra runs.
+
+A dedicated timer observes runtime status every minute. Confirmed failure schedules
+five possible replacements after 1, 2, 4, 8, and 15 minutes, independent of failure
+text. Completion resets the budget. Failure of replacement five exhausts recovery:
+ordinary timer/HTTP requests cannot restart it; explicit authorized administrator
+recovery is required and never bypasses an existing owner.
+
+Missing/unknown metadata or query failure retains ownership and is reported.
+Administrative termination/cancellation requires explicit recovery. Deployment
+targets absent coordinator state with no preexisting collection runs or queued
+legacy commands. Legacy boolean-only state is rejected; migration is outside this
+change. See ADR-010 for the fresh-state deployment contract.
+
 ### Durable Activity Wire Contract
 
 Azure Functions Java serializes activity return values with Gson, while the Durable Task Java SDK

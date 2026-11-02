@@ -2,7 +2,10 @@
 title Hourly Data Collection (Durable Orchestrator)
 
 participant "Timer/HTTP" as trigger
-participant "SejmCollectFunctions" as fn
+participant "SejmCollectFunctionSupport" as fn
+participant "collectcoordinator@singleton" as actor
+participant "One-minute status observer" as observer
+participant "Durable runtime" as runtime
 participant "Durable Orchestrator" as orch
 participant "SejmCollectOperations" as ops
 participant "SejmApiClient" as api
@@ -16,10 +19,12 @@ participant "TermSnapshotReconcilerEntity" as snapshot_entity
 trigger -> fn: Timer fires (0 0 * * * *)\nor HTTP POST
 activate fn
 
-fn -> orch: startNewOrchestration("Fun_CollectOrchestrator")
+fn -> actor: signal dispatch(requestCollect)
+fn --> trigger: accepted (HTTP 202)
+deactivate fn
+actor -> orch: startNewOrchestration("Fun_CollectOrchestrator")
+actor -> actor: commit returned instance ID and scheduled start
 activate orch
-
-orch -> orch: getCurrentTermNum()\n(SejmApiClient.fetchTerms(), cached)
 
 note right of orch
   Activities execute **sequentially**
@@ -97,10 +102,28 @@ snapshot_event_fn -> snapshot_entity: signalEntity("termSnapshotCollected",
   key=String.valueOf(termNum), enriched snapshot payload)
 deactivate snapshot_event_fn
 
-orch --> fn: CollectResult(countsByType)
+orch -> actor: signal collectCompleted(instance ID)\n(reconciliation hint only)
+orch --> runtime: return CollectResult(countsByType)\nExecutionCompleted
 deactivate orch
-
-fn --> trigger: 200 OK / IngestDailyDigestOutcome.Ingested
-deactivate fn
+observer -> actor: read owned instance ID every minute
+observer -> runtime: getInstanceMetadata(owned ID)
+runtime --> observer: runtime status
+observer -> actor: signal runtimeObserved(instance ID, status)
+alt matching Completed
+  actor -> actor: release owner; reset retry budget
+else matching Failed, attempt 0-4
+  actor -> orch: schedule replacement after 1/2/4/8/15 minutes
+  actor -> actor: own replacement immediately, even before start
+else matching Failed, attempt 5
+  actor -> actor: persist Exhausted; require administrator recovery
+else nonterminal, missing, or query error
+  actor -> actor: retain ownership; no new run
+end
+note right of actor
+  Failures can signal collectFailed before throwing.
+  Missing hints are recovered by runtime observations.
+  Stale IDs never change current ownership.
+  Timer/manual requests never bypass an owned run.
+end note
 
 @enduml

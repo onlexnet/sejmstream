@@ -1,16 +1,18 @@
 package onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator;
 
+import java.time.Instant;
+
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Component;
-
-import java.time.Instant;
 
 import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
 import com.microsoft.durabletask.TaskEntityContext;
 import com.microsoft.durabletask.TaskEntityOperation;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import onlexnet.app.usecases.DailyDigestIngestionCoordinatorDecider;
+import onlexnet.app.usecases.DailyDigestIngestionState;
 import onlexnet.infra.adapters.in.azurefunc.DurableEntityOperationBinding;
 import onlexnet.infra.adapters.in.azurefunc.JsonValidator;
 import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctions;
@@ -21,32 +23,21 @@ import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorCo
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorDispatchCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorForceStartNextCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
+import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRuntimeObservedCommandDTO;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectOrchestrationInputDTO;
 
 /**
- * Prevents concurrent daily-digest ingestion orchestrations by coordinating ingestion requests
- * through durable entity state.
- *
- * <p>Its single responsibility is to apply coordinator decisions and start an ingestion
- * orchestration when requested; it does not fetch or persist Sejm data itself.</p>
+ * Owns one loading orchestration, including scheduled retries, and reconciles correlated runtime observations.
  */
 @Component
+@Slf4j
 @RequiredArgsConstructor
 public class DailyDigestIngestionCoordinatorActor implements DailyDigestIngestionCoordinatorContractV1, EntityComponent {
 
     private static final DailyDigestIngestionCoordinatorDecider DECIDER = new DailyDigestIngestionCoordinatorDecider();
-    // private static final String DELETE_OPERATION_NAME = "delete";
     private final JsonValidator jsonValidator;
-    private EntityState state = None.INSTANCE;
+    private Lifecycle lifecycle = Uninitialized.INSTANCE;
     private TaskEntityLifecycleContext context = TaskEntityLifecycleContext.uninitialized();
-
-    protected Class<Some> getStateType() {
-        return Some.class;
-    }
-
-    protected Some initializeState(TaskEntityOperation operation) {
-        return new Some();
-    }
 
     @Override
     public String entityName() {
@@ -61,25 +52,17 @@ public class DailyDigestIngestionCoordinatorActor implements DailyDigestIngestio
     @Override
     public @Nullable Object runOperation(TaskEntityOperation operation) {
         context = TaskEntityLifecycleContext.initialized(operation.getContext());
-
-        var stateType = getStateType();
-        var persistedState = operation.getState().getState(stateType);
-        state = persistedState == null ? initializeState(operation) : persistedState;
-
-        // if (DELETE_OPERATION_NAME.equalsIgnoreCase(operation.getName())) {
-        //     operation.getState().deleteState();
-        //     this.state = null;
-        //     return null;
-        // }
-
-        var dispatchOperation = resolveContractOperation(operation.getName());
-        dispatchOperation.invoke(this, operation);
-        operation.getState().setState(requireState());
+        var saved = operation.getState().getState(DailyDigestIngestionCoordinatorState.class);
+        lifecycle = new Initialized(saved == null ? new DailyDigestIngestionState.Idle() : saved.lifecycle());
+        resolveContractOperation(operation.getName()).invoke(this, operation);
+        operation.getState().setState(DailyDigestIngestionCoordinatorState.of(requireState()));
         return null;
     }
 
-    public static DurableEntityOperationBinding<DailyDigestIngestionCoordinatorContractV1, ?> resolveContractOperation(String requestedMethod) {
-        return DailyDigestIngestionCoordinatorContractOperations.resolveOperation(DailyDigestIngestionCoordinatorActor.class, requestedMethod);
+    public static DurableEntityOperationBinding<DailyDigestIngestionCoordinatorContractV1, ?> resolveContractOperation(
+            String requestedMethod) {
+        return DailyDigestIngestionCoordinatorContractOperations.resolveOperation(
+                DailyDigestIngestionCoordinatorActor.class, requestedMethod);
     }
 
     @Override
@@ -87,104 +70,92 @@ public class DailyDigestIngestionCoordinatorActor implements DailyDigestIngestio
         if (command == null) {
             throw new IllegalArgumentException("Collect coordinator command payload is required");
         }
-
-        switch (command) {
-            case CollectCoordinatorRequestCollectCommandDTO requestCollectCommand ->
-                    handleRequestIngestion(requestCollectCommand.getSource());
-            case CollectCoordinatorCollectCompletedCommandDTO collectCompletedCommand ->
-                    handleIngestionCompleted(collectCompletedCommand);
-            case CollectCoordinatorCollectFailedCommandDTO collectFailedCommand ->
-                    handleIngestionFailed(collectFailedCommand);
-            case CollectCoordinatorForceStartNextCommandDTO forceStartNextCommand ->
-                    handleForceStartNextIngestion(forceStartNextCommand.getSource());
-            default -> throw new UnsupportedOperationException(
-                    "Unsupported daily-digest ingestion coordinator command type: " + command.getClass().getName());
+        var decision = DECIDER.decide(requireState(), toCommand(command));
+        var next = decision.state();
+        if (decision.effect() instanceof DailyDigestIngestionCoordinatorDecider.Effect.StartIngestionRun start) {
+            next = startRun(start);
         }
-    }
-
-    private void handleRequestIngestion(String source) {
-        var decision = DECIDER.decide(
-                requireState().toDeciderState(),
-                new DailyDigestIngestionCoordinatorDecider.RequestIngestion(source));
-        applyDecision(decision);
-    }
-
-    private void handleIngestionCompleted(CollectCoordinatorCollectCompletedCommandDTO command) {
-        var validatedCompletion = jsonValidator.validateReceived(
-                JsonValidator.COLLECT_COMPLETION,
-                command.getCompletion());
-        var decision = DECIDER.decide(
-                requireState().toDeciderState(),
-                new DailyDigestIngestionCoordinatorDecider.IngestionCompleted(
-                        validatedCompletion.getOrchestrationInstanceId()));
-        applyDecision(decision);
-    }
-
-    private void handleIngestionFailed(CollectCoordinatorCollectFailedCommandDTO command) {
-        var validatedFailure = jsonValidator.validateReceived(
-                JsonValidator.COLLECT_FAILURE,
-                command.getFailure());
-        var decision = DECIDER.decide(
-                requireState().toDeciderState(),
-                new DailyDigestIngestionCoordinatorDecider.IngestionFailed(
-                        validatedFailure.getOrchestrationInstanceId(),
-                        validatedFailure.getMessage()));
-        applyDecision(decision);
-    }
-
-    private void handleForceStartNextIngestion(String source) {
-        var normalizedSource = source == null || source.isBlank() ? "manual-recovery" : source;
-        var decision = DECIDER.decide(
-                requireState().toDeciderState(),
-                new DailyDigestIngestionCoordinatorDecider.ForceStartNextIngestion(normalizedSource));
-        applyDecision(decision);
-    }
-
-    private void applyDecision(DailyDigestIngestionCoordinatorDecider.Decision decision) {
-        requireState().apply(decision.state());
-        if (decision.effect() instanceof DailyDigestIngestionCoordinatorDecider.Effect.StartIngestionRun startIngestionRun) {
-            startNextIngestionRun(startIngestionRun.source());
-            return;
+        if (!requireState().equals(next)) {
+            switch (next) {
+                case DailyDigestIngestionState.Exhausted exhausted ->
+                        log.error("Daily-digest recovery exhausted for instance {}; administrator recovery required",
+                                exhausted.instanceId());
+                case DailyDigestIngestionState.RecoveryRequired recovery ->
+                        log.warn("Daily-digest recovery required: reason={}, instance={}", recovery.reason(), recovery.instanceId());
+                default -> { }
+            }
         }
-        if (decision.effect() instanceof DailyDigestIngestionCoordinatorDecider.Effect.StartIngestionRunDelayed startIngestionRunDelayed) {
-            startNextIngestionRun(startIngestionRunDelayed.source(), Instant.now().plus(startIngestionRunDelayed.delay()));
+        if (next instanceof DailyDigestIngestionState.RecoveryRequired recovery
+                && recovery.reason() == DailyDigestIngestionState.Reason.LEGACY_OWNERSHIP) {
+            log.error("Daily-digest starts blocked: legacy ownership requires operator inventory and migration");
         }
+        lifecycle = new Initialized(next);
     }
 
-    private void startNextIngestionRun(String source) {
-        startNextIngestionRun(source, null);
+    private DailyDigestIngestionCoordinatorDecider.Command toCommand(CollectCoordinatorDispatchCommandDTO command) {
+        return switch (command) {
+            case CollectCoordinatorRequestCollectCommandDTO request ->
+                    new DailyDigestIngestionCoordinatorDecider.RequestIngestion(requireSource(request.getSource()));
+            case CollectCoordinatorCollectCompletedCommandDTO completed -> {
+                var completion = jsonValidator.validateReceived(JsonValidator.COLLECT_COMPLETION, completed.getCompletion());
+                yield new DailyDigestIngestionCoordinatorDecider.IngestionCompleted(completion.getOrchestrationInstanceId());
+            }
+            case CollectCoordinatorCollectFailedCommandDTO failed -> {
+                var failure = jsonValidator.validateReceived(JsonValidator.COLLECT_FAILURE, failed.getFailure());
+                yield new DailyDigestIngestionCoordinatorDecider.IngestionFailed(
+                        failure.getOrchestrationInstanceId(), failure.getMessage());
+            }
+            case CollectCoordinatorForceStartNextCommandDTO recovery ->
+                    new DailyDigestIngestionCoordinatorDecider.ForceStartNextIngestion(requireSource(recovery.getSource()));
+            case CollectCoordinatorRuntimeObservedCommandDTO observed -> {
+                var instanceId = observed.getOrchestrationInstanceId();
+                var status = observed.getRuntimeStatus();
+                if (instanceId == null || instanceId.isBlank() || status == null) {
+                    throw new IllegalArgumentException("Runtime observation requires an instance ID and recognized runtime status");
+                }
+                yield new DailyDigestIngestionCoordinatorDecider.RuntimeObserved(instanceId,
+                        DailyDigestIngestionCoordinatorDecider.RuntimeStatus.valueOf(status.getValue()));
+            }
+            default -> throw new UnsupportedOperationException("Unsupported coordinator command: " + command.getClass().getName());
+        };
     }
 
-    private void startNextIngestionRun(String source, @Nullable Instant startTime) {
-        var options = new NewOrchestrationInstanceOptions();
-        if (startTime != null) {
-            options.setStartTime(startTime);
+    private static String requireSource(@Nullable String source) {
+        if (source == null || source.isBlank()) {
+            throw new IllegalArgumentException("Collection command source is required");
         }
-        var orchestrationInput = new CollectOrchestrationInputDTO();
-        orchestrationInput.setCoordinatorEntityId(requireContext().getId().toString());
-        orchestrationInput.setSource(source);
-        jsonValidator.validateToSend(
-                JsonValidator.COLLECT_ORCHESTRATION_INPUT,
-                orchestrationInput);
-        requireContext().startNewOrchestration(
-                SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME,
-                orchestrationInput,
-                options);
+        return source;
     }
 
-    private Some requireState() {
-        if (state instanceof Some initializedState) {
-            return initializedState;
+    private DailyDigestIngestionState.Owned startRun(
+            DailyDigestIngestionCoordinatorDecider.Effect.StartIngestionRun start) {
+        var scheduledStart = Instant.now().plus(start.delay());
+        var options = new NewOrchestrationInstanceOptions().setStartTime(scheduledStart);
+        var input = new CollectOrchestrationInputDTO();
+        input.setCoordinatorEntityId(requireContext().getId().toString());
+        input.setSource(start.source());
+        jsonValidator.validateToSend(JsonValidator.COLLECT_ORCHESTRATION_INPUT, input);
+        var instanceId = requireContext().startNewOrchestration(
+                SejmCollectFunctions.ORCHESTRATOR_FUNCTION_NAME, input, options);
+        if (instanceId == null || instanceId.isBlank()) {
+            throw new IllegalStateException("Durable runtime did not return the scheduled orchestration ID");
         }
-        throw new IllegalStateException("state must be initialized in run() before contract dispatch");
+        log.info("Daily-digest instance {} scheduled: attempt={}, start={}", instanceId, start.attempt(), scheduledStart);
+        return new DailyDigestIngestionState.Owned(instanceId, start.attempt(), start.source(), scheduledStart, false);
+    }
+
+    private DailyDigestIngestionState requireState() {
+        if (lifecycle instanceof Initialized initialized) {
+            return initialized.state();
+        }
+        throw new IllegalStateException("Coordinator state must be initialized by runOperation before dispatch");
     }
 
     private TaskEntityContext requireContext() {
-        return context.requireInitialized("context must be initialized in run() before contract dispatch");
+        return context.requireInitialized("Coordinator context must be initialized by runOperation before dispatch");
     }
-}
 
-sealed interface EntityState permits Some, None {
+    private sealed interface Lifecycle { }
+    private enum Uninitialized implements Lifecycle { INSTANCE }
+    private record Initialized(DailyDigestIngestionState state) implements Lifecycle { }
 }
-
-enum None implements EntityState { INSTANCE }

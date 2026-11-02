@@ -111,11 +111,13 @@ components:
           collectCompleted: '#/components/schemas/CollectCoordinatorCollectCompletedCommand'
           collectFailed: '#/components/schemas/CollectCoordinatorCollectFailedCommand'
           forceStartNext: '#/components/schemas/CollectCoordinatorForceStartNextCommand'
+          runtimeObserved: '#/components/schemas/CollectCoordinatorRuntimeObservedCommand'
       oneOf:
         - $ref: '#/components/schemas/CollectCoordinatorRequestCollectCommand'
         - $ref: '#/components/schemas/CollectCoordinatorCollectCompletedCommand'
         - $ref: '#/components/schemas/CollectCoordinatorCollectFailedCommand'
         - $ref: '#/components/schemas/CollectCoordinatorForceStartNextCommand'
+        - $ref: '#/components/schemas/CollectCoordinatorRuntimeObservedCommand'
     CollectCoordinatorRequestCollectCommand:
       allOf:
         - $ref: '#/components/schemas/CollectCoordinatorDispatchCommand'
@@ -152,3 +154,27 @@ components:
           properties:
             source:
               type: string
+    CollectCoordinatorRuntimeObservedCommand:
+      allOf:
+        - $ref: '#/components/schemas/CollectCoordinatorDispatchCommand'
+        - type: object
+          required:
+            - orchestrationInstanceId
+            - runtimeStatus
+          properties:
+            orchestrationInstanceId:
+              type: string
+              minLength: 1
+            runtimeStatus:
+              $ref: '#/components/schemas/CollectRuntimeStatus'
+    CollectRuntimeStatus:
+      type: string
+      enum:
+        - PENDING
+        - RUNNING
+        - SUSPENDED
+        - CONTINUED_AS_NEW
+        - COMPLETED
+        - FAILED
+        - TERMINATED
+        - CANCELED
