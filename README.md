@@ -1,6 +1,12 @@
 # SejmStream Projekt
 Facebook: [facebook.com/SejmAktualnosci](https://www.facebook.com/SejmAktualnosci)
 
+## Foundry agent example
+
+The [Foundry example](foundry/README.md) includes a document-analysis
+prompt agent, Terraform infrastructure, and a manual GitHub Actions
+deployment with OIDC authentication and a smoke test.
+
 ## Operational notes
 
 - Hourly collection runs through a durable orchestrator.
@@ -48,4 +54,3 @@ Build and test `fun_sejmlive` from monorepo root:
 
 ## Useful links
 - [How to create a Facebook access token](https://www.youtube.com/watch?v=RMLcmDdOSxw)
-

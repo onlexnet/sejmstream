@@ -1,0 +1,107 @@
+name: Foundry agent
+
+'on':
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'foundry/**'
+      - 'infra/**'
+      - '.github/workflows/foundry-agent.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'foundry/**'
+      - 'infra/**'
+      - '.github/workflows/foundry-agent.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: foundry/requirements.txt
+
+      - name: Install deployment dependencies
+        run: python -m pip install -r foundry/requirements.txt
+
+      - name: Test agent deployment
+        run: python -m unittest discover -s foundry/tests -v
+        env:
+          PYTHONPATH: foundry
+
+      - name: Validate example agent without Azure
+        run: python foundry/deploy_agent.py --validate --model sejm-analyst-model
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.17.0'
+
+      - name: Check Foundry Terraform formatting
+        run: terraform fmt -check infra/foundry-agent.tf infra/tests/foundry-agent.tftest.hcl
+
+      - name: Initialize Terraform without remote state
+        run: terraform -chdir=infra init -backend=false -input=false -lockfile=readonly
+
+      - name: Validate Terraform
+        run: terraform -chdir=infra validate -no-color
+
+      - name: Test Foundry infrastructure without Azure
+        run: terraform -chdir=infra test -filter=tests/foundry-agent.tftest.hcl -no-color
+
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: foundry/requirements.txt
+
+      - name: Install deployment dependencies
+        run: python -m pip install -r foundry/requirements.txt
+
+      - name: Check infrastructure configuration
+        env:
+          AZURE_AI_PROJECT_ENDPOINT: ${{ vars.AZURE_AI_PROJECT_ENDPOINT }}
+          AZURE_AI_MODEL_DEPLOYMENT_NAME: ${{ vars.AZURE_AI_MODEL_DEPLOYMENT_NAME }}
+        run: |
+          if [[ -z "$AZURE_AI_PROJECT_ENDPOINT" || -z "$AZURE_AI_MODEL_DEPLOYMENT_NAME" ]]; then
+            echo "::error::Apply infra/ to provision the Foundry project and deployment variables before deploying the agent."
+            exit 1
+          fi
+
+      - name: Azure login with OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy version and smoke-test agent
+        env:
+          AZURE_AI_PROJECT_ENDPOINT: ${{ vars.AZURE_AI_PROJECT_ENDPOINT }}
+          AZURE_AI_MODEL_DEPLOYMENT_NAME: ${{ vars.AZURE_AI_MODEL_DEPLOYMENT_NAME }}
+        run: python foundry/deploy_agent.py --smoke-test

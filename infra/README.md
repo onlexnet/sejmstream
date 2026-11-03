@@ -68,6 +68,17 @@ terraform apply
 
 Local `terraform plan` and `terraform apply` still work, but the actual execution happens remotely in Terraform Cloud because of the `cloud` block in `providers.tf`.
 
+## Location extraction model deployment
+
+The `location-extraction` deployment uses `GlobalStandard`. The default model,
+`gpt-4.1-nano` version `2025-04-14`, does not support regional `Standard`
+deployments in West Europe. Model availability and quota were checked against
+Azure before selecting the supported SKU.
+
+`GlobalStandard` can process prompts and responses outside the account's region,
+including outside the EU. The model, deployment name and configured capacity
+remain unchanged.
+
 ## fun_sejmlive Function App resources
 
 `infra/main.tf` now provisions the Azure resources required by the demo `fun_sejmlive` Durable Functions module:

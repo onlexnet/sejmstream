@@ -1,0 +1,5 @@
+{
+  "name": "sejm-analyst",
+  "description": "Summarizes user-provided Polish parliamentary documents without publishing content.",
+  "instructions_file": "instructions.md"
+}

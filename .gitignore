@@ -4,6 +4,7 @@ target/
 !**/src/test/**/target/
 
 .venv/
+__pycache__/
 
 ### Terraform ###
 .terraform/
