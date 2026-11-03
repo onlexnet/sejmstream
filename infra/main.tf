@@ -96,7 +96,7 @@ resource "azurerm_cognitive_deployment" "location_extraction" {
   }
 
   sku {
-    name     = "Standard"
+    name     = "GlobalStandard"
     capacity = var.foundry_location_deployment_capacity
   }
 }
