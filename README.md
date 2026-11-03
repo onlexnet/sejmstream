@@ -4,7 +4,7 @@ Facebook: [facebook.com/SejmAktualnosci](https://www.facebook.com/SejmAktualnosc
 ## Foundry agent example
 
 The [Foundry example](foundry/README.md) includes a document-analysis
-prompt agent, Terraform infrastructure, and a manual GitHub Actions
+prompt agent, Terraform infrastructure, and an automatic GitHub Actions
 deployment with OIDC authentication and a smoke test.
 
 ## Operational notes

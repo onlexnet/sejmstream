@@ -5,10 +5,6 @@ name: Foundry agent
   push:
     branches:
       - main
-    paths:
-      - 'foundry/**'
-      - 'infra/**'
-      - '.github/workflows/foundry-agent.yml'
   pull_request:
     branches:
       - main
@@ -64,7 +60,7 @@ jobs:
         run: terraform -chdir=infra test -filter=tests/foundry-agent.tftest.hcl -no-color
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: validate
     runs-on: ubuntu-latest
     environment: prod

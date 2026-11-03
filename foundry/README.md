@@ -66,9 +66,14 @@ secret management permissions.
 
 ## 2. Deploy through GitHub Actions
 
-After applying Terraform, go to **Actions > Foundry agent > Run workflow** and
-select **main**. Only this manual run on `main` deploys; pull requests and pushes
-run offline validation and tests without Azure credentials.
+After applying Terraform, every push to **main** runs validation and then
+deploys the agent, regardless of which files changed. Pull requests affecting
+the Foundry sources, infrastructure or workflow run validation only.
+
+Manual deployment remains available through **Actions > Foundry agent >
+Run workflow**, selecting **main**. Runs on other branches do not deploy.
+The pipeline does not provision infrastructure; apply Terraform before the
+first deployment or after infrastructure changes.
 
 The deploy job uses the existing **prod** GitHub Environment and its secrets:
 `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and `AZURE_SUBSCRIPTION_ID`. Terraform
