@@ -1,0 +1,18 @@
+{
+	"mcpServers": {
+		"com.microsoft/azure": {
+			"type": "stdio",
+			"command": "dnx",
+			"args": [
+				"Azure.Mcp@3.0.0-beta.6",
+				"--yes",
+				"--",
+				"server",
+				"start"
+			],
+			"tools": [
+				"*"
+			]
+		}
+	}
+}
