@@ -18,7 +18,11 @@ Deploy on **Azure Functions Flex Consumption Plan** (Java 21) with **Durable Fun
 
 - **Flex Consumption** provides scale-to-zero, per-execution billing, and up to 100 max instances.
 - **Durable Functions Orchestrator** (`Fun_CollectOrchestrator`) executes 6 activities **sequentially** with retry policy (maxRetries=3, delay=10s, backoffCoefficient=2.0, maxInterval=2min, timeout=10min). Sequential execution simplifies error handling and avoids API rate limiting.
-- **Timer Triggers** for scheduling: hourly collection (`0 0 * * * *`), daily publishing (`0 30 23 * * *`).
+- **Timer Triggers** for scheduling: daily collection at 01:00 `Europe/Warsaw`, daily publishing (`0 30 23 * * *`).
+- Collection uses UTC cron `0 0 0,23 * * *` and a Warsaw-time guard before signaling the coordinator.
+  Linux Flex Consumption does not support `WEBSITE_TIME_ZONE` or `TZ`; the two UTC candidates cover
+  winter and summer time, with only the candidate at 01:00 Warsaw starting collection.
+  This replaces hourly collection to reduce Durable Task Scheduler action costs.
 - **Queue Trigger** for interpellation processing with built-in poison message handling.
 - **HTTP Triggers** for Telegram webhook and manual admin operations.
 - **System-Assigned Managed Identity (MSI)** for Key Vault access and storage authentication.

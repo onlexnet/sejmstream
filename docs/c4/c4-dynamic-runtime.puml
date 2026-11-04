@@ -29,7 +29,7 @@ Container_Boundary(func_app, "Azure Function App (Java)") {
   Component(admin_uc, "AdminUseCase", "Use case")
 }
 
-' A) Hourly collect flow
+' A) Daily collect flow at 01:00 Europe/Warsaw
 Rel(collect_in, durable_scheduler, "A1 start/update orchestration")
 Rel(durable_scheduler, collect_uc, "A2 invokes collect activities")
 Rel(collect_uc, collect_ops, "A3 delegate collection")

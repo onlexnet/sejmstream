@@ -119,7 +119,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
     }
 
     @Test
-    void givenTimerFunction_whenCheckingTriggerContract_thenRunsDailyAt1630() throws NoSuchMethodException {
+    void shouldScheduleCollectionAtBothUtcCandidatesForWarsawOneAm() throws NoSuchMethodException {
         var method = SejmCollectTimerFunction.class.getDeclaredMethod(
                 "runTimer",
                 String.class,
@@ -132,7 +132,7 @@ class SejmCollectFunctionContractsTest extends PostgresIntegrationTestSupport {
         assertThat(functionName).isNotNull();
         assertThat(functionName.value()).isEqualTo(SejmCollectFunctions.TIMER_FUNCTION_NAME);
         assertThat(trigger).isNotNull();
-        assertThat(trigger.schedule()).isEqualTo("0 0 * * * *");
+        assertThat(trigger.schedule()).isEqualTo("0 0 0,23 * * *");
     }
 
     @Test

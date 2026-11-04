@@ -1,5 +1,5 @@
 @startuml seq_collect_daily_digest
-title Hourly Data Collection (Durable Orchestrator)
+title Daily Data Collection at 01:00 Europe/Warsaw (Durable Orchestrator)
 
 participant "Timer/HTTP" as trigger
 participant "SejmCollectFunctionSupport" as fn
@@ -16,7 +16,7 @@ participant "Azure Storage Queue" as collect_queue
 participant "TermSnapshotReconcilerCollectEventFunction" as snapshot_event_fn
 participant "TermSnapshotReconcilerEntity" as snapshot_entity
 
-trigger -> fn: Timer fires (0 0 * * * *)\nor HTTP POST
+trigger -> fn: Timer fires (0 0 0,23 * * *)\naccept only 01:00 Europe/Warsaw\nor HTTP POST (unrestricted)
 activate fn
 
 fn -> actor: signal dispatch(requestCollect)

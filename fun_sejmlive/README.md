@@ -33,7 +33,9 @@ See [ADR-009](../docs/adr/009-durable-actor-naming.md).
 
 ### Collect pipeline (Durable Functions)
 
-- `Fun_SejmCollectTimer` - `TimerTrigger`, cron `0 0 * * * *` (hourly).
+- `Fun_SejmCollectTimer` - daily collection at 01:00 `Europe/Warsaw`, including daylight-saving changes.
+  UTC cron `0 0 0,23 * * *` wakes twice daily; a Warsaw-time guard skips the other candidate before any Durable signal.
+  Manual HTTP starts and automatic failure recovery remain unchanged.
 - `Fun_CollectStart` - `HttpTrigger` `POST`, auth level `FUNCTION`.
 - `Fun_CollectOrchestrator` - durable orchestrator.
 - `Fun_CollectCoordinatorEntity` - durable entity to serialize collect requests.
@@ -93,11 +95,11 @@ Common optional settings:
 - `INTERPELLATION_PUBLISH_RETRY_DELAY_SECONDS` (default `60`)
 - `INTERPELLATION_PUBLISH_BACKOFF_MULTIPLIER` (default `2.0`)
 - `INTERPELLATION_PUBLISH_MAX_RETRY_DELAY_SECONDS` (default `900`)
-- `TZ=Europe/Warsaw`
-- `WEBSITE_TIME_ZONE=Europe/Warsaw`
 
 Notes:
 
+- Do not configure `TZ` or `WEBSITE_TIME_ZONE` on Linux Flex Consumption; they are unsupported.
+  The collection timer uses an explicit `Europe/Warsaw` zone in Java instead.
 - Queue payloads are sent as raw JSON; this requires `host.json` queue setting `messageEncoding: "none"`.
 - `DomainStorage` is intentionally separate from `AzureWebJobsStorage`.
 - Sejm OpenAPI spec is fetched from `https://api.sejm.gov.pl/sejm/openapi/` during Maven `generate-sources` only on developer machines (when `CI` env var is not set), saved to `src/main/resources/openapi/sejm-openapi.yaml`, and then used for generated client classes. CI uses the committed spec file and does not download it.

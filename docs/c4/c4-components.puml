@@ -6,7 +6,7 @@ title Component Diagram - SejmStream Function App (Hexagonal Architecture)
 Container_Boundary(func_app, "Azure Function App") {
 
     ' === INBOUND ADAPTERS (Driving) ===
-    Component(collect_fn, "SejmCollectFunctions", "Timer + HTTP + Durable Orchestrator", "Hourly collection trigger with 6 sequential activities (with retry)")
+    Component(collect_fn, "SejmCollectFunctions", "Timer + HTTP + Durable Orchestrator", "Daily collection at 01:00 Europe/Warsaw with 6 sequential activities (with retry)")
     Component(publish_fn, "FacebookPublishingFunctions", "Timer + HTTP", "Daily digest publish at 23:30")
     Component(interpellation_fn, "InterpellationPublishQueueFunctions", "Queue Trigger", "Processes interpellation publish messages")
     Component(telegram_fn, "TelegramBotFunctions", "HTTP Webhook", "Receives Telegram admin commands")

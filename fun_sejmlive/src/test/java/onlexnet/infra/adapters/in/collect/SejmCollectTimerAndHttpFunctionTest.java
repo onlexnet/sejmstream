@@ -4,16 +4,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.microsoft.azure.functions.HttpStatus;
 import com.microsoft.durabletask.EntityInstanceId;
 
 import onlexnet.app.ports.out.SejmApiClient;
 import onlexnet.app.ports.out.SejmCollectOperations;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectFunctionSupport;
+import onlexnet.infra.adapters.in.azurefunc.SejmCollectTimerFunction;
 import onlexnet.infra.adapters.in.azurefunc.dailydigestingestioncoordinator.DailyDigestIngestionCoordinatorContractOperations;
 import onlexnet.infra.adapters.in.azurefunc.generated.model.CollectCoordinatorRequestCollectCommandDTO;
 
@@ -21,6 +28,46 @@ class SejmCollectTimerAndHttpFunctionTest {
 
     private static final String COORDINATOR_ENTITY_NAME = "collectcoordinator";
     private static final String COORDINATOR_ENTITY_KEY = "singleton";
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "2026-11-05T00:00:00Z",
+            "2026-07-04T23:00:00Z",
+            "2026-03-29T00:00:00Z",
+            "2026-03-29T23:00:00Z",
+            "2026-10-24T23:00:00Z",
+            "2026-10-26T00:00:00Z"
+    })
+    void shouldCollectAtOneAmWarsawInWinterSummerAndAcrossClockChanges(String instant) {
+        var clock = Clock.fixed(Instant.parse(instant), ZoneOffset.UTC);
+        var function = new SejmCollectTimerFunction(new SejmCollectFunctionSupport(), clock);
+        var clientCtx = new SejmCollectFunctionTestSupport.TestDurableClientContext(false);
+
+        function.runTimer("timer", clientCtx, new SejmCollectFunctionTestSupport.FakeExecutionContext());
+
+        assertThat(clientCtx.lastSignaledEntityId)
+                .isEqualTo(new EntityInstanceId(COORDINATOR_ENTITY_NAME, COORDINATOR_ENTITY_KEY));
+        assertThat(clientCtx.lastEntityPayload).isInstanceOf(CollectCoordinatorRequestCollectCommandDTO.class);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "2026-11-04T23:00:00Z",
+            "2026-07-05T00:00:00Z",
+            "2026-03-28T23:00:00Z",
+            "2026-03-30T00:00:00Z",
+            "2026-10-25T00:00:00Z",
+            "2026-10-25T23:00:00Z"
+    })
+    void shouldSkipOtherUtcCandidateWithoutSignalingDurable(String instant) {
+        var clock = Clock.fixed(Instant.parse(instant), ZoneOffset.UTC);
+        var function = new SejmCollectTimerFunction(new SejmCollectFunctionSupport(), clock);
+        var clientCtx = new SejmCollectFunctionTestSupport.TestDurableClientContext(false);
+
+        function.runTimer("timer", clientCtx, new SejmCollectFunctionTestSupport.FakeExecutionContext());
+
+        assertThat(clientCtx.lastSignaledEntityId).isNull();
+    }
 
     @Test
     void givenTimerTrigger_whenInvoked_thenSignalsDailyDigestIngestionCoordinatorEntity() {
