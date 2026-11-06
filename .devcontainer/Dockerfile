@@ -9,6 +9,7 @@ RUN apt update && apt upgrade -y && apt install -y \
     # require graphviz to run PlantUML vscode plugin
     # more: https://plantuml.com/graphviz-dot
     graphviz \
+    libatomic1 \
     curl
 
 # Let use some username as 'worker' instead of default root
